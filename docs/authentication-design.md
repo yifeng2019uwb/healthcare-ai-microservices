@@ -13,26 +13,34 @@
 ## 🎯 **Overview**
 
 ### **What This Is**
-This design defines the authentication approach for healthcare AI microservices using an internal Auth Service that **only validates JWT tokens** and provides user context. The Auth Service is purely stateless - no database tables, no user storage, just JWT validation logic.
+This design defines the authentication approach for healthcare AI microservices using an internal Auth Service that **only validates JWT tokens** and provides user context. The Auth Service is purely stateless - no database tables, no user storage, no credential validation, just JWT validation logic.
 
 ### **Why This Matters**
 Secure authentication is critical for healthcare applications to protect patient data, ensure proper access control, and maintain HIPAA compliance. This stateless approach provides centralized authentication without external dependencies while keeping the Auth Service lightweight and focused.
 
 ### **Scope**
 - **In Scope**: JWT token validation, user context extraction, role-based access control, basic security
-- **Out of Scope**: Business logic, user management operations, database storage, complex authorization rules, enterprise SSO integration
+- **Out of Scope**: User login/logout, credential validation, user management operations, database storage, complex authorization rules, enterprise SSO integration
 
 ## 🏗️ **High-Level Design**
 
 ### **Core Concept**
-Internal Auth Service positioned between the Gateway and backend services, **only validating JWT tokens** and providing user context. The Auth Service is completely stateless - no database, no user storage, just JWT validation logic.
+Internal Auth Service positioned between the Gateway and backend services, **only validating JWT tokens** and providing user context. The Auth Service is completely stateless - no database, no user storage, no credential validation, just JWT validation logic.
+
+**User Authentication Flow**:
+1. **External Authentication**: Users authenticate via external provider (Supabase Auth, Auth0, etc.)
+2. **JWT Token**: External provider issues JWT token with user info and roles
+3. **Auth Service**: Only validates JWT tokens, extracts user context
+4. **Business Services**: Use validated user context for business logic
+5. **User Data**: Stored in Neon database for business services (Patient, Provider, etc.)
 
 ### **Key Components**
-- **Auth Service**: JWT validation only, no business logic, no database tables (Port 8001)
-- **JWT Tokens**: Secure, stateless authentication with embedded user info
+- **Auth Service**: JWT validation only, no business logic, no database tables, no user management (Port 8001)
+- **JWT Tokens**: Secure, stateless authentication with embedded user info (issued by external provider)
 - **Role-Based Access**: User roles extracted from JWT token claims
 - **Gateway Integration**: Authentication middleware in Spring Cloud Gateway
 - **Business Services**: Handle business logic and can call each other internally
+- **External Auth Provider**: Handles user login, registration, password reset (Supabase Auth, Auth0, etc.)
 
 ### **Data Flow**
 ```
@@ -75,10 +83,11 @@ Internal Auth Service positioned between the Gateway and backend services, **onl
 - **Why Neon PostgreSQL**: Single database for all data including authentication tables
 
 ### **Database Strategy**
-- **Primary Database**: Neon PostgreSQL for all business data and authentication
-- **Authentication Tables**: User accounts, roles, and sessions stored in Neon
-- **No External Auth**: Complete control over authentication data and logic
-- **Single Source of Truth**: All data in one database for consistency and simplicity
+- **Auth Service**: No database tables, completely stateless, only JWT validation
+- **Business Services**: Use Neon PostgreSQL for all business data including user-related tables
+- **User Data Storage**: Patient records, provider profiles, appointments stored in Neon database
+- **External Auth Provider**: Handles user authentication, registration, password reset (Supabase Auth, Auth0, etc.)
+- **No Internal User Management**: All user management operations handled by external provider
 
 ### **Integration Points**
 - **Gateway**: Authentication middleware validates tokens
@@ -90,12 +99,14 @@ Internal Auth Service positioned between the Gateway and backend services, **onl
 ## 📊 **Requirements**
 
 ### **Functional Requirements**
-- [ ] User login and logout functionality
-- [ ] JWT token generation and validation
+- [ ] JWT token validation and verification
+- [ ] User context extraction from JWT tokens
 - [ ] Role-based access control (Patient, Provider, Admin)
-- [ ] Token refresh mechanism
-- [ ] User session management
+- [ ] Token refresh validation
+- [ ] User session context management
 - [ ] Basic security monitoring
+
+**Note**: User login, logout, registration, and password reset are handled by external authentication provider (Supabase Auth, Auth0, etc.)
 
 ### **Non-Functional Requirements**
 - **Security**: Secure token storage and transmission
@@ -106,13 +117,13 @@ Internal Auth Service positioned between the Gateway and backend services, **onl
 ## 🚀 **Implementation Plan**
 
 ### **Phase 1: Foundation**
-- [ ] Create Auth Service with basic JWT functionality
-- [ ] Implement user authentication (login/logout)
-- [ ] Set up JWT token generation and validation
+- [ ] Create Auth Service with JWT validation functionality
+- [ ] Implement JWT token validation and user context extraction
+- [ ] Set up external authentication provider integration (Supabase Auth, Auth0, etc.)
 
 ### **Phase 2: Gateway Integration**
 - [ ] Add authentication middleware to Gateway
-- [ ] Implement token validation in Gateway
+- [ ] Implement token validation in Gateway using Auth Service
 - [ ] Pass user context to backend services
 
 ### **Phase 3: Service Integration**
@@ -157,25 +168,27 @@ Internal Auth Service positioned between the Gateway and backend services, **onl
 ## 📝 **Authentication Flow**
 
 ### **Login Process**
-1. **User submits credentials** to Auth Service
-2. **Auth Service validates credentials** against database
-3. **JWT token generated** with user info and roles
+1. **User submits credentials** to external authentication provider (Supabase Auth, Auth0, etc.)
+2. **External provider validates credentials** and authenticates user
+3. **JWT token generated** by external provider with user info and roles
 4. **Token returned** to frontend for storage
 5. **Frontend includes token** in subsequent requests
 
 ### **Request Authentication**
 1. **Frontend sends request** with JWT token in header
 2. **Gateway receives request** and extracts token
-3. **Gateway validates token** with Auth Service
+3. **Gateway validates token** with Auth Service (JWT validation only)
 4. **If valid, request proceeds** with user context
 5. **If invalid, request rejected** with 401 response
 
 ### **Token Validation**
 1. **Check token signature** for authenticity
 2. **Verify token expiration** (not expired)
-3. **Extract user information** and roles
+3. **Extract user information** and roles from JWT claims
 4. **Validate user permissions** for requested resource
 5. **Return user context** for service use
+
+**Note**: The Auth Service does not handle user login, registration, or password reset. These operations are managed by the external authentication provider.
 
 ## 🔐 **Security Features**
 
@@ -218,16 +231,15 @@ Internal Auth Service positioned between the Gateway and backend services, **onl
 
 ### **Auth Service Endpoints**
 ```java
-// Login endpoint
-POST /auth/login
+// JWT validation endpoint (internal use by Gateway)
+POST /auth/validate
 {
-  "username": "john_doe",
-  "password": "secure_password"
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 
 // Response
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "valid": true,
   "user": {
     "id": "user-123",
     "username": "john_doe",
@@ -243,9 +255,9 @@ POST /auth/login
 public class AuthenticationMiddleware {
 
     public Mono<UserContext> validateToken(String token) {
-        // Validate JWT token
-        // Extract user information
-        // Return user context
+        // Call Auth Service to validate JWT token
+        // Extract user information from validated token
+        // Return user context for business services
     }
 }
 ```
@@ -265,6 +277,8 @@ public Patient getPatient(@PathVariable String id,
     return patientService.getPatient(id);
 }
 ```
+
+**Note**: User login, registration, and password reset are handled by external authentication provider (Supabase Auth, Auth0, etc.). The Auth Service only validates JWT tokens.
 
 ## 🔍 **Security Monitoring**
 

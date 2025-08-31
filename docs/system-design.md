@@ -48,11 +48,12 @@
 
 ## 🎯 **Project Scope & Philosophy**
 
-### **Learning-Focused Approach**
+### **Learning-Focused Approach** (Keep it Simple!)
 - **Spring Boot Mastery**: Deep dive into Spring Boot microservices
 - **AI Integration**: Learn ML/AI integration with healthcare
 - **Microservices Patterns**: Clean architecture and service design
 - **Progressive Complexity**: Start simple, add features incrementally
+- **Avoid Over-Engineering**: Skip Kafka, Redis, complex monitoring for now
 
 ### **Core Principles**
 - **Service Independence**: No inter-service calls, direct data layer access
@@ -266,16 +267,16 @@ File URL + Metadata → Response to Client
 
 ## 📊 **Performance & Scalability**
 
-### **Current Strategy**
-- **Application-Level Caching**: In-memory caching per service
-- **Database Optimization**: Connection pooling and query optimization
-- **Frontend State**: Local state management and caching
+### **Performance Strategy**
+- **Simple Caching**: Basic in-memory caching per service (no Redis initially)
+- **Database Optimization**: Connection pooling and basic query optimization
+- **Frontend State**: Local state management
 
-### **Future Scalability Considerations**
-- **High Traffic Strategy**: Can be designed and implemented later
-- **Event-Driven Patterns**: Can be added for asynchronous communication
-- **Service Mesh**: Can be considered for advanced service communication
-- **Caching Layers**: Redis or distributed caching can be added
+### **Future Considerations** (Skip for now - learning focus)
+- **High Traffic**: Can be designed later when needed
+- **Event-Driven**: Can be added when business logic requires it
+- **Advanced Caching**: Redis can be added when performance needs it
+- **Service Mesh**: Not needed for learning project
 
 ## 🧪 **AI Service Integration**
 
@@ -294,20 +295,20 @@ File URL + Metadata → Response to Client
 ### **Implementation Approach**
 - **Python Ecosystem**: Leverage Python's extensive ML/AI libraries
 - **REST API Integration**: Seamless communication with Java services
-- **Model Management**: Version control and performance monitoring
+- **Model Management**: Basic version control (keep it simple)
 - **Healthcare Focus**: Specialized medical AI models and datasets
 
-## 📈 **Monitoring & Observability**
+## 📈 **Basic Monitoring** (Keep it Simple)
 
 ### **Health Checks**
 - **Service Health**: Basic health endpoints for each service
-- **Database Health**: Connection monitoring and performance
-- **Gateway Health**: Routing and availability monitoring
+- **Database Health**: Simple connection check
+- **Gateway Health**: Basic routing check
 
-### **Basic Metrics**
-- **Response Times**: Simple performance tracking
-- **Error Rates**: Basic error monitoring and alerting
-- **Resource Usage**: CPU and memory tracking per service
+### **Simple Metrics**
+- **Response Times**: Basic performance tracking
+- **Error Rates**: Simple error counting
+- **Resource Usage**: Basic CPU/memory check
 
 ## 🔄 **Development Workflow**
 
@@ -322,12 +323,12 @@ File URL + Metadata → Response to Client
 - **Deploy**: Automated Railway deployment
 - **Monitor**: Basic health checks post-deployment
 
-## 📋 **Implementation Roadmap**
+## 📋 **Implementation Roadmap** (Learning Focus)
 
 ### **Phase 1: Foundation (Weeks 1-2)**
-- [ ] Project setup and infrastructure
+- [ ] Project setup and basic infrastructure
 - [ ] Shared data layer module
-- [ ] Auth service implementation
+- [ ] Auth service (JWT validation only)
 - [ ] Basic database schema and Neon setup
 - [ ] Gateway service configuration
 
@@ -335,13 +336,13 @@ File URL + Metadata → Response to Client
 - [ ] Patient service implementation
 - [ ] Provider service implementation
 - [ ] Basic appointment management
-- [ ] Frontend integration
+- [ ] Simple frontend integration
 
 ### **Phase 3: Support Services (Weeks 5-6)**
 - [ ] File storage service with S3 integration
 - [ ] AI service basic implementation
-- [ ] Advanced features and optimization
-- [ ] Testing and refinement
+- [ ] Testing and basic optimization
+- [ ] **Skip**: Advanced features, complex monitoring, caching layers
 
 ## 🎯 **Success Metrics**
 
@@ -351,11 +352,11 @@ File URL + Metadata → Response to Client
 - **Clean Architecture**: Well-designed, maintainable services
 - **Practical Experience**: Working healthcare platform
 
-### **Technical Goals**
-- **Response Time**: < 500ms for 90% of requests
-- **Uptime**: 95% availability
-- **Error Rate**: < 1% of requests
-- **Deployment**: < 5 minutes per service
+### **Learning Goals** (Keep it Simple)
+- **Working Services**: All services start up and respond to requests
+- **Basic Functionality**: CRUD operations work for each service
+- **Simple Integration**: Services can communicate when needed
+- **Deployment**: Services can be deployed to Railway
 
 ## 🤝 **Contributing**
 

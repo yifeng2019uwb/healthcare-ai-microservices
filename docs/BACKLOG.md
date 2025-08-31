@@ -33,6 +33,30 @@
 
 ---
 
+## 🎯 **Project Philosophy: Keep it Simple for Learning**
+
+### **What We're Building**
+- **Learning Platform**: Focus on Spring Boot microservices mastery
+- **Basic Functionality**: Working CRUD operations and simple integrations
+- **Clean Architecture**: Well-designed, maintainable services
+- **Practical Experience**: Deployable healthcare platform
+
+### **What We're NOT Building** (Skip for now)
+- ❌ **Kafka Event Bus**: Too complex for initial learning
+- ❌ **Redis Caching**: Basic in-memory caching is sufficient
+- ❌ **Advanced Monitoring**: Simple health checks only
+- ❌ **Service Mesh**: Not needed for learning project
+- ❌ **Complex Orchestration**: Keep service communication simple
+
+### **Focus Areas**
+- ✅ **Core Services**: Patient, Provider, Appointment, AI, File Storage
+- ✅ **Basic Authentication**: JWT validation with external provider
+- ✅ **Simple Data Access**: Direct database access through shared layer
+- ✅ **Basic Integration**: Services can call each other when needed
+- ✅ **Simple Deployment**: Railway deployment with basic monitoring
+
+---
+
 ## 🏗️ **EPIC 1: Foundation & Infrastructure**
 
 ### **Goal**: Basic project structure and infrastructure working
@@ -180,9 +204,7 @@
 
 #### **🏗️ Infrastructure Design Docs**
 - [ ] **INFRA-001: Terraform Infrastructure Design** - Infrastructure as Code, deployment patterns, environment setup
-- [ ] **INFRA-002: Shared Module Design** - Common utilities, data access patterns, exception handling
-- [ ] **INFRA-003: Database Schema Design** - All tables, relationships, and data models
-- [ ] **INFRA-004: Infrastructure Design** - Deployment, monitoring, and operational patterns
+- [ ] **INFRA-002: Simple Deployment Design** - Basic deployment patterns, keep it simple
 
 #### **🔐 Authentication & Gateway Design Docs**
 - [ ] **AUTH-001: Auth Service Design** - JWT validation and stateless authentication (in progress)
@@ -190,11 +212,19 @@
 - [ ] **AUTH-003: Security Design** - Overall security architecture and policies
 
 #### **👥 Business Services Design Docs**
-- [ ] **PATIENT-001: Patient Service Design** - Patient data management, medical records, demographics
-- [ ] **PROVIDER-001: Provider Service Design** - Doctor profiles, schedules, availability management
-- [ ] **APPOINTMENT-001: Appointment Service Design** - Booking logic, scheduling algorithms, notifications
-- [ ] **AI-001: AI Service Design** - AI features, ML integration, healthcare algorithms
-- [ ] **STORAGE-001: File Storage Service Design** - File management, S3 integration, metadata handling
+- [ ] **PATIENT-001: Patient Service Design** - API endpoints, data requirements, business logic
+- [ ] **PROVIDER-001: Provider Service Design** - API endpoints, data requirements, business logic
+- [ ] **APPOINTMENT-001: Appointment Service Design** - API endpoints, data requirements, business logic
+- [ ] **AI-001: AI Service Design** - API endpoints, data requirements, business logic
+- [ ] **STORAGE-001: File Storage Service Design** - API endpoints, data requirements, business logic
+
+#### **🔧 Shared Module Design** (After Service APIs are designed)
+- [ ] **SHARED-001: Shared Module Design** - Common utilities and patterns based on service needs
+
+#### **🗄️ Database Design Docs** (After Service APIs are designed)
+- [ ] **DB-001: Database Schema Design** - Tables and relationships based on service API requirements
+- [ ] **DB-002: Data Access Patterns** - How services will access the database
+- [ ] **DB-003: Migration Strategy** - How to set up and evolve the database
 
 #### **🎨 Frontend Design Docs**
 - [ ] **FRONT-001: Frontend Architecture Design** - React app structure, routing, state management
@@ -226,13 +256,43 @@
 
 ---
 
+### **✅ COMPLETED: Data Strategy Clarification**
+**Component**: Documentation & Architecture
+**Type**: Strategy Document
+**Priority**: 🔴 HIGHEST PRIORITY
+**Status**: ✅ COMPLETED
+
+**Description**: Resolved all contradictions in data strategy across documentation
+
+**What Was Accomplished**:
+- Created clear data strategy document resolving all contradictions
+- Clarified authentication approach (Option A - Stateless JWT Only)
+- Defined clear separation between auth and business data
+- Resolved conflicts between "no auth tables" and "user management tables"
+- Established consistent database strategy across all documents
+
+**Files Created/Updated**:
+- `docs/data-strategy.md` - New comprehensive data strategy document
+- `docs/authentication-design.md` - Updated to reflect stateless approach
+
+**Next Steps**: Update remaining documents to align with clarified strategy
+
+---
+
 ## 📊 **Current Focus**
 
-### **Next Priority Tasks**
+### **Next Priority Tasks** (Logical Order!)
 1. **INFRA-001: Terraform Infrastructure Design** (highest priority - foundational)
-2. **Complete AUTH-001: Auth Service Design** (currently in progress)
-3. **Start AUTH-002: Gateway Design** (routing, security, middleware)
-4. **Start PATIENT-001: Patient Service Design** (core business logic)
+2. **INFRA-002: Simple Deployment Design** (basic deployment patterns)
+3. **Then**: Service API designs (what data each service needs)
+4. **Finally**: Database schema design (based on service requirements)
+
+### **Why This Order Makes Sense**
+- **Infrastructure First**: Need to know where and how to deploy services
+- **Service APIs Second**: Design what each service does and what data it needs
+- **Shared Module Third**: Design common utilities based on actual service requirements
+- **Database Last**: Schema design should be based on actual service requirements, not assumptions
+- **Data-Driven Design**: Both shared module and database emerge from service API design
 
 ### **After Design Docs Complete**:
 - Add detailed tasks to each epic
