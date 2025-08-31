@@ -140,25 +140,6 @@ cd healthcare-ai-microservices
 - **API Design**: RESTful services and authentication
 - **Deployment**: Railway platform and CI/CD
 
-## 🤝 **Contributing**
-
-1. Fork the repository
-2. Create a feature branch
-3. Implement changes
-4. Test thoroughly
-5. Submit pull request
-
-## 📄 **License**
-
-This project is licensed under the MIT License.
-
-## 📞 **Support**
-
-For questions and support:
-- Check the documentation
-- Review the implementation guides
-- Open an issue on GitHub
-
 ---
 
 *This platform is designed for learning Spring Boot, AI integration, and microservices architecture. Focus on clean design and progressive complexity.*
