@@ -34,7 +34,7 @@ Explanation of why this service is important and what problems it solves.
 - **[Term 2]**: Brief definition if needed
 - **[Term 3]**: Brief definition if needed
 
-## 👥 **User Cases & User Stories**
+## 👥 **User Stories**
 
 ### **Primary User Types**
 - **User Type 1**: Description of who this user is
@@ -48,134 +48,81 @@ Explanation of why this service is important and what problems it solves.
 **I want to** [describe what the user wants to do]
 **So that** [describe the benefit or value]
 
-**Example**: As a patient, I want to view my medical history so that I can track my health progress over time.
-
 #### **User Story 2: [Core Feature]**
 **As a** [user type]
 **I want to** [describe what the user wants to do]
 **So that** [describe the benefit or value]
-
-**Example**: As a provider, I want to schedule appointments with patients so that I can manage my daily schedule efficiently.
 
 #### **User Story 3: [Advanced Feature]**
 **As a** [user type]
 **I want to** [describe what the user wants to do]
 **So that** [describe the benefit or value]
 
-**Example**: As an admin, I want to generate reports on service usage so that I can monitor system performance and user engagement.
-
-## 🔧 **Solution Alternatives & Decision Making**
+## 🔧 **Solution Alternatives**
 
 ### **Solution 1: [Primary Approach]**
 **Description**: Brief description of this solution approach
 
-**Infrastructure Needs**:
-- What infrastructure components are required
-- What services need to be deployed
-- What resources are needed
+**Infrastructure**: What infrastructure is needed
+**Database**: What tables and fields are needed
+**Workflow**: How the solution works step by step
 
-**Database Tables**:
-- What tables are needed
-- What fields each table should have
-- How tables relate to each other
-
-**Workflow**:
-- How the solution works step by step
-- What happens in each step
-- How data flows through the system
-
-**Pros**:
-- Advantage 1
-- Advantage 2
-- Advantage 3
-
-**Cons**:
-- Disadvantage 1
-- Disadvantage 2
-- Disadvantage 3
+**Pros**: [Advantages]
+**Cons**: [Disadvantages]
 
 ### **Solution 2: [Alternative Approach]**
-**Description**: Brief description of this alternative solution
+**Description**: Brief description of this solution
 
-**Infrastructure Needs**:
-- What infrastructure components are required
-- What services need to be deployed
-- What resources are needed
+**Infrastructure**: What infrastructure is needed
+**Database**: What tables and fields are needed
+**Workflow**: How the solution works step by step
 
-**Database Tables**:
-- What tables are needed
-- What fields each table should have
-- How tables relate to each other
+**Pros**: [Advantages]
+**Cons**: [Disadvantages]
 
-**Workflow**:
-- How the solution works step by step
-- What happens in each step
-- How data flows through the system
-
-**Pros**:
-- Advantage 1
-- Advantage 2
-- Advantage 3
-
-**Cons**:
-- Disadvantage 1
-- Disadvantage 2
-- Disadvantage 3
-
-### **Final Decision & Rationale**
+### **Final Decision**
 **Chosen Solution**: [Which solution was selected]
 
-**Why This Solution**:
-- Primary reason for selection
-- Secondary considerations
-- Trade-offs accepted
-
-**Alternatives Considered But Rejected**:
-- Why other solutions weren't chosen
-- What we learned from considering alternatives
+**Why**: [Primary reason for selection]
 
 ## 🔌 **API Design**
 
-### **REST Endpoints**
-| Method | Endpoint | Description | Authentication | Request Data | Response Data |
-|--------|----------|-------------|----------------|--------------|---------------|
-| GET | `/health` | Health check | None | None | Status info |
-| GET | `/` | List resources | Required | Query params | Resource list |
-| POST | `/` | Create resource | Required | Resource data | Created resource |
-| GET | `/{id}` | Get resource | Required | Resource ID | Resource details |
-| PUT | `/{id}` | Update resource | Required | Resource data | Updated resource |
-| DELETE | `/{id}` | Delete resource | Required | Resource ID | Confirmation |
+### **Endpoints**
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/health` | Health check | No |
+| GET | `/` | List resources | Yes |
+| POST | `/` | Create resource | Yes |
+| GET | `/{id}` | Get resource | Yes |
+| PUT | `/{id}` | Update resource | Yes |
+| DELETE | `/{id}` | Delete resource | Yes |
 
-### **Request/Response Examples**
-
-#### **Create Resource Request**
+### **Request/Response Example**
 ```json
+// Request
 {
   "field1": "value1",
-  "field2": "value2",
-  "required_field": "required_value"
+  "field2": "value2"
 }
-```
 
-#### **Create Resource Response**
-```json
+// Response
 {
   "id": "uuid",
   "field1": "value1",
   "field2": "value2",
-  "created_at": "timestamp",
-  "updated_at": "timestamp"
+  "created_at": "timestamp"
 }
 ```
 
+## ❓ **Q&A**
+
+### **Common Questions**
+**Q**: [Question about the design]
+**A**: [Clear answer]
+
+**Q**: [Another question]
+**A**: [Clear answer]
+
 ## 📚 **References**
-
-### **Related Documents**
-- [System Design](system-design.md) - Overall architecture
-- [Database Design](database-design.md) - Database structure
-- [Data Strategy](data-strategy.md) - Data approach
-
-### **External References**
-- [Reference 1] - Brief description
-- [Reference 2] - Brief description
-- [Reference 3] - Brief description
+- [System Design](system-design.md)
+- [Database Design](database-design.md)
