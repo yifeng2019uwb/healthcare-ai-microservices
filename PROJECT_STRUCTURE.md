@@ -14,7 +14,7 @@ healthcare-ai-microservices/
 │   └── admin-portal/           # Administrative interface
 ├── services/                   # Backend microservices (Hybrid: Java + Python)
 │   ├── shared/                 # Shared Java modules and utilities
-│   ├── gateway/                # Spring Cloud Gateway (Port 8000) - Java
+│   ├── gateway/                # Spring Cloud Gateway (Port 8080) - Java
 │   ├── auth-service/           # Authentication service (Port 8001) - Java
 │   ├── patient-service/        # Patient management (Port 8002) - Java
 │   ├── provider-service/       # Provider management (Port 8003) - Java

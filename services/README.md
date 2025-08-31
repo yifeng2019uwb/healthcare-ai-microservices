@@ -5,7 +5,7 @@ This directory contains all the Java/Spring Boot microservices and one Python AI
 ## Service Structure
 
 - `shared/` - Common data access layer and utilities (Java)
-- `gateway/` - Spring Cloud Gateway (Port 8000) - Java
+- `gateway/` - Spring Cloud Gateway (Port 8080) - Java
 - `auth-service/` - Authentication and JWT validation (Port 8001) - Java
 - `patient-service/` - Patient management (Port 8002) - Java
 - `provider-service/` - Provider management (Port 8003) - Java

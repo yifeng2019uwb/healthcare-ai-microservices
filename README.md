@@ -8,49 +8,26 @@ A comprehensive healthcare AI microservices platform designed for learning Sprin
 
 ## 🏗️ **System Architecture**
 
-### **High-Level Architecture**
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Patient Web   │    │  Provider Web   │    │   Admin Portal  │
-│    (React)      │    │   (React)       │    │    (React)      │
-└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
-          │                      │                      │
-          └──────────────────────┼──────────────────────┘
-                                 │
-                    ┌────────────▼────────────┐
-                    │   Spring Cloud Gateway  │
-                    │        (Port 8000)      │
-                    └────────────┬───────────-┘
-                                 │
-                    ┌────────────▼────────────┐
-                    │      Auth Service       │
-                    │        (Port 8001)      │
-                    │   JWT Validation        │
-                    └────────────┬───────────-┘
-                                 │
-         ┌───────────────────────┼────────────────────────┐
-         │                       │                        │
-    ┌────▼────┐    ┌──────────┐    ┌────▼──────┐    ┌──────────┐
-    │ Patient │    │Provider  │    │Appointment│    │   AI     │
-    │Service  │    │Service   │    │ Service   │    │ Service  │
-    │ 8002    │    │ 8003     │    │ 8004      │    │ 8005     │
-    └────┬────┘    └────┬─────┘    └────┬──────┘    └────┬─────┘
-         │              │               │                │
-         └──────────────┼───────────────┼──────────────┘
-                        │               │
-              ┌───────--▼───────────────▼────────┐
-              │      Shared Data Layer           │
-              │     (Database Access)            │
-              └──────────────┬───────────────----┘
-                             │
-         ┌───────────────────┼───────────────────┐
-         │                   │                   │
-    ┌────▼───────┐    ┌─────▼────────┐    ┌──────▼──────┐
-    │ Neon DB    │    │   S3         │    │File Storage │
-    │(PostgreSQL)│    │(File Storage)│    │ Service     │
-    │            │    │              │    │ 8006        │
-    └────────────┘    └──────────────┘    └─────────────┘
-```
+### **High-Level Overview**
+This project implements a **hybrid Java + Python microservices architecture** for healthcare AI applications. The system uses **Neon PostgreSQL as the single primary database** for all business data and authentication, with **AWS S3 for file storage**.
+
+### **Backend Architecture**
+- **API Gateway (Port 8080)**: Single external entry point, routes to business services
+- **Auth Service (Port 8001)**: JWT validation only, no business logic
+- **Business Services (Ports 8002-8006)**: Handle business logic, can call each other internally when needed
+- **Data Layer**: Primary data access method for all services
+
+### **Port Management Strategy**
+- **External Access**: Only port 8080 (API Gateway) exposed to the internet
+- **Internal Services**: All business services run internally on ports 8001-8006
+- **Single Entry Point**: All external traffic goes through the Gateway for routing and security
+
+### **Technology Distribution**
+- **Java Services (6)**: Gateway, Auth, Patient, Provider, Appointment, File Storage
+- **Python Service (1)**: AI Service for ML/AI capabilities
+- **Database**: Neon PostgreSQL (single instance, multiple schemas)
+- **File Storage**: AWS S3 for medical documents and images
+- **Frontend**: React applications for different user roles
 
 ## 🚀 **Key Features**
 
@@ -82,7 +59,7 @@ A comprehensive healthcare AI microservices platform designed for learning Sprin
 
 ### **Backend Services**
 - **Framework**: Spring Boot 3.2+ with Java 17
-- **API Gateway**: Spring Cloud Gateway (Port 8000)
+- **API Gateway**: Spring Cloud Gateway (Port 8080)
 - **Authentication**: Spring Boot JWT authentication
 - **Database**: Neon PostgreSQL with multiple schemas
 - **File Storage**: AWS S3 (cost-effective, scalable)
@@ -107,6 +84,8 @@ A comprehensive healthcare AI microservices platform designed for learning Sprin
 - **[Authentication Design](docs/authentication-design.md)** - JWT authentication and security strategy
 - **[Exception Handling](docs/exception-handling-design.md)** - Standard exception handling strategy
 - **[Logging Design](docs/logging-design.md)** - Standardized logging strategy
+- **[Implementation Backlog](docs/BACKLOG.md)** - Complete task planning and roadmap
+- **[Daily Work Log](docs/DAILY_WORK_LOG.md)** - Daily progress tracking template
 - **[Project Structure](PROJECT_STRUCTURE.md)** - Project organization and structure
 - **[Project Setup](docs/project-setup.md)** - Step-by-step setup instructions
 

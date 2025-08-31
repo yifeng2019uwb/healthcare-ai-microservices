@@ -13,25 +13,26 @@
 ## 🎯 **Overview**
 
 ### **What This Is**
-This design defines the authentication approach for healthcare AI microservices using an internal Auth Service that validates JWT tokens and manages user authentication across all services.
+This design defines the authentication approach for healthcare AI microservices using an internal Auth Service that **only validates JWT tokens** and provides user context. The Auth Service is purely stateless - no database tables, no user storage, just JWT validation logic.
 
 ### **Why This Matters**
-Secure authentication is critical for healthcare applications to protect patient data, ensure proper access control, and maintain HIPAA compliance. This approach provides centralized authentication without external dependencies.
+Secure authentication is critical for healthcare applications to protect patient data, ensure proper access control, and maintain HIPAA compliance. This stateless approach provides centralized authentication without external dependencies while keeping the Auth Service lightweight and focused.
 
 ### **Scope**
-- **In Scope**: JWT token validation, user authentication, role-based access control, basic security
-- **Out of Scope**: Advanced security features, complex authorization rules, enterprise SSO integration
+- **In Scope**: JWT token validation, user context extraction, role-based access control, basic security
+- **Out of Scope**: Business logic, user management operations, database storage, complex authorization rules, enterprise SSO integration
 
 ## 🏗️ **High-Level Design**
 
 ### **Core Concept**
-Internal Auth Service positioned between the Gateway and backend services, validating JWT tokens and providing user context for all requests.
+Internal Auth Service positioned between the Gateway and backend services, **only validating JWT tokens** and providing user context. The Auth Service is completely stateless - no database, no user storage, just JWT validation logic.
 
 ### **Key Components**
-- **Auth Service**: JWT validation and user management (Port 8001)
-- **JWT Tokens**: Secure, stateless authentication
-- **Role-Based Access**: Basic user roles (Patient, Provider, Admin)
+- **Auth Service**: JWT validation only, no business logic, no database tables (Port 8001)
+- **JWT Tokens**: Secure, stateless authentication with embedded user info
+- **Role-Based Access**: User roles extracted from JWT token claims
 - **Gateway Integration**: Authentication middleware in Spring Cloud Gateway
+- **Business Services**: Handle business logic and can call each other internally
 
 ### **Data Flow**
 ```
@@ -44,13 +45,14 @@ Internal Auth Service positioned between the Gateway and backend services, valid
                                  │
                           ┌────────────▼────────────┐
                           │   Spring Cloud Gateway  │
-                          │        (Port 8000)      │
+                          │      Port 8080          │
+                          │   (EXTERNAL ENTRY)      │
                           └────────────┬───────────┘
                                        │
                           ┌────────────▼────────────┐
                           │      Auth Service       │
-                          │        (Port 8001)      │
-                          │   JWT Validation        │
+                          │        Port 8001        │
+                          │   (INTERNAL ONLY)       │
                           └────────────┬───────────┘
                                        │
                ┌───────────────────────┼────────────────────────┐
@@ -58,7 +60,9 @@ Internal Auth Service positioned between the Gateway and backend services, valid
           ┌────▼────┐    ┌──────────┐    ┌────▼──────┐    ┌──────────┐
           │ Patient │    │Provider  │    │Appointment│    │   AI     │
           │Service  │    │Service   │    │ Service   │    │ Service  │
+          │ Port    │    │ Port     │    │ Port      │    │ Port     │
           │ 8002    │    │ 8003     │    │ 8004      │    │ 8005     │
+          │(Java)   │    │(Java)    │    │(Java)     │    │(Python)  │
           └─────────┘    └──────────┘    └───────────┘    └──────────┘
 ```
 
@@ -68,12 +72,20 @@ Internal Auth Service positioned between the Gateway and backend services, valid
 - **Why JWT**: Stateless, scalable, widely supported
 - **Why Internal Service**: Full control, no external dependencies, healthcare compliance
 - **Why Gateway Integration**: Centralized authentication, consistent across all services
+- **Why Neon PostgreSQL**: Single database for all data including authentication tables
+
+### **Database Strategy**
+- **Primary Database**: Neon PostgreSQL for all business data and authentication
+- **Authentication Tables**: User accounts, roles, and sessions stored in Neon
+- **No External Auth**: Complete control over authentication data and logic
+- **Single Source of Truth**: All data in one database for consistency and simplicity
 
 ### **Integration Points**
 - **Gateway**: Authentication middleware validates tokens
 - **Auth Service**: JWT validation and user context
 - **Backend Services**: Receive validated user context
 - **Frontend**: Login/logout and token management
+- **Database**: Neon PostgreSQL for all data storage
 
 ## 📊 **Requirements**
 

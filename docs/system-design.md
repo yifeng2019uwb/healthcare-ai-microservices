@@ -89,32 +89,85 @@
 └─────────────-┘    └─────────────-┘    └─────────────┘
 ```
 
-## 💾 **Data Layer Architecture**
+## 🗄️ **Data Layer Strategy**
 
-### **Shared Data Layer Module**
-- **Purpose**: Common database access patterns for all services
-- **Components**: Database connections, logging, common utilities
-- **Benefits**: Consistent data access, reduced duplication, easier maintenance
-- **Future**: Can be enhanced for high traffic and caching strategies
+### **Primary Database: Neon PostgreSQL**
+- **Single Database**: All business data in one Neon PostgreSQL instance
+- **Multiple Schemas**: Separate schemas for different services (patient, provider, appointment, ai, file_metadata)
+- **Business Data**: Patient records, appointments, provider information, AI analysis results
+- **No Auth Tables**: Authentication data is not stored in database
 
-### **Database Strategy**
-- **Technology**: Neon PostgreSQL (single instance)
-- **Organization**: Multiple schemas for service separation
-- **Benefits**: ACID transactions, single source of truth, cost-effective
-- **Structure**: Service-specific schemas with clear data ownership
+### **File Storage: AWS S3**
+- **Medical Documents**: Patient files, medical images, reports
+- **Cross-Service Access**: All services can access files through S3
+- **Secure Storage**: Healthcare-compliant file storage and access controls
 
-### **File Storage Strategy**
-- **Technology**: AWS S3 (cost-effective, scalable)
-- **Purpose**: Cross-domain file management (medical documents, images)
-- **Benefits**: Healthcare compliant, pay-per-use, global availability
-- **Integration**: Services access files through File Storage Service
+### **Authentication: Stateless JWT**
+- **No Database Tables**: Auth Service is purely stateless
+- **JWT Validation**: Verify token signature and expiration
+- **User Context Extraction**: Parse user ID, roles from token
+- **No User Storage**: No user accounts or credentials stored
+
+### **Data Access Pattern**
+- **Direct Database Access**: Services connect directly to Neon PostgreSQL
+- **Shared Data Layer**: Common database access patterns in shared module
+- **No Inter-Service Calls**: Services don't call each other, only the database
+- **Consistent Data**: Single source of truth for all application data
 
 ## 🚀 **Service Architecture**
+
+### **Backend Service Responsibilities**
+- **Auth Service**: JWT token validation only, no business logic
+- **Gateway**: Routes validated requests to appropriate business services
+- **Business Services**: Can call each other internally when needed for business operations
+- **Data Layer**: Primary data access method for all services
+
+### **Service Communication Patterns**
+- **External Requests**: Client → Gateway (8080) → Business Service
+- **Internal Service Calls**: Business Service → Business Service (when business logic requires it)
+- **Data Access**: All services → Data Layer → Neon PostgreSQL
+- **Authentication**: Gateway validates JWT with Auth Service before routing
+
+### **Port Management Strategy**
+- **External Access**: Only port 8080 (API Gateway) exposed to the internet
+- **Internal Communication**: Services communicate internally on their assigned ports
+- **Gateway Routing**: All external requests go through Gateway, which routes to appropriate services
+- **Simplified Deployment**: Single external port to manage and secure
+
+### **Service Ports & Communication**
+| Service | Port | External Access | Internal Communication | Technology |
+|---------|------|----------------|----------------------|------------|
+| **API Gateway** | 8080 | ✅ **EXTERNAL** | Routes to internal services | Java/Spring Boot |
+| **Auth Service** | 8001 | ❌ Internal Only | JWT validation for Gateway | Java/Spring Boot |
+| **Patient Service** | 8002 | ❌ Internal Only | Can call other services when needed | Java/Spring Boot |
+| **Provider Service** | 8003 | ❌ Internal Only | Can call other services when needed | Java/Spring Boot |
+| **Appointment Service** | 8004 | ❌ Internal Only | Can call other services when needed | Java/Spring Boot |
+| **AI Service** | 8005 | ❌ Internal Only | Can call other services when needed | Python/FastAPI |
+| **File Storage Service** | 8006 | ❌ Internal Only | Can call other services when needed | Java/Spring Boot |
+
+### **Communication Flow**
+```
+External Request → Port 8080 (Gateway) → Business Service → Other Services (if needed)
+     ↓                    ↓                    ↓                    ↓
+Internet/Client    Spring Cloud Gateway    Primary Service    Supporting Services
+```
+
+### **Service Interaction Examples**
+- **Appointment Booking**: Appointment Service calls Patient Service to validate patient, Provider Service to check availability
+- **Patient Record Access**: Patient Service calls File Storage Service to retrieve medical documents
+- **AI Analysis**: AI Service calls Patient Service to get patient data, Appointment Service for appointment history
+- **Provider Dashboard**: Provider Service calls Appointment Service for schedule, Patient Service for patient list
+
+### **Benefits of Flexible Internal Communication**
+- **Business Logic Support**: Services can collaborate for complex operations
+- **Data Consistency**: Coordinated operations across multiple services
+- **Efficient Processing**: Avoid unnecessary data duplication
+- **Real-time Updates**: Services can notify each other of changes
 
 ### **Complete Service Overview**
 |      Service             | Port |     Type       |            Responsibility                   | Priority      | Technology |
 |--------------------------|------|----------------|---------------------------------------------|---------------|------------|
-| **API Gateway**          | 8000 | Infrastructure | Routing, Rate Limiting, Load Balancing      | 🔴 **HIGH**   | Java/Spring Boot |
+| **API Gateway**          | 8080 | Infrastructure | Routing, Rate Limiting, Load Balancing      | 🔴 **HIGH**   | Java/Spring Boot |
 | **Auth Service**         | 8001 | Infrastructure | JWT Validation, Authentication              | 🔴 **HIGH**   | Java/Spring Boot |
 | **Patient Service**      | 8002 | Business       | Patient CRUD, Medical Records, Demographics | 🔴 **HIGH**   | Java/Spring Boot |
 | **Provider Service**     | 8003 | Business       | Doctor Profiles, Schedules, Availability    | 🟡 **MEDIUM** | Java/Spring Boot |
@@ -127,7 +180,7 @@
 #### **Infrastructure Services (2)**
 |     Service      | Port |         Responsibility                 |  Priority   | Technology |
 |------------------|------|----------------------------------------|-------------|------------|
-| **API Gateway**  | 8000 | Routing, Rate Limiting, Load Balancing | 🔴 **HIGH** | Java/Spring Boot |
+| **API Gateway**  | 8080 | Routing, Rate Limiting, Load Balancing | 🔴 **HIGH** | Java/Spring Boot |
 | **Auth Service** | 8001 | JWT Validation, Authentication         | 🔴 **HIGH** | Java/Spring Boot |
 
 #### **Core Business Services (4)**
@@ -154,7 +207,7 @@
 
 ### **1. Authentication Flow**
 ```
-Frontend → Gateway → Auth Service (JWT Validation) → Business Services
+Frontend → Gateway (8080) → Auth Service (8001) (JWT Validation) → Business Services
     ↓
 Validated Request → Shared Data Layer → Database
 ```
@@ -168,7 +221,7 @@ Return Data → Response to Client
 
 ### **3. File Access Flow**
 ```
-Service → File Storage Service → S3
+Service → File Storage Service (8006) → S3
     ↓
 File URL + Metadata → Response to Client
 ```
@@ -176,7 +229,7 @@ File URL + Metadata → Response to Client
 ## 🚀 **Infrastructure Requirements**
 
 ### **Platform: Railway**
-- **Gateway Service**: Spring Cloud Gateway (Port 8000) - Java
+- **Gateway Service**: Spring Cloud Gateway (Port 8080) - Java
 - **Core Services**: Java Spring Boot microservices (Ports 8001-8004, 8006)
 - **AI Service**: Python FastAPI service (Port 8005) - Python
 - **Database**: Neon PostgreSQL with multiple schemas
