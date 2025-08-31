@@ -1,0 +1,12 @@
+# Healthcare AI Microservices - Docker Compose
+# Basic structure for local development
+
+version: '3.8'
+
+services:
+  # Placeholder for services
+  # Will be implemented later
+
+networks:
+  healthcare-network:
+    driver: bridge

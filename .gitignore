@@ -1,0 +1,75 @@
+# Healthcare AI Microservices - .gitignore
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.log
+target/
+!target/*.jar
+!target/*.war
+
+# Spring Boot
+application-*.properties
+application-*.yml
+!application-example.properties
+!application-example.yml
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+build/
+
+# React
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Kubernetes
+*.kubeconfig
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Secrets
+secrets/
+.env.secrets
+*.pem
+*.key
+*.crt
+
+# Build artifacts
+bin/
+out/
