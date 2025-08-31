@@ -222,9 +222,23 @@
 - [ ] **SHARED-001: Shared Module Design** - Common utilities and patterns based on service needs
 
 #### **🗄️ Database Design Docs** (After Service APIs are designed)
-- [ ] **DB-001: Database Schema Design** - Tables and relationships based on service API requirements
+- [x] **DB-001: Database Schema Design** - Tables and relationships based on service API requirements ✅
 - [ ] **DB-002: Data Access Patterns** - How services will access the database
 - [ ] **DB-003: Migration Strategy** - How to set up and evolve the database
+
+#### **👥 User Stories & Requirements** (Before Finalizing Database Design)
+- [ ] **USERS-001: Patient Service User Stories** - What data does Patient Service actually need?
+- [ ] **USERS-002: Provider Service User Stories** - What data does Provider Service actually need?
+- [ ] **USERS-003: Appointment Service User Stories** - What data does Appointment Service actually need?
+- [ ] **USERS-004: AI Service User Stories** - What data does AI Service actually need?
+- [ ] **USERS-005: File Storage User Stories** - What data does File Storage Service actually need?
+
+#### **🔧 Service API Design** (API-First Approach - Before Database Design)
+- [x] **API-001: Service Design Template** - Best practices and standard format for service design docs ✅
+- [ ] **API-002: Patient Service API Design** - Endpoints, data requirements, business logic
+- [ ] **API-003: Provider Service API Design** - Endpoints, data requirements, business logic
+- [ ] **API-004: Appointment Service API Design** - Endpoints, data requirements, business logic
+- [ ] **API-005: AI Service API Design** - Endpoints, data requirements, business logic
 
 #### **🎨 Frontend Design Docs**
 - [ ] **FRONT-001: Frontend Architecture Design** - React app structure, routing, state management
@@ -281,18 +295,18 @@
 
 ## 📊 **Current Focus**
 
-### **Next Priority Tasks** (Logical Order!)
+### **Next Priority Tasks** (API-First Approach!)
 1. **INFRA-001: Terraform Infrastructure Design** (highest priority - foundational)
 2. **INFRA-002: Simple Deployment Design** (basic deployment patterns)
-3. **Then**: Service API designs (what data each service needs)
-4. **Finally**: Database schema design (based on service requirements)
+3. **✅ Service API Design Template** (completed - best practices and standards)
+4. **Then**: Design each service API (Patient → Provider → Appointment → AI)
+5. **Finally**: Refine database design based on actual API requirements
 
 ### **Why This Order Makes Sense**
 - **Infrastructure First**: Need to know where and how to deploy services
-- **Service APIs Second**: Design what each service does and what data it needs
-- **Shared Module Third**: Design common utilities based on actual service requirements
-- **Database Last**: Schema design should be based on actual service requirements, not assumptions
-- **Data-Driven Design**: Both shared module and database emerge from service API design
+- **API Design Second**: Define what each service does and what data it needs
+- **Database Last**: Schema design should be based on actual API requirements, not assumptions
+- **Data-Driven Design**: Database emerges from service API design, ensuring perfect alignment
 
 ### **After Design Docs Complete**:
 - Add detailed tasks to each epic
