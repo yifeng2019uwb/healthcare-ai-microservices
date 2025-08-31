@@ -2,7 +2,7 @@
 
 > **Learning-Focused Healthcare AI Platform** - Master Spring Boot, AI Integration, and Microservices Architecture
 
-## 🎯 **Project Overview**
+## 🎯 **What This Project Is**
 
 A comprehensive healthcare AI microservices platform designed for learning Spring Boot, AI integration, and microservices patterns. Built with clean architecture principles and progressive complexity.
 
@@ -18,38 +18,38 @@ A comprehensive healthcare AI microservices platform designed for learning Sprin
           └──────────────────────┼──────────────────────┘
                                  │
                     ┌────────────▼────────────┐
-                    │   Spring Cloud Gateway │
-                    │        (Port 8000)     │
-                    └────────────┬───────────┘
+                    │   Spring Cloud Gateway  │
+                    │        (Port 8000)      │
+                    └────────────┬───────────-┘
                                  │
                     ┌────────────▼────────────┐
                     │      Auth Service       │
                     │        (Port 8001)      │
                     │   JWT Validation        │
-                    └────────────┬───────────┘
+                    └────────────┬───────────-┘
                                  │
-         ┌────────────────────────┼────────────────────────┐
-         │                        │                        │
-    ┌────▼────┐  ┌──────────┐  ┌────▼────┐  ┌──────────┐
-    │ Patient │  │Provider  │  │Appointment│  │   AI     │
-    │Service  │  │Service   │  │ Service  │  │ Service  │
-    │ 8002    │  │ 8003     │  │ 8004    │  │ 8005     │
-    └────┬────┘  └────┬─────┘  └────┬────┘  └────┬─────┘
-         │            │             │            │
-         └────────────┼─────────────┼────────────┘
-                      │             │
-              ┌───────▼─────────────▼────────┐
-              │      Shared Data Layer       │
-              │     (Database Access)        │
-              └──────────────┬───────────────┘
+         ┌───────────────────────┼────────────────────────┐
+         │                       │                        │
+    ┌────▼────┐    ┌──────────┐    ┌────▼──────┐    ┌──────────┐
+    │ Patient │    │Provider  │    │Appointment│    │   AI     │
+    │Service  │    │Service   │    │ Service   │    │ Service  │
+    │ 8002    │    │ 8003     │    │ 8004      │    │ 8005     │
+    └────┬────┘    └────┬─────┘    └────┬──────┘    └────┬─────┘
+         │              │               │                │
+         └──────────────┼───────────────┼──────────────┘
+                        │               │
+              ┌───────--▼───────────────▼────────┐
+              │      Shared Data Layer           │
+              │     (Database Access)            │
+              └──────────────┬───────────────----┘
                              │
          ┌───────────────────┼───────────────────┐
          │                   │                   │
-    ┌────▼────┐  ┌─────▼────┐  ┌─────▼────┐
-    │ Neon DB │  │   S3     │  │File Storage│
-    │(PostgreSQL)│  │(File Storage)│  │ Service  │
-    │          │  │           │  │ 8006     │
-    └──────────┘  └──────────┘  └──────────┘
+    ┌────▼───────┐    ┌─────▼────────┐    ┌──────▼──────┐
+    │ Neon DB    │    │   S3         │    │File Storage │
+    │(PostgreSQL)│    │(File Storage)│    │ Service     │
+    │            │    │              │    │ 8006        │
+    └────────────┘    └──────────────┘    └─────────────┘
 ```
 
 ## 🚀 **Key Features**
@@ -78,12 +78,6 @@ A comprehensive healthcare AI microservices platform designed for learning Sprin
 - **Appointment System**: Intelligent scheduling and reminders
 - **Medical Records**: Secure document storage and retrieval
 
-## 📚 **Documentation**
-
-- **[System Design](docs/system-design.md)** - Complete system architecture and design decisions
-- **[Data Layer Architecture](docs/data-layer-architecture.md)** - Database design and data flow patterns
-- **[Project Setup Guide](docs/project-setup.md)** - Step-by-step setup instructions
-
 ## 🛠️ **Technology Stack**
 
 ### **Backend Services**
@@ -107,6 +101,12 @@ A comprehensive healthcare AI microservices platform designed for learning Sprin
 - **CI/CD**: GitHub Actions
 - **Monitoring**: Railway built-in metrics
 
+## 📚 **Documentation**
+
+- **[System Design](docs/system-design.md)** - Complete system architecture and design decisions
+- **[Project Structure](PROJECT_STRUCTURE.md)** - Project organization and structure
+- **[Project Setup](docs/project-setup.md)** - Step-by-step setup instructions
+
 ## 🔧 **Quick Start**
 
 ### **Prerequisites**
@@ -125,80 +125,6 @@ cd healthcare-ai-microservices
 # Follow the setup guide
 # See docs/project-setup.md for detailed instructions
 ```
-
-## 🏥 **Healthcare Compliance**
-
-### **Basic Compliance Features**
-- **Data Encryption**: TLS for data in transit
-- **Access Controls**: Role-based permissions and data isolation
-- **Audit Trails**: Basic logging for compliance
-- **Data Minimization**: Only necessary data collection
-
-### **Security Measures**
-- **JWT Authentication**: Secure token-based authentication
-- **Rate Limiting**: API endpoint protection
-- **Input Validation**: SQL injection and XSS prevention
-- **CORS Policy**: Strict cross-origin restrictions
-
-## 📊 **Performance & Scalability**
-
-### **Current Strategy**
-- **Application-Level Caching**: In-memory caching per service
-- **Database Optimization**: Connection pooling and query optimization
-- **Service Independence**: Clean boundaries and focused responsibilities
-
-### **Future Considerations**
-- **High Traffic Strategy**: Can be designed and implemented later
-- **Event-Driven Patterns**: Can be added for asynchronous communication
-- **Advanced Caching**: Redis or distributed caching can be added
-
-## 🧪 **AI Service Capabilities**
-
-### **Centralized AI Features**
-- **AI Assistant**: Natural language processing for patient support
-- **Smart Scheduling**: AI-powered appointment optimization
-- **Clinical Decision Support**: Evidence-based treatment suggestions
-- **Predictive Analytics**: Health risk assessment and trend analysis
-
-### **Implementation Approach**
-- **Single Service**: All AI capabilities centralized
-- **Progressive Enhancement**: Start with basic features, add complexity
-- **Model Management**: Version control and performance monitoring
-- **REST APIs**: Easy integration with other services
-
-## 🔄 **Development Workflow**
-
-### **Git Strategy**
-- **Main Branch**: Production-ready code
-- **Feature Branches**: Individual feature development
-- **Simple Releases**: Tag-based versioning
-
-### **CI/CD Pipeline**
-- **Build**: Maven build and testing
-- **Test**: Basic unit and integration tests
-- **Deploy**: Automated Railway deployment
-- **Monitor**: Basic health checks post-deployment
-
-## 📋 **Implementation Roadmap**
-
-### **Phase 1: Foundation (Weeks 1-2)**
-- [ ] Project setup and infrastructure
-- [ ] Shared data layer module
-- [ ] Auth service implementation
-- [ ] Basic database schema and Neon setup
-- [ ] Gateway service configuration
-
-### **Phase 2: Core Services (Weeks 3-4)**
-- [ ] Patient service implementation
-- [ ] Provider service implementation
-- [ ] Basic appointment management
-- [ ] Frontend integration
-
-### **Phase 3: Support Services (Weeks 5-6)**
-- [ ] File storage service with S3 integration
-- [ ] AI service basic implementation
-- [ ] Advanced features and optimization
-- [ ] Testing and refinement
 
 ## 🎯 **Learning Goals**
 
