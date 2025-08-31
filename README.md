@@ -104,6 +104,9 @@ A comprehensive healthcare AI microservices platform designed for learning Sprin
 ## 📚 **Documentation**
 
 - **[System Design](docs/system-design.md)** - Complete system architecture and design decisions
+- **[Authentication Design](docs/authentication-design.md)** - JWT authentication and security strategy
+- **[Exception Handling](docs/exception-handling-design.md)** - Standard exception handling strategy
+- **[Logging Design](docs/logging-design.md)** - Standardized logging strategy
 - **[Project Structure](PROJECT_STRUCTURE.md)** - Project organization and structure
 - **[Project Setup](docs/project-setup.md)** - Step-by-step setup instructions
 
@@ -119,7 +122,7 @@ A comprehensive healthcare AI microservices platform designed for learning Sprin
 ### **Local Development**
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/yifeng2019uwb/healthcare-ai-microservices
 cd healthcare-ai-microservices
 
 # Follow the setup guide
