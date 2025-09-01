@@ -83,6 +83,7 @@ healthcare-infra/gcp/credentials/
 healthcare-infra/gcp/*.json
 healthcare-infra/gcp/*.key
 healthcare-infra/gcp/service-account-*.json
+!healthcare-infra/gcp/cloud-storage/cors.json
 
 # Environment Variables
 .env
@@ -90,6 +91,10 @@ healthcare-infra/gcp/service-account-*.json
 .env.development
 .env.production
 .env.staging
+healthcare-infra/config/*.env
+healthcare-infra/config/terraform.tfvars
+healthcare-infra/config/*.json
+!healthcare-infra/config/*.example
 
 # Build artifacts
 bin/
