@@ -1,0 +1,26 @@
+# Local gitignore for config directory
+# This prevents any credential files from being committed
+
+# Terraform variables
+terraform.tfvars
+terraform.tfvars.*
+
+# GCP credentials
+gcp-credentials.json
+service-account-*.json
+*.json
+
+# Environment files
+neon-connection.env
+.env
+.env.*
+
+# Any other credential files
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+
+# Keep example files
+!*.example

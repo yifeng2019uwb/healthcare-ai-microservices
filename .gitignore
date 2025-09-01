@@ -51,6 +51,9 @@ Thumbs.db
 *.tfstate.*
 .terraform/
 .terraform.lock.hcl
+terraform.tfvars
+terraform.tfvars.*
+!terraform.tfvars.example
 
 # Kubernetes
 *.kubeconfig
@@ -63,12 +66,30 @@ logs/
 *.tmp
 *.temp
 
-# Secrets
+# Secrets and Credentials
 secrets/
 .env.secrets
 *.pem
 *.key
 *.crt
+
+# Infrastructure Credentials
+healthcare-infra/terraform/terraform.tfvars
+healthcare-infra/terraform/terraform.tfvars.*
+!healthcare-infra/terraform/terraform.tfvars.example
+
+# GCP Credentials
+healthcare-infra/gcp/credentials/
+healthcare-infra/gcp/*.json
+healthcare-infra/gcp/*.key
+healthcare-infra/gcp/service-account-*.json
+
+# Environment Variables
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
 
 # Build artifacts
 bin/

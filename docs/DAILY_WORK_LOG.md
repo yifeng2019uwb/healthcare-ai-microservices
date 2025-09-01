@@ -37,6 +37,7 @@
 - Updated backlog to reflect all design tasks are in progress
 - Clarified service responsibilities: Appointment Service handles availability, Provider Service handles profiles and medical records
 - **Phased Implementation Plan**: Gateway+Auth+Patient → Provider+Medical → Appointment+Scheduling → AI+RealData
+- **Infrastructure Setup**: Created healthcare-infra/ directory, moved terraform/, established Phase 0 structure
 
 **Any issues**: Resolved all major inconsistencies across design documents. System design now properly high-level only.
 
