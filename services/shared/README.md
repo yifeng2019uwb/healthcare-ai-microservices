@@ -1,23 +1,59 @@
-# Shared Components
+# Healthcare Shared Module
 
-This directory contains shared modules and utilities used across all services.
+## 🎯 Purpose
+Internal shared components for database access, utilities, and common functionality across all healthcare microservices.
 
-## Components
+## 📦 Components
 
-- **Data Access Layer**: Common database access patterns
-- **Authentication**: Shared authentication utilities
-- **Logging**: Common logging configuration
-- **Utilities**: Shared helper functions
-- **Models**: Common data models
+### **Database Layer**
+- **Entities**: JPA entities for all 6 core tables
+- **Repositories**: Spring Data JPA repository interfaces
+- **Config**: Database connection and JPA configuration
 
-## Implementation Status
+### **Common Utilities**
+- **Constants**: Database, validation, and business constants
+- **ENUMs**: User roles, appointment statuses, medical record types
+- **Exceptions**: Standardized exception classes
+- **DTOs**: Common data transfer objects
+- **Validation**: Custom validators for healthcare data
+- **Logging**: Audit and debug logging utilities
 
-- [ ] Data access layer
-- [ ] Authentication utilities
-- [ ] Logging configuration
-- [ ] Common utilities
-- [ ] Shared models
+## 🚫 What's NOT Included
+- API controllers or endpoints
+- Business logic services
+- Web layer components
+- External API integrations
 
-## Usage
+## 🏗️ Package Structure
+```
+src/main/java/com/healthcare/
+├── config/          # Database, JPA, logging config
+├── entity/          # JPA entities
+├── repository/      # Repository interfaces
+├── dto/             # Data transfer objects
+├── exception/       # Custom exceptions
+├── util/            # Utilities
+├── validation/      # Custom validators
+├── constants/       # String constants
+├── enums/           # ENUMs for variable attributes
+└── logging/         # Audit/debug logging utilities
+```
 
-These components will be shared as Maven modules or common libraries across all Spring Boot services.
+## 🚀 Usage
+This module is imported as a dependency by individual services (Patient, Provider, Appointment, AI) to access shared database functionality and utilities.
+
+## 📋 Implementation Status
+- [x] Maven setup
+- [ ] Database entities
+- [ ] Repository interfaces
+- [ ] Configuration classes
+- [ ] Constants and ENUMs
+- [ ] Exception classes
+- [ ] Validation utilities
+- [ ] Logging utilities
+- [ ] Testing utilities
+
+## 🧪 Testing
+- Unit tests with H2 in-memory database
+- Integration tests with Testcontainers
+- Repository tests with @DataJpaTest
