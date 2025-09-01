@@ -47,8 +47,8 @@ terraform/
 
 ### **Setup**
 ```bash
-# Copy the example variables file from config directory
-cp ../config/terraform.tfvars.example terraform.tfvars
+# Copy the example variables file from examples directory
+cp ../examples/terraform.tfvars.example terraform.tfvars
 
 # Edit terraform.tfvars with your actual database connection details
 # neon_host     = "your-neon-host.neon.tech"
@@ -77,7 +77,7 @@ After applying, you'll get:
 
 ### **Environment Variables**
 - `terraform.tfvars` - Database connection details (required)
-- **Location**: Copy from `../config/terraform.tfvars.example`
+- **Location**: Copy from `../examples/terraform.tfvars.example`
 
 ### **Customization**
 - **Database Connection** - Update variables in `terraform.tfvars`
