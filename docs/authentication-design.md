@@ -22,7 +22,7 @@ Secure authentication is critical for healthcare applications to protect patient
 - **In Scope**: JWT token validation, user context extraction, role-based access control
 - **Out of Scope**: User login/logout, user registration, password management, authentication data storage, complex authorization rules, enterprise SSO integration
 
-**Note**: Registration flow orchestration needs discussion - Auth Service may need to integrate with external auth provider.
+**Note**: Registration flow handled by Gateway orchestration (calls Supabase Auth + business services).
 
 ## 📚 **Definitions & Glossary**
 
@@ -33,13 +33,15 @@ Secure authentication is critical for healthcare applications to protect patient
 - **JWT Token**: Secure token issued by external provider containing user information
 - **External Auth Provider**: Third-party service handling user login/registration (Supabase Auth, Auth0, etc.)
 
-## 👥 **User Stories**
+## 👥 **User Case**
 
 #### **User Case 1: JWT Token Validation**
 When a user makes a request to any service, the Auth Service validates their JWT token to ensure they are authenticated and authorized to access the requested resource. This happens transparently for every API call.
 
+**Note**: No registration logic - Gateway handles registration orchestration with Supabase Auth
+
 #### **User Case 2: Role-Based Access Control**
-The Auth Service extracts user roles from JWT tokens and provides role information to business services, enabling them to enforce appropriate access controls based on user permissions (Patient, Provider, Admin).
+The Auth Service extracts user roles from JWT tokens and provides role information to business services, enabling them to enforce appropriate access controls based on user permissions (Patient, Provider).
 
 #### **User Case 3: User Context Provision**
 Business services receive validated user context from the Auth Service, including user ID, username, role, and permissions, allowing them to make authorization decisions and provide personalized responses.
@@ -142,12 +144,12 @@ Internal Auth Service positioned between the Gateway and backend services, valid
 
 ### **Data Flow**
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Patient Web   │    │  Provider Web   │    │   Admin Portal  │
-│    (React)      │    │   (React)       │    │    (React)      │
-└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
-          │                      │                      │
-          └──────────────────────┼──────────────────────┘
+┌─────────────────┐    ┌─────────────────┐
+│   Patient Web   │    │  Provider Web   │
+│    (React)      │    │   (React)       │
+└─────────┬───────┘    └─────────┬───────┘
+          │                      │
+          └──────────────────────┘
                                  │
                           ┌────────────▼────────────┐
                           │   Spring Cloud Gateway  │
@@ -287,7 +289,7 @@ Supabase Auth handles all authentication data management:
 ### **Functional Requirements**
 - [ ] JWT token validation and verification
 - [ ] User context extraction from JWT tokens
-- [ ] Role-based access control (Patient, Provider, Admin)
+- [ ] Role-based access control (Patient, Provider)
 - [ ] Token refresh validation
 - [ ] User session context management
 - [ ] Basic security monitoring
@@ -385,7 +387,7 @@ Supabase Auth handles all authentication data management:
 - **Token Rotation**: Regular token refresh for active sessions
 
 ### **Access Control**
-- **Role-Based**: Patient, Provider, Admin roles
+- **Role-Based**: Patient, Provider roles
 - **Resource-Level**: Users can only access their own data
 - **API Protection**: All endpoints require valid authentication
 - **Audit Logging**: All authentication events logged
@@ -408,8 +410,7 @@ Supabase Auth handles all authentication data management:
 - **Actions**: View patient data, manage appointments, update records
 - **Restrictions**: Only access assigned patients
 
-### **Admin Role**
-- **Access**: System administration, user management, reports
+
 - **Actions**: Manage users, view system logs, generate reports
 - **Restrictions**: Cannot access individual patient medical data
 
@@ -492,7 +493,7 @@ A: The Auth Service returns validation failure, and the client must re-authentic
 A: Roles and permissions are embedded in JWT token claims by Supabase Auth. The Auth Service extracts and validates this information from the JWT token.
 
 **Q: What about user registration and password reset?**
-A: These operations are handled entirely by Supabase Auth. The Auth Service has no involvement in user management - we focus only on JWT validation.
+A: Registration is orchestrated by the Gateway (calls Supabase Auth + business services). Password reset is handled entirely by Supabase Auth. The Auth Service has no involvement in user management - we focus only on JWT validation.
 
 **Q: How do we ensure security compliance?**
 A: Supabase Auth handles all security compliance (password hashing, failed login tracking, account locks, MFA). Our Auth Service focuses on JWT validation and user context extraction.
@@ -509,15 +510,14 @@ A: Token refresh is handled by Supabase Auth. Our Auth Service only validates JW
 **Question**: How does Auth Service integrate with Supabase Auth?
 - **JWT Validation**: Validate tokens issued by Supabase Auth
 - **User Context**: Extract user information from JWT claims
-- **Registration Flow**: How to handle new user registration?
-- **Decision Needed**: Integration pattern and responsibilities
+- **Registration Flow**: Gateway orchestrates registration (Supabase Auth + business services)
+- **Decision**: Clear integration pattern established
 
 ### **2. Registration Flow Responsibility**
-**Question**: Who orchestrates the registration process?
-- **Option A**: Gateway orchestrates (calls business services, creates Supabase account)
-- **Option B**: Auth Service handles (integrates with Supabase API)
-- **Option C**: Separate registration service
-- **Decision Needed**: Clear responsibility assignment
+**Decision**: Gateway orchestrates the registration process (calls Supabase Auth + business services)
+- **Gateway**: Orchestrates complete registration process
+- **Supabase Auth**: Handles authentication credentials
+- **Business Services**: Create user business profiles
 
 ### **3. Service Communication**
 **Question**: How should Auth Service communicate with other services?

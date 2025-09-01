@@ -42,7 +42,7 @@ healthcare-ai-microservices/
 ├── frontend/                     # React applications
 │   ├── patient-portal/          # Patient web app
 │   ├── provider-portal/          # Provider web app
-│   └── admin-portal/             # Admin web app
+
 ├── infrastructure/               # Infrastructure as code
 │   ├── terraform/                # Terraform configurations
 │   └── docker/                   # Docker configurations
@@ -158,7 +158,7 @@ cd healthcare-ai-microservices
 # Create necessary directories
 mkdir -p services auth-service gateway-service patient-service provider-service appointment-service ai-service
 mkdir -p shared/{models,utils,config}
-mkdir -p frontend/{patient-portal,provider-portal,admin-portal}
+mkdir -p frontend/{patient-portal,provider-portal}
 mkdir -p infrastructure/{terraform,docker}
 mkdir -p scripts
 ```
@@ -383,7 +383,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Create custom types
-CREATE TYPE user_role AS ENUM ('PATIENT', 'PROVIDER', 'ADMIN');
+CREATE TYPE user_role AS ENUM ('PATIENT', 'PROVIDER');
 CREATE TYPE user_status AS ENUM ('ACTIVE', 'INACTIVE', 'SUSPENDED');
 CREATE TYPE verification_status AS ENUM ('PENDING', 'VERIFIED', 'REJECTED');
 CREATE TYPE appointment_type AS ENUM ('CONSULTATION', 'FOLLOW_UP', 'EMERGENCY');
@@ -398,7 +398,7 @@ CREATE TYPE compliance_severity AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
 CREATE TYPE hipaa_category AS ENUM ('PHI_ACCESS', 'DATA_BREACH', 'UNAUTHORIZED_ACCESS');
 CREATE TYPE data_classification AS ENUM ('PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED');
 CREATE TYPE access_type AS ENUM ('VIEW', 'CREATE', 'UPDATE', 'DELETE');
-CREATE TYPE data_category AS ENUM ('DEMOGRAPHIC', 'MEDICAL', 'FINANCIAL', 'ADMINISTRATIVE');
+CREATE TYPE data_category AS ENUM ('DEMOGRAPHIC', 'MEDICAL', 'FINANCIAL');
 CREATE TYPE access_method AS ENUM ('WEB_APP', 'API', 'MOBILE_APP', 'SYSTEM');
 
 -- Create tables (as defined in data-layer-architecture.md)
@@ -539,10 +539,10 @@ npx create-react-app . --template typescript
 npm install @supabase/supabase-js axios react-router-dom @mui/material @emotion/react @emotion/styled
 ```
 
-### **7.3 Admin Portal Setup**
+
 
 ```bash
-cd ../admin-portal
+
 
 # Create React app
 npx create-react-app . --template typescript
@@ -655,7 +655,7 @@ REDIS_PASSWORD=your_redis_password
 ### **Frontend Applications**
 - [ ] Patient portal React app created
 - [ ] Provider portal React app created
-- [ ] Admin portal React app created
+
 - [ ] Supabase client configured
 
 ### **Deployment**

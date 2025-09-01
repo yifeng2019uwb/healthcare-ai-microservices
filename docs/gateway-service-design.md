@@ -25,7 +25,7 @@ The Gateway provides centralized access control, request routing, and security f
 - **In Scope**: Request routing, authentication middleware, basic validation, response formatting
 - **Out of Scope**: Business logic, data processing, complex orchestration
 
-**Note**: Scope may expand to include orchestration for registration flow - needs discussion.
+**Note**: Gateway handles orchestration for registration flow (calls Supabase Auth + business services).
 
 ## 📚 **Definitions & Glossary**
 
@@ -37,9 +37,10 @@ The Gateway provides centralized access control, request routing, and security f
 ## 👥 **User Cases**
 
 ### **User Case 1: Patient Registration**
-When a patient wants to register, the Gateway receives the registration request, validates basic format, calls business services for validation, creates Supabase account, and returns success/error response.
+When a patient wants to register, the Gateway receives the registration request, orchestrates the complete registration process by calling Supabase Auth API and Patient Service, and returns success/error response.
 
-**Note**: This assumes Gateway handles orchestration - needs discussion on implementation approach.
+**Process**: Gateway validates format → Calls Supabase Auth → Creates patient profile → Returns result
+**Failure Handling**: Gateway coordinates rollback if any step fails
 
 ### **User Case 2: Patient Profile Access**
 When a patient wants to view their profile, the Gateway validates their JWT token, extracts user context, routes the request to Patient Service, and returns the profile data.
@@ -54,12 +55,13 @@ When a provider logs in, the Gateway validates their JWT token, extracts role an
 **Database**: No database required
 **Workflow**: Route requests to appropriate services based on URL patterns
 
-### **Solution 2: Orchestration Gateway**
+### **Solution 2: Orchestration Gateway (RECOMMENDED)**
 **Infrastructure**: Spring Cloud Gateway with service orchestration
 **Database**: No database required
-**Workflow**: Gateway coordinates multi-service operations (like registration)
+**Workflow**: Gateway coordinates multi-service operations (registration, complex flows)
 
-**Note**: This approach handles registration flow but increases Gateway complexity.
+**Registration Flow**: Gateway orchestrates Supabase Auth + Business Service calls
+**Failure Handling**: Gateway coordinates rollback for transactional operations
 
 ### **Solution 3: Advanced Gateway**
 **Infrastructure**: Spring Cloud Gateway with caching, rate limiting, monitoring
@@ -88,7 +90,8 @@ Spring Cloud Gateway positioned as the single external entry point, routing requ
 ### **Endpoints**
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| POST | `/api/auth/register` | User registration | No |
+| POST | `/api/auth/register/patient` | Patient registration | No |
+| POST | `/api/auth/register/provider` | Provider registration | No |
 | POST | `/api/patients/*` | Patient service routes | Yes |
 | POST | `/api/providers/*` | Provider service routes | Yes |
 | POST | `/api/medical/*` | Medical records routes | Yes |
@@ -124,8 +127,8 @@ A: [To be defined based on solution choice]
 ### **2. External Auth Integration**
 **Question**: How does Gateway work with Supabase Auth and Auth Service?
 - **Flow**: Supabase Auth → JWT → Gateway → Auth Service → Business Services
-- **Registration**: Gateway orchestrates or separate flow?
-- **Decision Needed**: Clear integration pattern
+- **Registration**: Gateway orchestrates complete registration (Supabase Auth + Business Service)
+- **Decision**: Gateway handles orchestration, Auth Service only validates JWT
 
 ### **3. Service Communication**
 **Question**: How should Gateway handle service failures?

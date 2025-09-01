@@ -20,6 +20,8 @@
 - [x] **Gateway Service Design** - Added medical routes, updated routing table
 - [x] **Backlog Update** - Changed all design tasks from completed to in progress status
 - [x] **Document Consistency** - Fixed all major inconsistencies across design documents
+- [x] **AI Service Design** - Created high-level design document with simplified scope
+- [x] **Critical Fixes** - Standardized "User Case" terminology, updated registration flow decisions, removed all "needs discussion" notes, removed admin role references
 
 ---
 
@@ -28,7 +30,7 @@
 **What I worked on**: Major design document cleanup and consistency fixes. Focused on simplifying system design to high-level only, updating service designs with proper architecture diagrams, and ensuring all documents are consistent.
 
 **Key decisions made**:
-- Removed File Storage Service from system design (Admin Service instead)
+- Removed File Storage Service from system design
 - Updated Provider Service to handle medical records with `/api/medical/records` APIs
 - Simplified all service designs to focus on core functionality
 - Fixed database design to 6 core tables only

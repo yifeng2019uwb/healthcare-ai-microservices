@@ -34,12 +34,10 @@ This document defines the data archive strategy for managing data lifecycle, per
 ### **Current Active Tables (8)**
 ```
 user_profiles
-user_authentication
 patients
 providers
 appointments
 medical_records
-file_metadata
 audit_logs
 ```
 
@@ -47,7 +45,6 @@ audit_logs
 ```
 appointments_archive
 medical_records_archive
-file_metadata_archive
 audit_logs_archive
 ```
 
@@ -55,7 +52,6 @@ audit_logs_archive
 ```
 appointments_deleted
 medical_records_deleted
-file_metadata_deleted
 audit_logs_deleted
 ```
 
@@ -88,12 +84,12 @@ audit_logs_deleted
 #### **High Volume Tables (Need Archiving)**
 ✅ **appointments** → appointments_archive → appointments_deleted
 ✅ **medical_records** → medical_records_archive → medical_records_deleted
-✅ **file_metadata** → file_metadata_archive → file_metadata_deleted
+
 ✅ **audit_logs** → audit_logs_archive → audit_logs_deleted
 
 #### **Low Volume Tables (No Archiving)**
 ❌ **user_profiles** (never archive - always needed)
-❌ **user_authentication** (never archive - always needed)
+
 ❌ **patients** (static reference data)
 ❌ **providers** (static reference data)
 
@@ -162,7 +158,7 @@ medical_records_complete (active + archive + deleted)
 ### **Current Table Modifications**
 Add archive fields to current tables for future use:
 ```sql
--- Add to appointments, medical_records, file_metadata, audit_logs
+-- Add to appointments, medical_records, audit_logs
 is_archived BOOLEAN DEFAULT FALSE
 archived_at TIMESTAMP WITH TIME ZONE
 archived_by VARCHAR(255)

@@ -36,14 +36,14 @@ Provider data is essential for healthcare operations, enabling appointment sched
 - **Medical Records**: Clinical documentation of patient care and treatment
 - **Provider-Patient Relationship**: Professional relationship between provider and patient
 
-## 👥 **User Stories**
+## 👥 **User Case**
 
 ### **Primary User Types**
 - **Providers**: Healthcare professionals who manage their profiles and patient care
 - **Patients**: Individuals who need to find and connect with providers
-- **System Administrators**: Platform administrators who manage provider accounts
 
-### **User Stories**
+
+### **User Case**
 
 #### **User Case 1: Provider Registration**
 Healthcare providers need to register on the platform to offer their services. They should be able to create a professional profile with their credentials, specialties, and practice information to start accepting patients.
@@ -57,35 +57,14 @@ Patients need to find and discover healthcare providers based on specialties, lo
 #### **User Case 4: Medical Records Management**
 Providers need to create, view, and update medical records for their patients, including diagnoses, treatments, medications, and clinical notes to maintain comprehensive patient care documentation.
 
-#### **User Case 5: Credential Verification**
-System administrators need to verify provider credentials and professional licenses to ensure only qualified healthcare professionals are active on the platform.
+
 
 ## 🔧 **Solution Alternatives**
 
-### **Current System Infrastructure & Data (Available to All Services)**
+### **Shared Infrastructure**
+*Reference: System Design Document for complete infrastructure details*
 
-#### **Shared Infrastructure**
-- **PostgreSQL Database**: Central database shared across all microservices
-- **Spring Boot Framework**: Standard framework for all Java services
-- **Shared Data Layer Module**: Common data access layer with standard patterns
-- **Authentication Service**: JWT-based authentication and authorization
-- **API Gateway**: Central routing and request handling
-- **Docker Containerization**: Standard deployment approach
-- **Railway Deployment Platform**: Cloud hosting and deployment
-
-#### **Shared Database Tables**
-- **`user_profiles`**: Core user identity and basic information
-- **`patients`**: Patient-specific business data
-- **`providers`**: Provider-specific business data
-- **`appointments`**: Scheduling and appointment data
-- **`medical_records`**: Clinical medical data
-- **`audit_logs`**: System-wide audit trail
-
-#### **Shared Services**
-- **Auth Service**: JWT validation and user context
-- **AI Service**: Python-based AI and ML capabilities
-- **Shared Exception Handling**: Standard error patterns
-- **Shared Logging**: Structured logging across services
+**Key Infrastructure**: PostgreSQL Database, Spring Boot Framework, Shared Data Layer Module, Authentication Service, API Gateway, Docker, Railway Deployment
 
 ### **Provider Service Design Approach**
 **Description**: Practical provider service that meets current scope while allowing future scaling.
@@ -240,7 +219,7 @@ Patient → Gateway → Auth → Provider Service → Database
 | POST | `/api/providers` | Create provider account | Yes |
 | GET | `/api/providers/profile` | Get my provider profile | Yes |
 | PUT | `/api/providers/profile` | Update my provider profile | Yes |
-| GET | `/api/providers` | List providers (patient/admin access) | Yes |
+| GET | `/api/providers` | List providers (patient access) | Yes |
 
 ### **Medical Records APIs**
 | Method | Endpoint | Description | Auth |
@@ -389,11 +368,10 @@ Patient → Gateway → Auth → Provider Service → Database
 ## 🔍 **Discussion Points**
 
 ### **1. Registration Flow Responsibility**
-**Question**: Who handles provider registration?
-- **Option A**: Gateway orchestrates (calls Provider Service for validation, creates Supabase account)
-- **Option B**: External auth provider handles (Provider Service only manages business data)
-- **Option C**: Provider Service handles (integrates with external auth)
-- **Decision Needed**: Clear responsibility assignment
+**Decision**: Gateway orchestrates provider registration (calls Supabase Auth + Provider Service)
+- **Gateway**: Orchestrates complete registration process
+- **Supabase Auth**: Handles authentication credentials
+- **Provider Service**: Creates provider business profile
 
 ### **2. Medical Records Management**
 **Question**: How should medical records be managed?
@@ -402,12 +380,7 @@ Patient → Gateway → Auth → Provider Service → Database
 - **Integration**: How to coordinate between services?
 - **Decision Needed**: Medical records ownership and access patterns
 
-### **3. Credential Verification**
-**Question**: How to implement professional credential verification?
-- **Manual Verification**: Admin reviews and approves credentials
-- **Automated Verification**: Integration with professional databases
-- **Hybrid Approach**: Automated + manual review for complex cases
-- **Decision Needed**: Verification strategy and implementation
+
 
 ## 📚 **References**
 

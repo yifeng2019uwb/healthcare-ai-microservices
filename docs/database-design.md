@@ -124,7 +124,7 @@ id (UUID PK)
 username (email, unique)
 notification_email
 first_name, last_name
-role (PATIENT/PROVIDER/ADMIN)
+role (PATIENT/PROVIDER)
 status (ACTIVE/INACTIVE/SUSPENDED)
 created_at, updated_at
 ```

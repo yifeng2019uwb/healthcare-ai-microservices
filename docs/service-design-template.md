@@ -3,7 +3,7 @@
 > **🔧 Standard Template for Service Design Documents**
 >
 > This template ensures consistency across all service design documents.
-> **Use this template** for Patient, Provider, Appointment, AI, and File Storage services.
+> **Use this template** for Patient, Provider, Appointment, and AI services.
 
 ## 📋 **Document Information**
 
@@ -41,7 +41,7 @@ Explanation of why this service is important and what problems it solves.
 - **User Type 2**: Description of who this user is
 - **User Type 3**: Description of who this user is
 
-### **User Stories**
+### **User Case**
 
 #### **User Case 1: [Basic Functionality]**
 [Write a simple, natural description of what users need and why it's important. Make it easy to understand like telling a story.]
@@ -51,6 +51,11 @@ Explanation of why this service is important and what problems it solves.
 
 
 ## 🔧 **Solution Alternatives**
+
+### **Shared Infrastructure**
+*Reference: System Design Document for complete infrastructure details*
+
+**Key Infrastructure**: PostgreSQL Database, Spring Boot Framework, Shared Data Layer Module, Authentication Service, API Gateway, Docker, Railway Deployment
 
 ### **Solution 1: [Primary Approach]**
 **Description**: Brief description of this solution approach

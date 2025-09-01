@@ -37,14 +37,14 @@ Appointment scheduling is critical for healthcare operations, enabling efficient
 - **Appointment Lifecycle**: Complete journey from booking to completion
 - **Reminders**: Automated notifications for upcoming appointments
 
-## 👥 **User Stories**
+## 👥 **User Case**
 
 ### **Primary User Types**
 - **Patients**: Individuals who book and manage appointments
 - **Providers**: Healthcare professionals who manage their schedules
-- **System Administrators**: Platform administrators who manage appointment settings
 
-### **User Stories**
+
+### **User Case**
 
 #### **User Case 1: Appointment Management**
 Patients and providers need to view and manage appointments. Patients can see their upcoming appointments, and providers can see their patient appointments.
@@ -60,30 +60,10 @@ Patients need to check in for their appointments, and providers need to mark app
 
 ## 🔧 **Solution Alternatives**
 
-### **Current System Infrastructure & Data (Available to All Services)**
+### **Shared Infrastructure**
+*Reference: System Design Document for complete infrastructure details*
 
-#### **Shared Infrastructure**
-- **PostgreSQL Database**: Central database shared across all microservices
-- **Spring Boot Framework**: Standard framework for all Java services
-- **Shared Data Layer Module**: Common data access layer with standard patterns
-- **Authentication Service**: JWT-based authentication and authorization
-- **API Gateway**: Central routing and request handling
-- **Docker Containerization**: Standard deployment approach
-- **Railway Deployment Platform**: Cloud hosting and deployment
-
-#### **Shared Database Tables**
-- **`user_profiles`**: Core user identity and basic information
-- **`patients`**: Patient-specific business data
-- **`providers`**: Provider-specific business data
-- **`appointments`**: Scheduling and appointment data
-- **`medical_records`**: Clinical medical data
-- **`audit_logs`**: System-wide audit trail
-
-#### **Shared Services**
-- **Auth Service**: JWT validation and user context
-- **AI Service**: Python-based AI and ML capabilities
-- **Shared Exception Handling**: Standard error patterns
-- **Shared Logging**: Structured logging across services
+**Key Infrastructure**: PostgreSQL Database, Spring Boot Framework, Shared Data Layer Module, Authentication Service, API Gateway, Docker, Railway Deployment
 
 ### **Appointment Service Design Approach**
 **Description**: Practical appointment service that meets current scope while allowing future scaling.
@@ -206,7 +186,7 @@ Provider → Gateway → Auth → Appointment Service → Database
 | POST  | `/api/appointments/{id}/checkin` | Patient check-in | Yes |
 | POST  | `/api/appointments/{id}/complete` | Mark appointment complete | Yes |
 
-**Note**: Admin APIs will be implemented in future iterations for system administration and statistics.
+
 
 ### **Request/Response Examples**
 [To be defined based on solution choice]

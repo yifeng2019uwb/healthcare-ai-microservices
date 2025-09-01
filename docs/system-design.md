@@ -4,12 +4,12 @@
 
 ### **High-Level Architecture**
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Patient Web   │    │  Provider Web   │    │   Admin Portal  │
-│    (React)      │    │   (React)       │    │    (React)      │
-└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
-          │                      │                      │
-          └──────────────────────┼──────────────────────┘
+┌─────────────────┐    ┌─────────────────┐
+│   Patient Web   │    │  Provider Web   │
+│    (React)      │    │   (React)       │
+└─────────┬───────┘    └─────────┬───────┘
+          │                      │
+          └──────────────────────┘
                                  │
                     ┌────────────▼────────────┐
                     │   Spring Cloud Gateway │
@@ -40,9 +40,9 @@
          ┌───────────────────┼───────────────────┐
          │                   │                   │
     ┌────▼────---┐   ┌─────--▼────--┐   ┌─────---▼────┐
-    │ Neon DB    │   │   S3         │   │   Admin     │
-    │(PostgreSQL)│   │(File Storage)│   │ Service     │
-    │            │   │              │   │ 8006        │
+    │ Neon DB    │   │   S3         │   │   Shared    │
+    │(PostgreSQL)│   │(File Storage)│   │   Data      │
+    │            │   │              │   │   Layer     │
     └──────────--┘   └──────────----┘   └──────────---┘
 ```
 
@@ -62,13 +62,13 @@
 - **Scalable Foundation**: Architecture supports future growth
 
 ### **Hybrid Architecture Strategy**
-- **Java Services (6)**: Enterprise-grade Spring Boot microservices for core business logic
+- **Java Services (3)**: Enterprise-grade Spring Boot microservices for core business logic
 - **Python Service (1)**: AI Service leveraging Python's rich ML/AI ecosystem
 - **Technology Agnostic**: Services communicate via REST APIs regardless of implementation language
 - **Best of Both Worlds**: Java's enterprise strength + Python's AI capabilities
 
 ### **Service Architecture**
-- **7 Services Total**: Gateway, Auth, Patient, Provider, Appointment, AI, Admin
+- **4 Services Total**: Patient, Provider, Appointment, AI
 - **2 User Types**: Patient and Provider only
 - **Clear Boundaries**: Each service has focused responsibility
 
@@ -77,22 +77,22 @@
 ### **Internal Auth Service (Spring Boot)**
 - **JWT Token Management**: Secure authentication across all services
 - **User Management**: Registration, login, profile management
-- **Role-Based Access**: Patient, Provider, Admin roles with permissions
+- **Role-Based Access**: Patient, Provider roles with permissions
 - **Session Management**: Token validation and refresh
 
 ### **User Roles & Permissions**
 ```
-┌─────────────-┐    ┌─────────────-┐    ┌─────────────┐
-│   Patient    │    │  Provider    │    │    Admin    │
-│              │    │              │    │             │
-├─────────────-┤    ├─────────────-┤    ├─────────────┤
-│• View own    │    │• View        │    │• Full       │
-│  data        │    │  patients    │    │  access     │
-│• Update      │    │• Manage      │    │• User       │
-│  profile     │    │  schedules   │    │  management │
-│• Book        │    │• View        │    │• System     │
-│  appointments│    │  appointments│    │  monitoring │
-└─────────────-┘    └─────────────-┘    └─────────────┘
+┌─────────────-┐    ┌─────────────-┐
+│   Patient    │    │  Provider    │
+│              │    │              │
+├─────────────-┤    ├─────────────-┤
+│• View own    │    │• View        │
+│  data        │    │  patients    │
+│• Update      │    │• Manage      │
+│  profile     │    │  schedules   │
+│• Book        │    │• View        │
+│  appointments│    │  appointments│
+└─────────────-┘    └─────────────-┘
 ```
 
 ## 🗄️ **Data Layer Strategy**
@@ -113,7 +113,7 @@
 ### **Backend Service Responsibilities**
 - **Auth Service**: JWT token validation
 - **Gateway**: Routes requests to business services
-- **Business Services**: Handle core business logic
+- **Business Services**: Patient, Provider, Appointment, AI services
 - **Data Layer**: Data access for all services
 
 ### **Service Ports**
@@ -125,7 +125,6 @@
 | **Provider Service** | 8003 | ❌ Internal Only | Java/Spring Boot |
 | **Appointment Service** | 8004 | ❌ Internal Only | Java/Spring Boot |
 | **AI Service** | 8005 | ❌ Internal Only | Python/FastAPI |
-| **Admin Service** | 8006 | ❌ Internal Only | Java/Spring Boot |
 
 ### **Service Interaction Examples**
 - **Appointment Booking**: Appointment Service
@@ -259,7 +258,6 @@ Service → Database → Response to Client
 - [ ] Simple frontend integration
 
 ### **Phase 3: Support Services (Weeks 5-6)**
-- [ ] Admin service for system monitoring and management
 - [ ] AI service basic implementation
 - [ ] Testing and basic optimization
 - [ ] **Skip**: Advanced features, complex monitoring, caching layers
@@ -300,16 +298,16 @@ For questions and support:
 ## 🔍 **Discussion Points & Open Questions**
 
 ### **1. Gateway Implementation Strategy**
-**Question**: Should Gateway be simple routing or handle orchestration?
+**Decision**: Gateway handles orchestration for registration and complex flows
 - **Simple Routing**: Basic request forwarding to services
-- **Orchestration**: Gateway coordinates multi-service operations (like registration)
-- **Decision Needed**: Balance between simplicity and functionality
+- **Orchestration**: Gateway coordinates multi-service operations (registration, complex flows)
+- **Implementation**: Balance between functionality and learning goals
 
 ### **2. External Auth Integration Strategy**
-**Question**: How do Gateway, External Auth, and Auth Service work together?
+**Decision**: Gateway orchestrates registration, Auth Service validates JWT only
 - **Flow**: External Auth → JWT Token → Gateway → Auth Service → Business Services
-- **Registration**: Who orchestrates the registration flow?
-- **Decision Needed**: Clear integration pattern and responsibilities
+- **Registration**: Gateway orchestrates registration (calls Supabase Auth + business services)
+- **Integration**: Clear pattern established with Gateway orchestration
 
 ### **3. Service Interaction Strategy**
 **Question**: How should services call each other internally?
@@ -317,11 +315,28 @@ For questions and support:
 - **How**: REST APIs, clear contracts, avoid circular dependencies
 - **Decision Needed**: Interaction patterns and guidelines
 
-### **4. Registration Flow Design**
-**Question**: How to handle user registration with external auth?
-- **Options**: Gateway orchestration vs. separate validation step
-- **Business Validation**: Where does business rule validation happen?
-- **Decision Needed**: Complete registration flow design
+### **4. Registration Flow Strategy**
+**Recommended Approach**: Gateway Orchestration for complete registration
+
+**Flow**: User → Gateway → [Supabase Auth + Patient/Provider Service] → Success/Rollback
+
+**Responsibilities**:
+- **Supabase**: Username/password storage, authentication
+- **Gateway**: Orchestrates complete registration process
+- **Business Services**: User profile and business data
+- **Auth Service**: Only JWT validation (no registration logic)
+
+**Failure Handling**:
+- Gateway coordinates rollback if any step fails
+- Transactional approach: All-or-nothing registration
+- Clean error messages to user regardless of which step failed
+
+**API Placement**:
+- **Registration API Location**: Gateway Service
+- `POST /api/auth/register/patient`
+- `POST /api/auth/register/provider`
+- Gateway endpoint calls Supabase API + Business Service
+- Single external endpoint for complete registration
 
 ---
 

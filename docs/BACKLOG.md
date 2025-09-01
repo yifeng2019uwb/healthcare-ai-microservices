@@ -49,7 +49,7 @@
 - ❌ **Complex Orchestration**: Keep service communication simple
 
 ### **Focus Areas**
-- ✅ **Core Services**: Patient, Provider, Appointment, AI, File Storage
+- ✅ **Core Services**: Patient, Provider, Appointment, AI
 - ✅ **Basic Authentication**: JWT validation with external provider
 - ✅ **Simple Data Access**: Direct database access through shared layer
 - ✅ **Basic Integration**: Services can call each other when needed
@@ -161,24 +161,11 @@
 
 ---
 
-## 📁 **EPIC 7: File Storage Service**
 
-### **Goal**: Complete file management system
-### **Status**: Not Started
-### **Dependencies**: Core services working
-
-**High-Level Tasks** (details to be added after design docs):
-- [ ] File upload/download
-- [ ] S3 integration
-- [ ] Metadata management
-- [ ] GDPR compliance
-
-**Design Docs Needed**:
-- [🚧] File Storage Service design (FILE-001) (IN PROGRESS)
 
 ---
 
-## 🎨 **EPIC 8: Frontend Applications**
+## 🎨 **EPIC 5: Frontend Applications**
 
 ### **Goal**: Complete user interfaces
 ### **Status**: Not Started
@@ -187,7 +174,6 @@
 **High-Level Tasks** (details to be added after design docs):
 - [ ] Patient Portal
 - [ ] Provider Portal
-- [ ] Admin Portal
 
 **Design Docs Needed**:
 - [🚧] Frontend architecture design (FRONT-001) (IN PROGRESS)
@@ -215,8 +201,7 @@
 - [🚧] **PATIENT-001: Patient Service Design** - API endpoints, data requirements, business logic (IN PROGRESS)
 - [🚧] **PROVIDER-001: Provider Service Design** - API endpoints, data requirements, business logic (IN PROGRESS)
 - [🚧] **APPOINTMENT-001: Appointment Service Design** - API endpoints, data requirements, business logic (IN PROGRESS)
-- [ ] **AI-001: AI Service Design** - API endpoints, data requirements, business logic
-- [ ] **STORAGE-001: File Storage Service Design** - API endpoints, data requirements, business logic
+- [x] **AI-001: AI Service Design** - API endpoints, data requirements, business logic (COMPLETED)
 
 #### **🔧 Shared Module Design** (After Service APIs are designed)
 - [ ] **SHARED-001: Shared Module Design** - Common utilities and patterns based on service needs
@@ -226,19 +211,19 @@
 - [ ] **DB-002: Data Access Patterns** - How services will access the database
 - [ ] **DB-003: Migration Strategy** - How to set up and evolve the database
 
-#### **👥 User Stories & Requirements** (Before Finalizing Database Design)
-- [ ] **USERS-001: Patient Service User Stories** - What data does Patient Service actually need?
-- [ ] **USERS-002: Provider Service User Stories** - What data does Provider Service actually need?
-- [ ] **USERS-003: Appointment Service User Stories** - What data does Appointment Service actually need?
-- [ ] **USERS-004: AI Service User Stories** - What data does AI Service actually need?
-- [ ] **USERS-005: File Storage User Stories** - What data does File Storage Service actually need?
+#### **👥 User Case & Requirements** (Before Finalizing Database Design)
+- [ ] **USERS-001: Patient Service User Case** - What data does Patient Service actually need?
+- [ ] **USERS-002: Provider Service User Case** - What data does Provider Service actually need?
+- [ ] **USERS-003: Appointment Service User Case** - What data does Appointment Service actually need?
+- [ ] **USERS-004: AI Service User Case** - What data does AI Service actually need?
+
 
 #### **🔧 Service API Design** (API-First Approach - Before Database Design)
 - [🚧] **API-001: Service Design Template** - Best practices and standard format for service design docs (IN PROGRESS)
 - [🚧] **API-002: Patient Service API Design** - Endpoints, data requirements, business logic (IN PROGRESS)
 - [🚧] **API-003: Provider Service API Design** - Endpoints, data requirements, business logic (IN PROGRESS)
 - [🚧] **API-004: Appointment Service API Design** - Endpoints, data requirements, business logic (IN PROGRESS)
-- [ ] **API-005: AI Service API Design** - Endpoints, data requirements, business logic
+- [x] **API-005: AI Service API Design** - Endpoints, data requirements, business logic (COMPLETED)
 
 #### **🎨 Frontend Design Docs**
 - [ ] **FRONT-001: Frontend Architecture Design** - React app structure, routing, state management

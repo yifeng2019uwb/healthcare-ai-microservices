@@ -22,7 +22,7 @@ Patient data is the core of any healthcare system. This service ensures secure, 
 - **In Scope**: Account creation, patient profile management, medical history viewing
 - **Out of Scope**: Appointment creation and management (handled by Appointment Service), medical records content, billing information, provider management, user authentication (handled by Auth Service)
 
-**Note**: Account creation scope needs clarification - may be handled by Gateway orchestration or external auth provider.
+**Note**: Account creation handled by Gateway orchestration (calls Supabase Auth + Patient Service).
 
 ## 📚 **Definitions & Glossary**
 
@@ -32,17 +32,17 @@ Patient data is the core of any healthcare system. This service ensures secure, 
 - **Medical History**: Record of patient's past health conditions, treatments, and procedures
 - **Demographics**: Basic patient information like age, gender, location, contact details
 
-## 👥 **User Stories**
+## 👥 **User Case**
 
 ### **Primary User Types**
 - **Patients**: Individuals who use the platform to manage their own health information
 
-### **User Stories**
+### **User Case**
 
 #### **User Case 1: Account Creation**
 Patients need to create an account to access the healthcare platform. They should be able to register with basic information like name, email, and password to get started with managing their health information.
 
-**Note**: This may be handled by Gateway orchestration or external auth provider - needs discussion.
+**Note**: Account creation handled by Gateway orchestration (calls Supabase Auth + Patient Service).
 
 #### **User Case 2: Profile Management**
 Patients need to view and update their personal health profile. They want to see their complete health information in one place and easily update their contact details, add new allergies, or modify their health information. This helps them keep their profile current and accurate.
@@ -53,30 +53,10 @@ Patients want to view their complete medical history including past conditions, 
 
 ## 🔧 **Solution Alternatives**
 
-### **Current System Infrastructure & Data (Available to All Services)**
+### **Shared Infrastructure**
+*Reference: System Design Document for complete infrastructure details*
 
-#### **Shared Infrastructure**
-- **PostgreSQL Database**: Central database shared across all microservices
-- **Spring Boot Framework**: Standard framework for all Java services
-- **Shared Data Layer Module**: Common data access layer with standard patterns
-- **Authentication Service**: JWT-based authentication and authorization
-- **API Gateway**: Central routing and request handling
-- **Docker Containerization**: Standard deployment approach
-- **Railway Deployment Platform**: Cloud hosting and deployment
-
-#### **Shared Database Tables**
-- **`user_profiles`**: Core user identity and basic information
-- **`patients`**: Patient-specific business data
-- **`providers`**: Provider-specific business data
-- **`appointments`**: Scheduling and appointment data
-- **`medical_records`**: Clinical medical data
-- **`audit_logs`**: System-wide audit trail
-
-#### **Shared Services**
-- **Auth Service**: JWT validation and user context
-- **AI Service**: Python-based AI and ML capabilities
-- **Shared Exception Handling**: Standard error patterns
-- **Shared Logging**: Structured logging across services
+**Key Infrastructure**: PostgreSQL Database, Spring Boot Framework, Shared Data Layer Module, Authentication Service, API Gateway, Docker, Railway Deployment
 
 ### **Patient Service Design Approach**
 **Description**: Practical patient service that meets current scope while allowing future scaling.
@@ -94,7 +74,7 @@ Patients want to view their complete medical history including past conditions, 
   - Simple implementation for learning project
   - Best for direct-to-consumer healthcare platforms
 
-**Note**: Registration flow needs discussion - may be orchestrated by Gateway or handled by external auth provider.
+**Note**: Registration flow handled by Gateway orchestration (calls Supabase Auth + Patient Service).
 
 **Core Workflow**:
 - Account creation with proper validation and security
@@ -319,7 +299,7 @@ For enhanced patient experience before medical visits, the following APIs can be
 | date_of_birth | DATE         | NOT NULL                    | - | User's date of birth |
 | phone         | VARCHAR(20)  | NULL                        | INDEX | Contact phone number |
 | email         | VARCHAR(255) | NOT NULL                    | - | Contact email address |
-| role          | ENUM         | NOT NULL, DEFAULT 'PATIENT' | - | User role (PATIENT, PROVIDER, ADMIN) |
+| role          | ENUM         | NOT NULL, DEFAULT 'PATIENT' | - | User role (PATIENT, PROVIDER) |
 | status        | ENUM         | NOT NULL, DEFAULT 'ACTIVE'  | - | Account status (ACTIVE, INACTIVE) |
 | created_at    | TIMESTAMP    | NOT NULL, DEFAULT NOW()     | - | Record creation timestamp |
 | updated_at    | TIMESTAMP    | NOT NULL, DEFAULT NOW()     | - | Last update timestamp |
@@ -400,7 +380,7 @@ For enhanced patient experience before medical visits, the following APIs can be
 #### **Data Access Patterns**
 - **Patient Self-Service**: Query by `patients.user_id` (authenticated user)
 - **Provider Lookup**: Query by `user_profiles` name/DOB, join to `patients`
-- **System Admin**: Query by `user_profiles.role = 'PATIENT'`
+- **System Query**: Query by `user_profiles.role = 'PATIENT'`
 
 ### **Data Validation Rules**
 
