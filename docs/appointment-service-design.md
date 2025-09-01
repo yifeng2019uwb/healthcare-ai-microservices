@@ -36,9 +36,7 @@ Appointment scheduling is critical for healthcare operations, enabling efficient
 - **❌ Provider Service**: Provider profiles, credentials, medical records
 - **❌ Patient Service**: Patient profiles and medical history viewing
 
-### **Implementation Phases**
-- **Phase 1**: Core functionality (availability, basic booking, viewing)
-- **Phase 2**: Advanced features (management, lifecycle, updates)
+
 
 ## 📚 **Definitions & Glossary**
 
@@ -177,33 +175,33 @@ Provider → Gateway → Auth → Appointment Service → Database
 ## 🛠️ **API Design**
 
 ### **Provider Availability Management**
-| Method | Endpoint | Description | Auth | Phase |
-|--------|----------|-------------|------|-------|
-| POST   | `/api/appointments/availability` | Set my available slots | Provider | **Phase 1** |
-| GET    | `/api/appointments/availability` | Get my availability | Provider | **Phase 1** |
-| PUT    | `/api/appointments/availability/{slotId}` | Update slot | Provider | **Phase 2** |
-| DELETE | `/api/appointments/availability/{slotId}` | Remove slot | Provider | **Phase 2** |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST   | `/api/appointments/availability` | Set my available slots | Provider |
+| GET    | `/api/appointments/availability` | Get my availability | Provider |
+| PUT    | `/api/appointments/availability/{slotId}` | Update slot | Provider |
+| DELETE | `/api/appointments/availability/{slotId}` | Remove slot | Provider |
 
 ### **Patient Appointment Booking**
-| Method | Endpoint | Description | Auth | Phase |
-|--------|----------|-------------|------|-------|
-| GET    | `/api/appointments/available-slots` | Find available slots | Public | **Phase 1** |
-| POST   | `/api/appointments` | Book appointment | Patient | **Phase 1** |
-| GET    | `/api/appointments` | View my appointments | Patient | **Phase 1** |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET    | `/api/appointments/available-slots` | Find available slots | Public |
+| POST   | `/api/appointments` | Book appointment | Patient |
+| GET    | `/api/appointments` | View my appointments | Patient |
 
 ### **Appointment Management APIs**
-| Method | Endpoint | Description | Auth | Phase |
-|--------|----------|-------------|------|-------|
-| GET    | `/api/appointments/provider/{providerId}` | Get provider's appointments | Provider | **Phase 2** |
-| PUT    | `/api/appointments/{id}/status` | Change appointment status | Provider | **Phase 2** |
-| PUT    | `/api/appointments/{id}/reschedule` | Reschedule appointment | Patient/Provider | **Phase 2** |
-| DELETE | `/api/appointments/{id}` | Cancel appointment | Patient/Provider | **Phase 2** |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET    | `/api/appointments/provider/{providerId}` | Get provider's appointments | Provider |
+| PUT    | `/api/appointments/{id}/status` | Change appointment status | Provider |
+| PUT    | `/api/appointments/{id}/reschedule` | Reschedule appointment | Patient/Provider |
+| DELETE | `/api/appointments/{id}` | Cancel appointment | Patient/Provider |
 
 ### **Appointment Lifecycle APIs**
-| Method | Endpoint | Description | Auth | Phase |
-|--------|----------|-------------|------|-------|
-| POST  | `/api/appointments/{id}/checkin` | Patient check-in | Patient | **Phase 2** |
-| POST  | `/api/appointments/{id}/complete` | Mark appointment complete | Provider | **Phase 2** |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST  | `/api/appointments/{id}/checkin` | Patient check-in | Patient |
+| POST  | `/api/appointments/{id}/complete` | Mark appointment complete | Provider |
 
 
 

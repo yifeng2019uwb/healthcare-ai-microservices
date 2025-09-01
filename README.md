@@ -2,132 +2,213 @@
 
 > **Learning-Focused Healthcare AI Platform** - Master Spring Boot, AI Integration, and Microservices Architecture
 
-## 🎯 **What This Project Is**
+## 📋 **Overview**
 
 A comprehensive healthcare AI microservices platform designed for learning Spring Boot, AI integration, and microservices patterns. Built with clean architecture principles and progressive complexity.
 
-## 🏗️ **System Architecture**
+### **Key Features**
+- **🔐 Authentication**: JWT-based authentication with Supabase Auth
+- **🏥 Healthcare Services**: Patient, Provider, and Appointment management
+- **🤖 AI Integration**: Healthcare analytics and clinical insights
+- **📊 Data Management**: Neon PostgreSQL with AWS S3 file storage
+- **🚀 Microservices**: Spring Boot services with API Gateway
 
-### **High-Level Overview**
-This project implements a **hybrid Java + Python microservices architecture** for healthcare AI applications. The system uses **Neon PostgreSQL as the single primary database** for all business data and authentication, with **AWS S3 for file storage**.
+## 🏗️ **Project Structure**
 
-### **Backend Architecture**
-- **API Gateway (Port 8080)**: Single external entry point, orchestrates registration and routes to business services
-- **Auth Service (Port 8001)**: JWT validation only, no business logic
-- **Patient Service (Port 8002)**: Patient profile management and medical history viewing
-- **Provider Service (Port 8003)**: Provider profile management and medical records management
-- **Appointment Service (Port 8004)**: Appointment scheduling, availability management, and lifecycle
-- **AI Service (Port 8005)**: Healthcare analytics and clinical insights
-- **Data Layer**: Primary data access method for all services
+```
+healthcare-ai-microservices/
+├── docs/                           # Design documentation
+│   ├── system-design.md           # System architecture
+│   ├── authentication-design.md   # Auth strategy
+│   ├── database-design.md         # Database schema
+│   └── BACKLOG.md                 # Implementation planning
+├── healthcare-infra/              # Infrastructure as Code
+│   ├── terraform/                 # Database tables
+│   └── config/                    # Credentials (ignored by git)
+├── services/                      # Backend services
+│   ├── gateway/                   # API Gateway (Port 8080)
+│   ├── auth/                      # Auth Service (Port 8001)
+│   ├── patient/                   # Patient Service (Port 8002)
+│   ├── provider/                  # Provider Service (Port 8003)
+│   ├── appointment/               # Appointment Service (Port 8004)
+│   └── ai/                        # AI Service (Port 8005)
+├── frontend/                      # React applications
+│   ├── patient-portal/            # Patient web app
+│   └── provider-portal/           # Provider web app
+├── scripts/                       # Development scripts
+└── .github/workflows/             # CI/CD pipelines
+```
 
-### **Port Management Strategy**
-- **External Access**: Only port 8080 (API Gateway) exposed to the internet
-- **Internal Services**: All business services run internally on ports 8001-8005
-- **Single Entry Point**: All external traffic goes through the Gateway for routing and security
-
-### **Technology Distribution**
-- **Java Services (4)**: Gateway, Auth, Patient, Provider, Appointment
-- **Python Service (1)**: AI Service for ML/AI capabilities
-- **Database**: Neon PostgreSQL (single instance, multiple schemas)
-- **File Storage**: AWS S3 for medical documents and images (handled by Provider Service)
-- **Frontend**: React applications for Patient and Provider users
-
-## 🚀 **Key Features**
-
-### **🔐 Authentication & Security**
-- **Internal Auth Service**: Spring Boot JWT validation only
-- **External Authentication**: Supabase Auth handles login/registration
-- **JWT-based Authentication**: Secure token management
-- **Role-based Access Control**: Patient and Provider roles only
-- **Basic Compliance**: Simple audit trails and data protection
-
-### **💾 Data Management**
-- **Shared Data Layer**: Common database access patterns for all services
-- **Single Database**: Neon PostgreSQL with service-specific schemas
-- **File Storage**: AWS S3 for cross-domain file management
-- **Service Communication**: Services can call each other internally when needed for business logic
-
-### **🤖 AI Integration**
-- **Centralized AI Service**: All AI capabilities in one service
-- **Healthcare Data Analysis**: Patient data analysis and insights
-- **Predictive Analytics**: Health outcome predictions and trends
-- **Clinical Decision Support**: AI-powered insights for healthcare decisions
-
-### **🏥 Healthcare Features**
-- **Patient Management**: Complete patient profiles and medical history viewing (Patient Service)
-- **Provider Management**: Doctor profiles, specialties, and credentials (Provider Service)
-- **Medical Records**: Secure document storage and retrieval through Provider Service
-- **Appointment System**: Availability management, slot generation, and appointment booking (Appointment Service)
-
-## 🛠️ **Technology Stack**
-
-### **Backend Services**
-- **Framework**: Spring Boot 3.2+ with Java 17
-- **API Gateway**: Spring Cloud Gateway (Port 8080)
-- **Authentication**: Spring Boot JWT validation + Supabase Auth
-- **Database**: Neon PostgreSQL with multiple schemas
-- **File Storage**: AWS S3 (cost-effective, scalable)
-- **Shared Module**: Common data access patterns
-
-### **Frontend Applications**
-- **Framework**: React 18+ with TypeScript
-- **UI Library**: Material-UI (MUI)
-- **State Management**: React Context + Hooks
-- **HTTP Client**: Axios
-- **Authentication**: JWT token management
-- **User Portals**: Patient Portal and Provider Portal only
-
-### **Infrastructure**
-- **Platform**: Railway (deployment and hosting)
-- **Containerization**: Docker
-- **CI/CD**: GitHub Actions
-- **Monitoring**: Railway built-in metrics
-
-## 📚 **Documentation**
-
-- **[System Design](docs/system-design.md)** - Complete system architecture and design decisions
-- **[Authentication Design](docs/authentication-design.md)** - JWT authentication and security strategy
-- **[Exception Handling](docs/exception-handling-design.md)** - Standard exception handling strategy
-- **[Logging Design](docs/logging-design.md)** - Standardized logging strategy
-- **[Implementation Backlog](docs/BACKLOG.md)** - Complete task planning and roadmap
-- **[Daily Work Log](docs/DAILY_WORK_LOG.md)** - Daily progress tracking template
-- **[Project Structure](PROJECT_STRUCTURE.md)** - Project organization and structure
-- **[Project Setup](docs/project-setup.md)** - Step-by-step setup instructions
-
-## 🔧 **Quick Start**
+## 🚀 **Installation / Setup**
 
 ### **Prerequisites**
-- Java 17+
-- Maven 3.8+ or Gradle 8+
-- Node.js 18+
-- Docker
-- Git
+- **Java 17+** - For Spring Boot services
+- **Maven 3.8+** - Build tool
+- **Node.js 18+** - For React frontend
+- **Docker** - Containerization
+- **Git** - Version control
 
-### **Local Development**
+### **Quick Setup**
 ```bash
 # Clone the repository
 git clone https://github.com/yifeng2019uwb/healthcare-ai-microservices
 cd healthcare-ai-microservices
 
-# Follow the setup guide
-# See docs/project-setup.md for detailed instructions
+# Setup development environment
+./scripts/setup-dev.sh
+
+# Test project structure
+./scripts/test-ci.sh
 ```
 
-## 🎯 **Learning Goals**
+### **Database Setup**
+```bash
+# Copy configuration template
+cp healthcare-infra/examples/terraform.tfvars.example healthcare-infra/config/terraform.tfvars
 
-### **Primary Objectives**
-- **Spring Boot Mastery**: Deep dive into microservice development
-- **AI Integration**: Learn ML/AI in healthcare context
-- **Clean Architecture**: Well-designed, maintainable services
-- **Practical Experience**: Working healthcare platform
-- **Hybrid Architecture**: Java + Python microservices integration
+# Edit with your Neon database credentials
+# Then create database tables
+cd healthcare-infra/terraform
+terraform init
+terraform apply
+```
 
-### **Technical Skills**
-- **Microservices Patterns**: Service design and communication
-- **Database Design**: PostgreSQL with multiple schemas
-- **API Design**: RESTful services and authentication
-- **Deployment**: Railway platform and CI/CD
+## 💻 **Usage**
 
----
+### **Development Workflow**
+```bash
+# Test locally before pushing
+./scripts/test-ci.sh
 
-*This platform is designed for learning Spring Boot, AI integration, and microservices architecture. Focus on clean design and progressive complexity.*
+# If tests pass, commit and push
+git add .
+git commit -m "Your changes"
+git push
+```
+
+### **System Architecture**
+```
+┌─────────────────┐    ┌─────────────────┐
+│   Patient Web   │    │  Provider Web   │
+│    (React)      │    │   (React)       │
+└─────────┬───────┘    └─────────┬───────┘
+          │                      │
+          └──────────────────────┘
+                                 │
+                    ┌────────────▼────────────┐
+                    │   Spring Cloud Gateway │
+                    │        (Port 8080)     │
+                    └────────────┬───────────┘
+                                 │
+                    ┌────────────▼────────────┐
+                    │      Auth Service       │
+                    │        (Port 8001)      │
+                    │   JWT Validation        │
+                    └────────────┬───────────┘
+                                 │
+         ┌───────────────────────┼────────────────────────┐
+         │                       │                        │
+    ┌────▼────┐   ┌──────────┐   ┌────▼────┐    ┌──────────┐
+    │ Patient │   │Provider  │   │Appointment│    │   AI     │
+    │Service  │   │Service   │   │ Service   │    │ Service  │
+    │ 8002    │   │ 8003     │   │ 8004      │    │ 8005     │
+    └────┬────┘   └────┬─────┘   └────┬────┘    └────┬─────┘
+         │             │              │               │
+         └─────────────┼──────────────┼───────────────┘
+                       │              │
+              ┌────────▼──────────────▼────────┐
+              │      Shared Data Layer         │
+              │     (Database Access)          │
+              └──────────────┬─────────────────┘
+                             │
+         ┌───────────────────┼───────────────────┐
+         │                   │                   │
+    ┌────▼────┐   ┌─────────▼────────┐   ┌──────▼────┐
+    │ Neon DB │   │   S3             │   │   Shared  │
+    │(PostgreSQL)│   │(File Storage)   │   │   Data    │
+    │            │   │                 │   │   Layer   │
+    └───────────┘   └─────────────────┘   └───────────┘
+```
+
+### **Service Architecture**
+| Service          | Port | Responsibility                     |
+| ---------------- | ---- | ---------------------------------- |
+| API Gateway      | 8080 | Routes requests to all services    |
+| Auth Service     | 8001 | JWT validation                     |
+| Patient Service  | 8002 | Patient profiles, medical history  |
+| Provider Service | 8003 | Provider profiles, medical records |
+| Appointment      | 8004 | Scheduling & availability          |
+| AI Service       | 8005 | Analytics & insights               |
+
+## 🎯 **Technology Stack**
+
+**Backend**: Spring Boot 3.2+, Java 17
+**Database**: Neon PostgreSQL
+**File Storage**: AWS S3
+**Frontend**: React 18+ with TypeScript
+**Authentication**: Supabase Auth + JWT
+**Deployment**: Railway
+**CI/CD**: GitHub Actions
+
+## 🏥 **Planned Features**
+
+- **Authentication Service** (JWT validation)
+- **Patient Service** (profiles, medical history)
+- **Provider Service** (provider data, medical records)
+- **Appointment Service** (scheduling, availability)
+- **AI Service** (analytics, clinical insights)
+- **API Gateway** (single entry point, request routing)
+
+## 🚧 **Current Status**
+
+- ✅ Initial project design
+- 🔄 Infrastructure setup (Terraform + DB)
+- ⏳ API Gateway skeleton
+- ⏳ Auth Service MVP
+- ⏳ Core healthcare services
+- ⏳ AI service integration
+- ⏳ Frontend portals
+
+## 🧪 **Testing**
+
+### **Local Testing**
+```bash
+# Test project structure
+./scripts/test-ci.sh
+
+# Run specific service tests
+cd services/patient
+mvn test
+
+# Run all tests
+cd services
+mvn test
+```
+
+### **CI/CD Pipeline**
+- **Automatic**: Runs on every push and pull request
+- **Validation**: Checks project structure and builds
+- **Reports**: Test results and build artifacts
+- **Status**: View in GitHub Actions tab
+
+## 📚 **Documentation**
+
+### **Design Documents**
+- **[System Design](docs/system-design.md)** - Complete architecture overview
+- **[Authentication Design](docs/authentication-design.md)** - JWT and security strategy
+- **[Database Design](docs/database-design.md)** - Schema and data modeling
+- **[Gateway Service Design](docs/gateway-service-design.md)** - API Gateway routing and configuration
+- **[Patient Service Design](docs/patient-service-design.md)** - Patient management APIs
+- **[Provider Service Design](docs/provider-service-design.md)** - Provider and medical records APIs
+- **[Appointment Service Design](docs/appointment-service-design.md)** - Scheduling and availability APIs
+- **[AI Service Design](docs/ai-service-design.md)** - Healthcare analytics and insights
+- **[Service Design Template](docs/service-design-template.md)** - Standard format for service designs
+
+### **Implementation**
+- **[Backlog](BACKLOG.md)** - Task planning and roadmap
+- **[Daily Work Log](DAILY_WORK_LOG.md)** - Progress tracking
+- **[Project Setup](docs/project-setup.md)** - Detailed setup instructions
+
+### **Infrastructure**
+- **[Infrastructure Design](healthcare-infra/README.md)** - Database and deployment setup
+- **[Terraform Config](healthcare-infra/terraform/)** - Database table definitions

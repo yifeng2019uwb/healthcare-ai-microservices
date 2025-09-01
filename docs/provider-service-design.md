@@ -27,9 +27,7 @@ Provider data is essential for healthcare operations, enabling appointment sched
 - **In Scope**: Provider registration, profile management, medical specialties, credentials, provider discovery, medical records management
 - **Out of Scope**: Appointment scheduling (handled by Appointment Service), availability management (handled by Appointment Service), billing and payments, user authentication (handled by Auth Service)
 
-### **Implementation Phases**
-- **Phase 1**: Core provider functionality (profiles, discovery)
-- **Phase 2**: Medical records management (create, update, view)
+
 
 ## 📚 **Definitions & Glossary**
 
@@ -217,20 +215,20 @@ Patient → Gateway → Auth → Provider Service → Database
 ## 🛠️ **API Design**
 
 ### **Provider Management APIs**
-| Method | Endpoint | Description | Auth | Phase |
-|--------|----------|-------------|------|-------|
-| POST | `/api/providers` | Create provider profile | Yes | **Phase 1** |
-| GET | `/api/providers/profile` | Get my provider profile | Yes | **Phase 1** |
-| PUT | `/api/providers/profile` | Update my provider profile | Yes | **Phase 1** |
-| GET | `/api/providers` | List providers (patient access) | Yes | **Phase 1** |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/providers` | Create provider profile | Yes |
+| GET | `/api/providers/profile` | Get my provider profile | Yes |
+| PUT | `/api/providers/profile` | Update my provider profile | Yes |
+| GET | `/api/providers` | List providers (patient access) | Yes |
 
 ### **Medical Records APIs**
-| Method | Endpoint | Description | Auth | Phase |
-|--------|----------|-------------|------|-------|
-| POST | `/api/medical/records` | Create medical record | Yes | **Phase 2** |
-| GET | `/api/medical/records` | Get my medical records | Yes | **Phase 2** |
-| PUT | `/api/medical/records/{recordId}` | Update medical record | Yes | **Phase 2** |
-| GET | `/api/medical/records/patient/{patientId}` | Get patient's medical records | Yes | **Phase 2** |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/medical/records` | Create medical record | Yes |
+| GET | `/api/medical/records` | Get my medical records | Yes |
+| PUT | `/api/medical/records/{recordId}` | Update medical record | Yes |
+| GET | `/api/medical/records/patient/{patientId}` | Get patient's medical records | Yes |
 
 ### **Request/Response Example**
 ```json
