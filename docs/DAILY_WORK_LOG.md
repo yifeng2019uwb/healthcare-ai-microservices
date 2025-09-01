@@ -35,6 +35,8 @@
 - Simplified all service designs to focus on core functionality
 - Fixed database design to 6 core tables only
 - Updated backlog to reflect all design tasks are in progress
+- Clarified service responsibilities: Appointment Service handles availability, Provider Service handles profiles and medical records
+- **Phased Implementation Plan**: Gateway+Auth+Patient → Provider+Medical → Appointment+Scheduling → AI+RealData
 
 **Any issues**: Resolved all major inconsistencies across design documents. System design now properly high-level only.
 

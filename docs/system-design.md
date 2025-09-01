@@ -113,8 +113,16 @@
 ### **Backend Service Responsibilities**
 - **Auth Service**: JWT token validation
 - **Gateway**: Routes requests to business services
-- **Business Services**: Patient, Provider, Appointment, AI services
+- **Patient Service**: Patient profile management and medical history viewing
+- **Provider Service**: Provider profile management and medical records management
+- **Appointment Service**: Appointment scheduling, availability management, and lifecycle
+- **AI Service**: Healthcare analytics and clinical insights
 - **Data Layer**: Data access for all services
+
+### **Service Boundaries**
+- **Provider Service**: ✅ Provider profiles, credentials, medical records ❌ Appointment slots
+- **Appointment Service**: ✅ Availability windows, slot generation, booking, lifecycle ❌ Provider profiles, medical records
+- **Patient Service**: ✅ Patient profiles, medical history viewing ❌ Appointment booking, medical records
 
 ### **Service Ports**
 | Service | Port | External Access | Technology |
@@ -127,10 +135,24 @@
 | **AI Service** | 8005 | ❌ Internal Only | Python/FastAPI |
 
 ### **Service Interaction Examples**
-- **Appointment Booking**: Appointment Service
-- **Patient Record Access**: Provider Service
-- **AI Analysis**: AI Service
-- **Provider Dashboard**: Provider Service
+- **Appointment Management**: Appointment Service (availability windows, slot generation, booking, lifecycle)
+- **Provider Profiles**: Provider Service (profiles, credentials, specialties, medical records)
+- **Patient Profiles**: Patient Service (patient data, medical history viewing)
+- **AI Analysis**: AI Service (healthcare insights, clinical support)
+
+### **Data Flow Examples**
+- **Provider Sets Availability**: Provider → Appointment Service → Creates multiple 30-min slots
+- **Patient Books Appointment**: Patient → Appointment Service → Books specific time slot
+- **Provider Manages Records**: Provider → Provider Service → Creates/updates medical records
+
+### **Simplified API Structure**
+- **Provider Service**: Profile management, medical records
+- **Appointment Service**: Availability management, appointment booking
+- **Patient Service**: Patient profiles, medical history viewing
+
+### **Implementation Phases**
+- **Phase 1**: Core functionality (profiles, basic booking, discovery)
+- **Phase 2**: Advanced features (medical records, appointment management, lifecycle)
 
 
 

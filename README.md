@@ -14,7 +14,10 @@ This project implements a **hybrid Java + Python microservices architecture** fo
 ### **Backend Architecture**
 - **API Gateway (Port 8080)**: Single external entry point, orchestrates registration and routes to business services
 - **Auth Service (Port 8001)**: JWT validation only, no business logic
-- **Business Services (Ports 8002-8005)**: Handle business logic, can call each other internally when needed
+- **Patient Service (Port 8002)**: Patient profile management and medical history viewing
+- **Provider Service (Port 8003)**: Provider profile management and medical records management
+- **Appointment Service (Port 8004)**: Appointment scheduling, availability management, and lifecycle
+- **AI Service (Port 8005)**: Healthcare analytics and clinical insights
 - **Data Layer**: Primary data access method for all services
 
 ### **Port Management Strategy**
@@ -26,7 +29,7 @@ This project implements a **hybrid Java + Python microservices architecture** fo
 - **Java Services (4)**: Gateway, Auth, Patient, Provider, Appointment
 - **Python Service (1)**: AI Service for ML/AI capabilities
 - **Database**: Neon PostgreSQL (single instance, multiple schemas)
-- **File Storage**: AWS S3 for medical documents and images
+- **File Storage**: AWS S3 for medical documents and images (handled by Provider Service)
 - **Frontend**: React applications for Patient and Provider users
 
 ## 🚀 **Key Features**
@@ -51,10 +54,10 @@ This project implements a **hybrid Java + Python microservices architecture** fo
 - **Clinical Decision Support**: AI-powered insights for healthcare decisions
 
 ### **🏥 Healthcare Features**
-- **Patient Management**: Complete patient profiles and medical history viewing
-- **Provider Management**: Doctor profiles, specialties, and medical records management
-- **Appointment System**: Scheduling, management, and lifecycle tracking
+- **Patient Management**: Complete patient profiles and medical history viewing (Patient Service)
+- **Provider Management**: Doctor profiles, specialties, and credentials (Provider Service)
 - **Medical Records**: Secure document storage and retrieval through Provider Service
+- **Appointment System**: Availability management, slot generation, and appointment booking (Appointment Service)
 
 ## 🛠️ **Technology Stack**
 

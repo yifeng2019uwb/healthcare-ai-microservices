@@ -27,6 +27,19 @@ Appointment scheduling is critical for healthcare operations, enabling efficient
 - **In Scope**: Appointment management, status changes, rescheduling, check-in, completion
 - **Out of Scope**: Availability management (will be implemented in future), notifications (will be implemented in future), medical records (handled by Provider Service), billing and payments, user authentication (handled by Auth Service)
 
+### **Service Responsibilities**
+- **✅ Appointment Service**: All appointment-related functionality
+  - Provider availability windows and slot generation
+  - Patient appointment booking and management
+  - Appointment lifecycle and status management
+  - Scheduling logic and conflict prevention
+- **❌ Provider Service**: Provider profiles, credentials, medical records
+- **❌ Patient Service**: Patient profiles and medical history viewing
+
+### **Implementation Phases**
+- **Phase 1**: Core functionality (availability, basic booking, viewing)
+- **Phase 2**: Advanced features (management, lifecycle, updates)
+
 ## 📚 **Definitions & Glossary**
 
 ### **Key Terms**
@@ -83,19 +96,19 @@ Patients need to check in for their appointments, and providers need to mark app
 ## 🏗️ **High-Level Design**
 
 ### **Core Concept**
-Spring Boot service managing healthcare appointment scheduling, availability, and lifecycle management with clear APIs and conflict prevention.
+Spring Boot service managing healthcare appointment scheduling, availability, and lifecycle management. Handles all appointment-related functionality including provider availability windows and patient booking.
 
 ### **Key Components**
 - **Appointment Service**: Appointment scheduling and management (Port 8004)
-- **Availability Management**: Provider schedule and time slot management
-- **Calendar Operations**: Provider calendar and patient booking coordination
-- **Notification System**: Appointment reminders and status updates
+- **Availability Management**: Provider availability windows and time slot generation
+- **Booking System**: Patient appointment booking and management
+- **Appointment Lifecycle**: Scheduling, confirmation, completion, cancellation
 
 ### **Data Flow**
-1. **Provider Availability**: Provider sets schedule → Availability stored → Time slots calculated
-2. **Patient Booking**: Patient searches providers → Views availability → Books appointment → Confirmation sent
-3. **Appointment Lifecycle**: Booking → Confirmation → Reminders → Completion → History
-4. **Calendar Updates**: Appointment changes → Calendar updates → Notifications sent
+1. **Provider Availability**: Provider sets availability window → System generates 30-minute slots → Slots stored as AVAILABLE
+2. **Patient Discovery**: Patient searches for providers → Views available time slots → Books specific appointment
+3. **Appointment Lifecycle**: Booking → Confirmation → Check-in → Completion → History
+4. **Slot Management**: Available slots → Booked appointments → Status updates
 
 **Data Flow Diagrams**:
 
@@ -163,33 +176,71 @@ Provider → Gateway → Auth → Appointment Service → Database
 
 ## 🛠️ **API Design**
 
-### **Booking APIs**
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET    | `/api/appointments/available-slots` | Get available time slots | Yes |
-| POST   | `/api/appointments/available-slots` | Add available time slots (provider) | Yes |
-| DELETE | `/api/appointments/available-slots/{slotId}` | Remove available time slot (provider) | Yes |
-| POST   | `/api/appointments` | Book new appointment | Yes |
+### **Provider Availability Management**
+| Method | Endpoint | Description | Auth | Phase |
+|--------|----------|-------------|------|-------|
+| POST   | `/api/appointments/availability` | Set my available slots | Provider | **Phase 1** |
+| GET    | `/api/appointments/availability` | Get my availability | Provider | **Phase 1** |
+| PUT    | `/api/appointments/availability/{slotId}` | Update slot | Provider | **Phase 2** |
+| DELETE | `/api/appointments/availability/{slotId}` | Remove slot | Provider | **Phase 2** |
 
-### **Management APIs**
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET    | `/api/appointments` | Get my appointments (patient view) | Yes |
-| GET    | `/api/appointments/provider/{providerId}` | Get provider's appointments | Yes |
-| PUT    | `/api/appointments/{id}/status` | Change appointment status | Yes |
-| PUT    | `/api/appointments/{id}/reschedule` | Reschedule appointment | Yes |
-| DELETE | `/api/appointments/{id}` | Cancel appointment | Yes |
+### **Patient Appointment Booking**
+| Method | Endpoint | Description | Auth | Phase |
+|--------|----------|-------------|------|-------|
+| GET    | `/api/appointments/available-slots` | Find available slots | Public | **Phase 1** |
+| POST   | `/api/appointments` | Book appointment | Patient | **Phase 1** |
+| GET    | `/api/appointments` | View my appointments | Patient | **Phase 1** |
 
-### **Lifecycle APIs**
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST  | `/api/appointments/{id}/checkin` | Patient check-in | Yes |
-| POST  | `/api/appointments/{id}/complete` | Mark appointment complete | Yes |
+### **Appointment Management APIs**
+| Method | Endpoint | Description | Auth | Phase |
+|--------|----------|-------------|------|-------|
+| GET    | `/api/appointments/provider/{providerId}` | Get provider's appointments | Provider | **Phase 2** |
+| PUT    | `/api/appointments/{id}/status` | Change appointment status | Provider | **Phase 2** |
+| PUT    | `/api/appointments/{id}/reschedule` | Reschedule appointment | Patient/Provider | **Phase 2** |
+| DELETE | `/api/appointments/{id}` | Cancel appointment | Patient/Provider | **Phase 2** |
+
+### **Appointment Lifecycle APIs**
+| Method | Endpoint | Description | Auth | Phase |
+|--------|----------|-------------|------|-------|
+| POST  | `/api/appointments/{id}/checkin` | Patient check-in | Patient | **Phase 2** |
+| POST  | `/api/appointments/{id}/complete` | Mark appointment complete | Provider | **Phase 2** |
 
 
 
 ### **Request/Response Examples**
-[To be defined based on solution choice]
+
+#### **1. Provider Sets Available Slots**
+```json
+POST /api/appointments/availability
+{
+    "dayOfWeek": 1,           // Monday
+    "startTime": "09:00:00",  // 9 AM
+    "endTime": "17:00:00",    // 5 PM
+    "durationMinutes": 30,    // 30-minute slots
+    "recurringWeeks": 4       // Create for next 4 weeks
+}
+```
+
+**Response**: System creates 16 available slots (9:00, 9:30, 10:00, ..., 16:30)
+
+#### **2. Patient Finds Available Slots**
+```json
+GET /api/appointments/available-slots?providerId=uuid&date=2024-01-15
+```
+
+**Response**: List of available 30-minute slots for the requested date
+
+#### **3. Patient Books Appointment**
+```json
+POST /api/appointments
+{
+    "providerId": "uuid",
+    "slotTime": "2024-01-15T10:00:00Z",
+    "notes": "Annual checkup"
+}
+```
+
+**Response**: Appointment confirmation with booking details
 
 ## 🗄️ **Database Schema Design**
 
