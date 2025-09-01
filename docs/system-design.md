@@ -13,7 +13,7 @@
                                  │
                     ┌────────────▼────────────┐
                     │   Spring Cloud Gateway │
-                    │        (Port 8000)     │
+                    │        (Port 8080)     │
                     └────────────┬───────────┘
                                  │
                     ┌────────────▼────────────┐
@@ -103,11 +103,12 @@
 - **Cross-Service Access**: All services can access files through S3
 - **Secure Storage**: Healthcare-compliant file storage and access controls
 
-### **Authentication: Stateless JWT**
-- **No Database Tables**: Auth Service is purely stateless
+### **Authentication: External Auth + Stateless JWT**
+- **External Auth Provider**: Supabase Auth handles all user authentication (login, registration, password management)
+- **Auth Service**: Purely stateless JWT validation only
 - **JWT Validation**: Verify token signature and expiration
 - **User Context Extraction**: Parse user ID, roles from token
-- **No User Storage**: No user accounts or credentials stored
+- **No Internal User Storage**: No user accounts or credentials stored in our system
 
 ### **Data Access Pattern**
 - **Direct Database Access**: Services connect directly to Neon PostgreSQL
@@ -123,11 +124,15 @@
 - **Business Services**: Can call each other internally when needed for business operations
 - **Data Layer**: Primary data access method for all services
 
+**Note**: Auth Service is stateless and only validates JWT tokens issued by external authentication providers (Supabase Auth).
+
 ### **Service Communication Patterns**
 - **External Requests**: Client → Gateway (8080) → Business Service
 - **Internal Service Calls**: Business Service → Business Service (when business logic requires it)
 - **Data Access**: All services → Data Layer → Neon PostgreSQL
 - **Authentication**: Gateway validates JWT with Auth Service before routing
+
+**Note**: Services can call each other internally when needed for business operations, but should have clear interaction strategies to avoid circular dependencies.
 
 ### **Port Management Strategy**
 - **External Access**: Only port 8080 (API Gateway) exposed to the internet
@@ -376,6 +381,32 @@ For questions and support:
 - Check the documentation
 - Review the implementation guides
 - Open an issue on GitHub
+
+## 🔍 **Discussion Points & Open Questions**
+
+### **1. Gateway Implementation Strategy**
+**Question**: Should Gateway be simple routing or handle orchestration?
+- **Simple Routing**: Basic request forwarding to services
+- **Orchestration**: Gateway coordinates multi-service operations (like registration)
+- **Decision Needed**: Balance between simplicity and functionality
+
+### **2. External Auth Integration Strategy**
+**Question**: How do Gateway, External Auth, and Auth Service work together?
+- **Flow**: External Auth → JWT Token → Gateway → Auth Service → Business Services
+- **Registration**: Who orchestrates the registration flow?
+- **Decision Needed**: Clear integration pattern and responsibilities
+
+### **3. Service Interaction Strategy**
+**Question**: How should services call each other internally?
+- **When**: Only when business logic requires it
+- **How**: REST APIs, clear contracts, avoid circular dependencies
+- **Decision Needed**: Interaction patterns and guidelines
+
+### **4. Registration Flow Design**
+**Question**: How to handle user registration with external auth?
+- **Options**: Gateway orchestration vs. separate validation step
+- **Business Validation**: Where does business rule validation happen?
+- **Decision Needed**: Complete registration flow design
 
 ---
 

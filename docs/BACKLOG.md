@@ -207,12 +207,12 @@
 - [ ] **INFRA-002: Simple Deployment Design** - Basic deployment patterns, keep it simple
 
 #### **🔐 Authentication & Gateway Design Docs**
-- [ ] **AUTH-001: Auth Service Design** - JWT validation and stateless authentication (in progress)
+- [x] **AUTH-001: Auth Service Design** - JWT validation and stateless authentication ✅
 - [ ] **AUTH-002: Gateway Design** - Routing, security, and middleware configuration
 - [ ] **AUTH-003: Security Design** - Overall security architecture and policies
 
 #### **👥 Business Services Design Docs**
-- [ ] **PATIENT-001: Patient Service Design** - API endpoints, data requirements, business logic
+- [x] **PATIENT-001: Patient Service Design** - API endpoints, data requirements, business logic ✅
 - [ ] **PROVIDER-001: Provider Service Design** - API endpoints, data requirements, business logic
 - [ ] **APPOINTMENT-001: Appointment Service Design** - API endpoints, data requirements, business logic
 - [ ] **AI-001: AI Service Design** - API endpoints, data requirements, business logic
@@ -235,7 +235,7 @@
 
 #### **🔧 Service API Design** (API-First Approach - Before Database Design)
 - [x] **API-001: Service Design Template** - Best practices and standard format for service design docs ✅
-- [ ] **API-002: Patient Service API Design** - Endpoints, data requirements, business logic
+- [x] **API-002: Patient Service API Design** - Endpoints, data requirements, business logic ✅
 - [ ] **API-003: Provider Service API Design** - Endpoints, data requirements, business logic
 - [ ] **API-004: Appointment Service API Design** - Endpoints, data requirements, business logic
 - [ ] **API-005: AI Service API Design** - Endpoints, data requirements, business logic
@@ -267,6 +267,28 @@
 **Dependencies**: None
 **Files to Update**: `docs/terraform-infrastructure-design.md`
 **Why Needed**: Infrastructure design must be complete before any service implementation can begin
+
+---
+
+### **✅ COMPLETED: Service Boundaries Clarification**
+**Component**: Architecture & Design
+**Type**: Design Decision
+**Priority**: 🔴 HIGHEST PRIORITY
+**Status**: ✅ COMPLETED
+
+**Description**: Clarified service responsibilities and boundaries
+
+**What Was Accomplished**:
+- **Patient Service**: Handles patient registration, profile management, allergies, health goals, risk factors
+- **Provider Service**: Will handle medical records, diagnoses, treatments, visits, clinical notes
+- **Appointment Service**: Will handle scheduling, booking, visit management, reminders
+- **Clear separation**: Each service has distinct responsibilities and data ownership
+
+**Files Updated**:
+- `docs/patient-service-design.md` - Added service boundaries section
+- `docs/BACKLOG.md` - Updated task status
+
+**Next Steps**: Design Provider Service and Appointment Service with clear boundaries
 
 ---
 

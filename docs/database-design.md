@@ -36,11 +36,10 @@ Database design is foundational for all services. A well-designed schema ensures
 
 ### **Table Structure Overview**
 ```
-🗄️ Core Tables Structure (7 tables total)
+🗄️ Core Tables Structure (6 tables total)
 
-Identity & Authentication (3 tables)
+Identity & Authentication (2 tables)
 ├── user_profiles          - Basic user information and role
-├── user_authentication    - Auth audit data and security metadata
 ├── patients              - Patient-specific data (if role = PATIENT)
 └── providers             - Provider-specific data (if role = PROVIDER)
 
@@ -66,15 +65,6 @@ Support Systems (2 tables)
   - ✅ **Auditable**: Easy to track who accessed what
   - ❌ **Limitation**: Can't be both patient and provider (realistic for most cases)
 
-#### **user_authentication Table**
-- **Purpose**: Authentication audit data and security metadata
-- **Key Design Decision**: Keep separate from user_profiles for audit purposes
-- **Why This Approach**:
-  - ✅ **Audit Compliance**: Detailed authentication tracking for HIPAA
-  - ✅ **Security Features**: Can implement MFA, password history, account lockout later
-  - ✅ **AI Integration**: AI service can analyze auth patterns for security issues
-  - ✅ **Separation of Concerns**: Auth logic separate from business logic
-  - ❌ **Complexity**: Additional table to manage
 
 #### **patients & providers Tables**
 - **Purpose**: Role-specific data for patients and providers
@@ -147,19 +137,9 @@ status (ACTIVE/INACTIVE/SUSPENDED)
 created_at, updated_at
 ```
 
-### **Table 2: user_authentication**
-```
-id (UUID PK)
-user_id (UUID FK → user_profiles.id)
-last_login
-mfa_enabled (boolean)
-account_locked (boolean)
-password_history (JSON array)
-failed_login_attempts
-created_at, updated_at
-```
 
-### **Table 3: patients**
+
+### **Table 2: patients**
 ```
 id (UUID PK)
 user_id (UUID FK → user_profiles.id)
@@ -172,7 +152,7 @@ risk_factors (JSON)
 created_at, updated_at
 ```
 
-### **Table 4: providers**
+### **Table 3: providers**
 ```
 id (UUID PK)
 user_id (UUID FK → user_profiles.id)
@@ -184,7 +164,7 @@ is_verified (boolean)
 created_at, updated_at
 ```
 
-### **Table 5: appointments**
+### **Table 4: appointments**
 ```
 id (UUID PK)
 patient_id (UUID FK → patients.id)
@@ -197,7 +177,7 @@ notes
 created_at, updated_at
 ```
 
-### **Table 6: medical_records**
+### **Table 5: medical_records**
 ```
 id (UUID PK)
 patient_id (UUID FK → patients.id)
@@ -209,7 +189,7 @@ notes
 created_at, updated_at
 ```
 
-### **Table 7: file_metadata**
+### **Table 6: file_metadata**
 ```
 id (UUID PK)
 owner_id (UUID FK → user_profiles.id)
@@ -221,7 +201,7 @@ upload_date
 created_at, updated_at
 ```
 
-### **Table 8: audit_logs**
+### **Table 7: audit_logs**
 ```
 id (UUID PK)
 user_id (UUID FK → user_profiles.id)
@@ -274,7 +254,7 @@ details (JSON)
 
 ## 📋 **Success Criteria**
 
-- [ ] All 8 tables can be created in Neon PostgreSQL
+- [ ] All 7 tables can be created in Neon PostgreSQL
 - [ ] Basic CRUD operations work for each table
 - [ ] Foreign key relationships are properly enforced
 - [ ] Audit logging captures all data access
