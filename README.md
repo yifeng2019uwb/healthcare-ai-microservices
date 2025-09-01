@@ -12,55 +12,56 @@ A comprehensive healthcare AI microservices platform designed for learning Sprin
 This project implements a **hybrid Java + Python microservices architecture** for healthcare AI applications. The system uses **Neon PostgreSQL as the single primary database** for all business data and authentication, with **AWS S3 for file storage**.
 
 ### **Backend Architecture**
-- **API Gateway (Port 8080)**: Single external entry point, routes to business services
+- **API Gateway (Port 8080)**: Single external entry point, orchestrates registration and routes to business services
 - **Auth Service (Port 8001)**: JWT validation only, no business logic
-- **Business Services (Ports 8002-8006)**: Handle business logic, can call each other internally when needed
+- **Business Services (Ports 8002-8005)**: Handle business logic, can call each other internally when needed
 - **Data Layer**: Primary data access method for all services
 
 ### **Port Management Strategy**
 - **External Access**: Only port 8080 (API Gateway) exposed to the internet
-- **Internal Services**: All business services run internally on ports 8001-8006
+- **Internal Services**: All business services run internally on ports 8001-8005
 - **Single Entry Point**: All external traffic goes through the Gateway for routing and security
 
 ### **Technology Distribution**
-- **Java Services (6)**: Gateway, Auth, Patient, Provider, Appointment, File Storage
+- **Java Services (4)**: Gateway, Auth, Patient, Provider, Appointment
 - **Python Service (1)**: AI Service for ML/AI capabilities
 - **Database**: Neon PostgreSQL (single instance, multiple schemas)
 - **File Storage**: AWS S3 for medical documents and images
-- **Frontend**: React applications for different user roles
+- **Frontend**: React applications for Patient and Provider users
 
 ## 🚀 **Key Features**
 
 ### **🔐 Authentication & Security**
-- **Internal Auth Service**: Spring Boot JWT authentication
+- **Internal Auth Service**: Spring Boot JWT validation only
+- **External Authentication**: Supabase Auth handles login/registration
 - **JWT-based Authentication**: Secure token management
-- **Role-based Access Control**: Patient, Provider, Admin roles
+- **Role-based Access Control**: Patient and Provider roles only
 - **Basic Compliance**: Simple audit trails and data protection
 
 ### **💾 Data Management**
 - **Shared Data Layer**: Common database access patterns for all services
 - **Single Database**: Neon PostgreSQL with service-specific schemas
 - **File Storage**: AWS S3 for cross-domain file management
-- **Service Independence**: No inter-service calls, direct data access
+- **Service Communication**: Services can call each other internally when needed for business logic
 
 ### **🤖 AI Integration**
 - **Centralized AI Service**: All AI capabilities in one service
-- **AI Assistant**: Chatbot and patient support
-- **Smart Scheduling**: AI-powered appointment optimization
-- **Clinical Decision Support**: Treatment recommendations
+- **Healthcare Data Analysis**: Patient data analysis and insights
+- **Predictive Analytics**: Health outcome predictions and trends
+- **Clinical Decision Support**: AI-powered insights for healthcare decisions
 
 ### **🏥 Healthcare Features**
-- **Patient Management**: Complete patient profiles and medical history
-- **Provider Management**: Doctor profiles, schedules, availability
-- **Appointment System**: Intelligent scheduling and reminders
-- **Medical Records**: Secure document storage and retrieval
+- **Patient Management**: Complete patient profiles and medical history viewing
+- **Provider Management**: Doctor profiles, specialties, and medical records management
+- **Appointment System**: Scheduling, management, and lifecycle tracking
+- **Medical Records**: Secure document storage and retrieval through Provider Service
 
 ## 🛠️ **Technology Stack**
 
 ### **Backend Services**
 - **Framework**: Spring Boot 3.2+ with Java 17
 - **API Gateway**: Spring Cloud Gateway (Port 8080)
-- **Authentication**: Spring Boot JWT authentication
+- **Authentication**: Spring Boot JWT validation + Supabase Auth
 - **Database**: Neon PostgreSQL with multiple schemas
 - **File Storage**: AWS S3 (cost-effective, scalable)
 - **Shared Module**: Common data access patterns
@@ -71,6 +72,7 @@ This project implements a **hybrid Java + Python microservices architecture** fo
 - **State Management**: React Context + Hooks
 - **HTTP Client**: Axios
 - **Authentication**: JWT token management
+- **User Portals**: Patient Portal and Provider Portal only
 
 ### **Infrastructure**
 - **Platform**: Railway (deployment and hosting)
@@ -115,6 +117,7 @@ cd healthcare-ai-microservices
 - **AI Integration**: Learn ML/AI in healthcare context
 - **Clean Architecture**: Well-designed, maintainable services
 - **Practical Experience**: Working healthcare platform
+- **Hybrid Architecture**: Java + Python microservices integration
 
 ### **Technical Skills**
 - **Microservices Patterns**: Service design and communication
