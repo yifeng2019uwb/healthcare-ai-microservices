@@ -40,7 +40,7 @@
          ┌───────────────────┼───────────────────┐
          │                   │                   │
     ┌────▼────---┐   ┌─────--▼────--┐   ┌─────---▼────┐
-    │ Neon DB    │   │   S3         │   │File Storage │
+    │ Neon DB    │   │   S3         │   │   Admin     │
     │(PostgreSQL)│   │(File Storage)│   │ Service     │
     │            │   │              │   │ 8006        │
     └──────────--┘   └──────────----┘   └──────────---┘
@@ -56,9 +56,9 @@
 - **Avoid Over-Engineering**: Skip Kafka, Redis, complex monitoring for now
 
 ### **Core Principles**
-- **Service Independence**: No inter-service calls, direct data layer access
 - **Shared Infrastructure**: Common data access patterns across services
 - **Clear Boundaries**: Each service has distinct, focused responsibility
+- **User Type Separation**: Patient and Provider users access appropriate services
 - **Scalable Foundation**: Architecture supports future growth
 
 ### **Hybrid Architecture Strategy**
@@ -66,6 +66,11 @@
 - **Python Service (1)**: AI Service leveraging Python's rich ML/AI ecosystem
 - **Technology Agnostic**: Services communicate via REST APIs regardless of implementation language
 - **Best of Both Worlds**: Java's enterprise strength + Python's AI capabilities
+
+### **Service Architecture**
+- **7 Services Total**: Gateway, Auth, Patient, Provider, Appointment, AI, Admin
+- **2 User Types**: Patient and Provider only
+- **Clear Boundaries**: Each service has focused responsibility
 
 ## 🔐 **Authentication & Authorization Architecture**
 
@@ -94,152 +99,62 @@
 
 ### **Primary Database: Neon PostgreSQL**
 - **Single Database**: All business data in one Neon PostgreSQL instance
-- **Multiple Schemas**: Separate schemas for different services (patient, provider, appointment, ai, file_metadata)
 - **Business Data**: Patient records, appointments, provider information, AI analysis results
-- **No Auth Tables**: Authentication data is not stored in database
 
 ### **File Storage: AWS S3**
-- **Medical Documents**: Patient files, medical images, reports
-- **Cross-Service Access**: All services can access files through S3
-- **Secure Storage**: Healthcare-compliant file storage and access controls
+- **Cross-domain File Management**: Centralized file storage for all services
 
 ### **Authentication: External Auth + Stateless JWT**
-- **External Auth Provider**: Supabase Auth handles all user authentication (login, registration, password management)
-- **Auth Service**: Purely stateless JWT validation only
-- **JWT Validation**: Verify token signature and expiration
-- **User Context Extraction**: Parse user ID, roles from token
-- **No Internal User Storage**: No user accounts or credentials stored in our system
-
-### **Data Access Pattern**
-- **Direct Database Access**: Services connect directly to Neon PostgreSQL
-- **Shared Data Layer**: Common database access patterns in shared module
-- **No Inter-Service Calls**: Services don't call each other, only the database
-- **Consistent Data**: Single source of truth for all application data
+- **External Auth Provider**: Handles user authentication
+- **Auth Service**: JWT validation only
 
 ## 🚀 **Service Architecture**
 
 ### **Backend Service Responsibilities**
-- **Auth Service**: JWT token validation only, no business logic
-- **Gateway**: Routes validated requests to appropriate business services
-- **Business Services**: Can call each other internally when needed for business operations
-- **Data Layer**: Primary data access method for all services
+- **Auth Service**: JWT token validation
+- **Gateway**: Routes requests to business services
+- **Business Services**: Handle core business logic
+- **Data Layer**: Data access for all services
 
-**Note**: Auth Service is stateless and only validates JWT tokens issued by external authentication providers (Supabase Auth).
-
-### **Service Communication Patterns**
-- **External Requests**: Client → Gateway (8080) → Business Service
-- **Internal Service Calls**: Business Service → Business Service (when business logic requires it)
-- **Data Access**: All services → Data Layer → Neon PostgreSQL
-- **Authentication**: Gateway validates JWT with Auth Service before routing
-
-**Note**: Services can call each other internally when needed for business operations, but should have clear interaction strategies to avoid circular dependencies.
-
-### **Port Management Strategy**
-- **External Access**: Only port 8080 (API Gateway) exposed to the internet
-- **Internal Communication**: Services communicate internally on their assigned ports
-- **Gateway Routing**: All external requests go through Gateway, which routes to appropriate services
-- **Simplified Deployment**: Single external port to manage and secure
-
-### **Service Ports & Communication**
-| Service | Port | External Access | Internal Communication | Technology |
-|---------|------|----------------|----------------------|------------|
-| **API Gateway** | 8080 | ✅ **EXTERNAL** | Routes to internal services | Java/Spring Boot |
-| **Auth Service** | 8001 | ❌ Internal Only | JWT validation for Gateway | Java/Spring Boot |
-| **Patient Service** | 8002 | ❌ Internal Only | Can call other services when needed | Java/Spring Boot |
-| **Provider Service** | 8003 | ❌ Internal Only | Can call other services when needed | Java/Spring Boot |
-| **Appointment Service** | 8004 | ❌ Internal Only | Can call other services when needed | Java/Spring Boot |
-| **AI Service** | 8005 | ❌ Internal Only | Can call other services when needed | Python/FastAPI |
-| **File Storage Service** | 8006 | ❌ Internal Only | Can call other services when needed | Java/Spring Boot |
-
-### **Communication Flow**
-```
-External Request → Port 8080 (Gateway) → Business Service → Other Services (if needed)
-     ↓                    ↓                    ↓                    ↓
-Internet/Client    Spring Cloud Gateway    Primary Service    Supporting Services
-```
+### **Service Ports**
+| Service | Port | External Access | Technology |
+|---------|------|----------------|------------|
+| **API Gateway** | 8080 | ✅ **EXTERNAL** | Java/Spring Boot |
+| **Auth Service** | 8001 | ❌ Internal Only | Java/Spring Boot |
+| **Patient Service** | 8002 | ❌ Internal Only | Java/Spring Boot |
+| **Provider Service** | 8003 | ❌ Internal Only | Java/Spring Boot |
+| **Appointment Service** | 8004 | ❌ Internal Only | Java/Spring Boot |
+| **AI Service** | 8005 | ❌ Internal Only | Python/FastAPI |
+| **Admin Service** | 8006 | ❌ Internal Only | Java/Spring Boot |
 
 ### **Service Interaction Examples**
-- **Appointment Booking**: Appointment Service calls Patient Service to validate patient, Provider Service to check availability
-- **Patient Record Access**: Patient Service calls File Storage Service to retrieve medical documents
-- **AI Analysis**: AI Service calls Patient Service to get patient data, Appointment Service for appointment history
-- **Provider Dashboard**: Provider Service calls Appointment Service for schedule, Patient Service for patient list
+- **Appointment Booking**: Appointment Service
+- **Patient Record Access**: Provider Service
+- **AI Analysis**: AI Service
+- **Provider Dashboard**: Provider Service
 
-### **Benefits of Flexible Internal Communication**
-- **Business Logic Support**: Services can collaborate for complex operations
-- **Data Consistency**: Coordinated operations across multiple services
-- **Efficient Processing**: Avoid unnecessary data duplication
-- **Real-time Updates**: Services can notify each other of changes
 
-### **Complete Service Overview**
-|      Service             | Port |     Type       |            Responsibility                   | Priority      | Technology |
-|--------------------------|------|----------------|---------------------------------------------|---------------|------------|
-| **API Gateway**          | 8080 | Infrastructure | Routing, Rate Limiting, Load Balancing      | 🔴 **HIGH**   | Java/Spring Boot |
-| **Auth Service**         | 8001 | Infrastructure | JWT Validation, Authentication              | 🔴 **HIGH**   | Java/Spring Boot |
-| **Patient Service**      | 8002 | Business       | Patient CRUD, Medical Records, Demographics | 🔴 **HIGH**   | Java/Spring Boot |
-| **Provider Service**     | 8003 | Business       | Doctor Profiles, Schedules, Availability    | 🟡 **MEDIUM** | Java/Spring Boot |
-| **Appointment Service**  | 8004 | Business       | Booking, Calendar, Notifications            | 🟡 **MEDIUM** | Java/Spring Boot |
-| **AI Service**           | 8005 | Business       | All AI Features Centralized                 | 🟢 **LOW**    | Python/FastAPI |
-| **File Storage Service** | 8006 | Support        | Cross-domain File Management                | 🟡 **MEDIUM** | Java/Spring Boot |
 
-### **Service Categories**
 
-#### **Infrastructure Services (2)**
-|     Service      | Port |         Responsibility                 |  Priority   | Technology |
-|------------------|------|----------------------------------------|-------------|------------|
-| **API Gateway**  | 8080 | Routing, Rate Limiting, Load Balancing | 🔴 **HIGH** | Java/Spring Boot |
-| **Auth Service** | 8001 | JWT Validation, Authentication         | 🔴 **HIGH** | Java/Spring Boot |
-
-#### **Core Business Services (4)**
-|        Service          | Port |          Responsibility                     |   Priority    | Technology |
-|-------------------------|------|---------------------------------------------|---------------|------------|
-| **Patient Service**     | 8002 | Patient CRUD, Medical Records, Demographics | 🔴 **HIGH**   | Java/Spring Boot |
-| **Provider Service**    | 8003 | Doctor Profiles, Schedules, Availability    | 🟡 **MEDIUM** | Java/Spring Boot |
-| **Appointment Service** | 8004 | Booking, Calendar, Notifications            | 🟡 **MEDIUM** | Java/Spring Boot |
-| **AI Service**          | 8005 | All AI Features Centralized                 | 🟢 **LOW**    | Python/FastAPI |
-
-#### **Support Services (1)**
-|        Service           | Port |     Responsibility           |   Priority    | Technology |
-|--------------------------|------|------------------------------|---------------|------------|
-| **File Storage Service** | 8006 | Cross-domain File Management | 🟡 **MEDIUM** | Java/Spring Boot |
-
-### **Service Communication Strategy**
-- **No Inter-Service Calls**: Services don't call each other directly
-- **Direct Data Access**: Each service calls shared data layer
-- **Authentication Layer**: Auth Service validates JWT tokens before requests reach business services
-- **Clean Boundaries**: Services operate independently
-- **Technology Agnostic**: Java and Python services communicate via REST APIs
 
 ## 🔄 **Data Flow Patterns**
 
 ### **1. Authentication Flow**
 ```
-Frontend → Gateway (8080) → Auth Service (8001) (JWT Validation) → Business Services
-    ↓
-Validated Request → Shared Data Layer → Database
+Frontend → Gateway (8080) → Auth Service (8001) → Business Services
 ```
 
 ### **2. Data Access Flow**
 ```
-Service → Shared Data Layer → Database (direct connection)
-    ↓
-Return Data → Response to Client
+Service → Database → Response to Client
 ```
 
-### **3. File Access Flow**
-```
-Service → File Storage Service (8006) → S3
-    ↓
-File URL + Metadata → Response to Client
-```
-
-## 🚀 **Infrastructure Requirements**
+## 🚀 **Infrastructure**
 
 ### **Platform: Railway**
-- **Gateway Service**: Spring Cloud Gateway (Port 8080) - Java
-- **Core Services**: Java Spring Boot microservices (Ports 8001-8004, 8006)
-- **AI Service**: Python FastAPI service (Port 8005) - Python
-- **Database**: Neon PostgreSQL with multiple schemas
-- **File Storage**: AWS S3 for cross-domain file management
+- **Services**: Java Spring Boot and Python FastAPI microservices
+- **Database**: Neon PostgreSQL
+- **File Storage**: AWS S3
 - **Frontend**: React web applications
 - **Monitoring**: Railway built-in metrics
 
@@ -344,7 +259,7 @@ File URL + Metadata → Response to Client
 - [ ] Simple frontend integration
 
 ### **Phase 3: Support Services (Weeks 5-6)**
-- [ ] File storage service with S3 integration
+- [ ] Admin service for system monitoring and management
 - [ ] AI service basic implementation
 - [ ] Testing and basic optimization
 - [ ] **Skip**: Advanced features, complex monitoring, caching layers

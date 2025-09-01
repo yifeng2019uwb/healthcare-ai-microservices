@@ -87,7 +87,7 @@
 - [ ] Authentication integration
 
 **Design Docs Needed**:
-- [x] Auth Service design (already exists)
+- [🚧] Auth Service design (already exists) (IN PROGRESS)
 - [ ] Gateway design
 - [ ] Security design
 
@@ -106,7 +106,7 @@
 - [ ] Patient portal integration
 
 **Design Docs Needed**:
-- [x] Patient Service design (PATIENT-001)
+- [🚧] Patient Service design (PATIENT-001) (IN PROGRESS)
 
 ---
 
@@ -123,7 +123,7 @@
 - [ ] Provider portal integration
 
 **Design Docs Needed**:
-- [x] Provider Service design (PROVIDER-001)
+- [🚧] Provider Service design (PROVIDER-001) (IN PROGRESS)
 
 ---
 
@@ -140,7 +140,7 @@
 - [ ] Notification system
 
 **Design Docs Needed**:
-- [x] Appointment Service design (APPOINTMENT-001)
+- [🚧] Appointment Service design (APPOINTMENT-001) (IN PROGRESS)
 
 ---
 
@@ -157,7 +157,7 @@
 - [ ] Predictive analytics
 
 **Design Docs Needed**:
-- [x] AI Service design (AI-001)
+- [🚧] AI Service design (AI-001) (IN PROGRESS)
 
 ---
 
@@ -174,7 +174,7 @@
 - [ ] GDPR compliance
 
 **Design Docs Needed**:
-- [x] File Storage Service design (FILE-001)
+- [🚧] File Storage Service design (FILE-001) (IN PROGRESS)
 
 ---
 
@@ -190,8 +190,8 @@
 - [ ] Admin Portal
 
 **Design Docs Needed**:
-- [x] Frontend architecture design (FRONT-001)
-- [x] UI/UX design guidelines (FRONT-002)
+- [🚧] Frontend architecture design (FRONT-001) (IN PROGRESS)
+- [🚧] UI/UX design guidelines (FRONT-002) (IN PROGRESS)
 
 ---
 
@@ -207,14 +207,14 @@
 - [ ] **INFRA-002: Simple Deployment Design** - Basic deployment patterns, keep it simple
 
 #### **🔐 Authentication & Gateway Design Docs**
-- [x] **AUTH-001: Auth Service Design** - JWT validation and stateless authentication ✅
-- [ ] **AUTH-002: Gateway Design** - Routing, security, and middleware configuration
+- [🚧] **AUTH-001: Auth Service Design** - JWT validation and stateless authentication (IN PROGRESS)
+- [🚧] **AUTH-002: Gateway Design** - Routing, security, and middleware configuration (IN PROGRESS)
 - [ ] **AUTH-003: Security Design** - Overall security architecture and policies
 
 #### **👥 Business Services Design Docs**
-- [x] **PATIENT-001: Patient Service Design** - API endpoints, data requirements, business logic ✅
-- [ ] **PROVIDER-001: Provider Service Design** - API endpoints, data requirements, business logic
-- [ ] **APPOINTMENT-001: Appointment Service Design** - API endpoints, data requirements, business logic
+- [🚧] **PATIENT-001: Patient Service Design** - API endpoints, data requirements, business logic (IN PROGRESS)
+- [🚧] **PROVIDER-001: Provider Service Design** - API endpoints, data requirements, business logic (IN PROGRESS)
+- [🚧] **APPOINTMENT-001: Appointment Service Design** - API endpoints, data requirements, business logic (IN PROGRESS)
 - [ ] **AI-001: AI Service Design** - API endpoints, data requirements, business logic
 - [ ] **STORAGE-001: File Storage Service Design** - API endpoints, data requirements, business logic
 
@@ -222,7 +222,7 @@
 - [ ] **SHARED-001: Shared Module Design** - Common utilities and patterns based on service needs
 
 #### **🗄️ Database Design Docs** (After Service APIs are designed)
-- [x] **DB-001: Database Schema Design** - Tables and relationships based on service API requirements ✅
+- [🚧] **DB-001: Database Schema Design** - Tables and relationships based on service API requirements (IN PROGRESS)
 - [ ] **DB-002: Data Access Patterns** - How services will access the database
 - [ ] **DB-003: Migration Strategy** - How to set up and evolve the database
 
@@ -234,10 +234,10 @@
 - [ ] **USERS-005: File Storage User Stories** - What data does File Storage Service actually need?
 
 #### **🔧 Service API Design** (API-First Approach - Before Database Design)
-- [x] **API-001: Service Design Template** - Best practices and standard format for service design docs ✅
-- [x] **API-002: Patient Service API Design** - Endpoints, data requirements, business logic ✅
-- [ ] **API-003: Provider Service API Design** - Endpoints, data requirements, business logic
-- [ ] **API-004: Appointment Service API Design** - Endpoints, data requirements, business logic
+- [🚧] **API-001: Service Design Template** - Best practices and standard format for service design docs (IN PROGRESS)
+- [🚧] **API-002: Patient Service API Design** - Endpoints, data requirements, business logic (IN PROGRESS)
+- [🚧] **API-003: Provider Service API Design** - Endpoints, data requirements, business logic (IN PROGRESS)
+- [🚧] **API-004: Appointment Service API Design** - Endpoints, data requirements, business logic (IN PROGRESS)
 - [ ] **API-005: AI Service API Design** - Endpoints, data requirements, business logic
 
 #### **🎨 Frontend Design Docs**
@@ -320,7 +320,7 @@
 ### **Next Priority Tasks** (API-First Approach!)
 1. **INFRA-001: Terraform Infrastructure Design** (highest priority - foundational)
 2. **INFRA-002: Simple Deployment Design** (basic deployment patterns)
-3. **✅ Service API Design Template** (completed - best practices and standards)
+3. **🚧 Service API Design Template** (in progress - best practices and standards)
 4. **Then**: Design each service API (Patient → Provider → Appointment → AI)
 5. **Finally**: Refine database design based on actual API requirements
 

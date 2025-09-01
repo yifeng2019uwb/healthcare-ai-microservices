@@ -47,8 +47,8 @@ Healthcare Operations (2 tables)
 ├── appointments          - Scheduling between patients and providers
 └── medical_records      - Basic medical data per appointment
 
-Support Systems (2 tables)
-├── file_metadata        - File storage with ownership tracking
+Support Systems (1 table)
+
 └── audit_logs          - Comprehensive audit trail for HIPAA compliance
 ```
 
@@ -100,14 +100,6 @@ Support Systems (2 tables)
   - ❌ **Limited**: No ongoing conditions, medications, lab results (acceptable for learning)
 
 ### **3. Support Systems Tables**
-
-#### **file_metadata Table**
-- **Purpose**: File storage with ownership tracking
-- **Key Design Decision**: Flexible ownership with owner_type field
-- **Why This Approach**:
-  - ✅ **Flexible**: Files can belong to patients, providers, or appointments
-  - ✅ **Auditable**: Track file ownership and access
-  - ✅ **Simple**: Single table for all file metadata
 
 #### **audit_logs Table**
 - **Purpose**: Comprehensive audit trail for HIPAA compliance
@@ -189,19 +181,7 @@ notes
 created_at, updated_at
 ```
 
-### **Table 6: file_metadata**
-```
-id (UUID PK)
-owner_id (UUID FK → user_profiles.id)
-owner_type (PATIENT/PROVIDER/APPOINTMENT)
-file_path
-file_type
-file_size
-upload_date
-created_at, updated_at
-```
-
-### **Table 7: audit_logs**
+### **Table 6: audit_logs**
 ```
 id (UUID PK)
 user_id (UUID FK → user_profiles.id)
@@ -254,7 +234,7 @@ details (JSON)
 
 ## 📋 **Success Criteria**
 
-- [ ] All 7 tables can be created in Neon PostgreSQL
+- [ ] All 6 tables can be created in Neon PostgreSQL
 - [ ] Basic CRUD operations work for each table
 - [ ] Foreign key relationships are properly enforced
 - [ ] Audit logging captures all data access

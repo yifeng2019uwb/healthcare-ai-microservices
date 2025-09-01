@@ -70,25 +70,22 @@ Patients want to view their complete medical history including past conditions, 
 - **`providers`**: Provider-specific business data
 - **`appointments`**: Scheduling and appointment data
 - **`medical_records`**: Clinical medical data
-- **`file_metadata`**: File storage and management
 - **`audit_logs`**: System-wide audit trail
 
 #### **Shared Services**
 - **Auth Service**: JWT validation and user context
-- **File Storage Service**: S3-based file management
 - **AI Service**: Python-based AI and ML capabilities
 - **Shared Exception Handling**: Standard error patterns
 - **Shared Logging**: Structured logging across services
 
-### **Solution 1: Standard Patient Service with Core Features**
-**Description**: A well-structured patient service that provides all the essential functionality needed for patient management while maintaining good code quality and architecture practices.
+### **Patient Service Design Approach**
+**Description**: Practical patient service that meets current scope while allowing future scaling.
 
-**Database**:
-- **Existing System Tables** (already available):
-  - `user_profiles` table: Core user information (ID, username, name, role, status)
-- **Patient Service Uses** (existing table):
-  - `patients` table: Patient-specific data (medical history, allergies, assigned providers, health goals, risk factors)
-- **No New Tables Required**: Patient Service uses existing database schema
+**Database Tables**:
+- `user_profiles` - Core user information
+- `patients` - Patient-specific data
+
+
 
 **Account-to-Patient Linking Strategy**:
 - **Auto-Create Patient ID During Registration**
@@ -99,12 +96,29 @@ Patients want to view their complete medical history including past conditions, 
 
 **Note**: Registration flow needs discussion - may be orchestrated by Gateway or handled by external auth provider.
 
-**Workflow**:
+**Core Workflow**:
 - Account creation with proper validation and security
 - Profile management with data integrity checks
 - Medical history viewing with proper data organization
 - Basic search functionality for patient lookup
 - Proper error handling and validation throughout
+
+## 🏗️ **High-Level Design**
+
+### **Core Concept**
+Spring Boot service managing patient data and operations, ensuring HIPAA compliance and data integrity while providing self-service capabilities for patients.
+
+### **Key Components**
+- **Patient Service**: Patient data management and operations (Port 8002)
+- **Profile Management**: Patient profile CRUD operations
+- **Medical History**: Patient medical data viewing
+- **Data Validation**: Business rule validation and integrity checks
+
+### **Data Flow**
+1. **Account Creation**: User registration → Patient profile creation → Data validation → Success response
+2. **Profile Management**: Patient updates profile → Validation → Database update → Success response
+3. **Medical History**: Patient requests history → Authorization check → Data retrieval → Response
+4. **Search Operations**: Provider searches patients → Name/DOB lookup → Patient data retrieval → Response
 
 **Data Flow Diagrams**:
 

@@ -91,6 +91,7 @@ Spring Cloud Gateway positioned as the single external entry point, routing requ
 | POST | `/api/auth/register` | User registration | No |
 | POST | `/api/patients/*` | Patient service routes | Yes |
 | POST | `/api/providers/*` | Provider service routes | Yes |
+| POST | `/api/medical/*` | Medical records routes | Yes |
 | GET | `/health` | Health check | No |
 
 ### **Request/Response Examples**
