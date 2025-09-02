@@ -11,6 +11,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.sql.init.SqlInitializationAutoConfiguration;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class EntityTest {
 
     @Configuration
-    @EnableAutoConfiguration
+    @EnableAutoConfiguration(exclude = {SqlInitializationAutoConfiguration.class})
     static class TestConfig {
     }
 
