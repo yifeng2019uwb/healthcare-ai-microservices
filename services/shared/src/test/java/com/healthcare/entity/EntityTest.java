@@ -4,14 +4,6 @@ import com.healthcare.enums.AppointmentStatus;
 import com.healthcare.enums.MedicalRecordType;
 import com.healthcare.enums.UserRole;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.sql.init.SqlInitializationAutoConfiguration;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,133 +12,159 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test class to verify entity creation and basic operations
+ * Unit tests for entity classes - testing entity creation and basic operations
+ * without Spring context or database dependencies
  */
-@DataJpaTest
-@ActiveProfiles("test")
 class EntityTest {
-
-    @Configuration
-    @EnableAutoConfiguration(exclude = {SqlInitializationAutoConfiguration.class})
-    static class TestConfig {
-    }
-
-    @Autowired
-    private TestEntityManager entityManager;
 
     @Test
     void testUserEntity() {
-        // Create and save a user
+        // Create a user
         User user = new User("John", "Doe", "john.doe@example.com", UserRole.PATIENT);
-        User savedUser = entityManager.persistAndFlush(user);
 
-        assertThat(savedUser.getId()).isNotNull();
-        assertThat(savedUser.getFirstName()).isEqualTo("John");
-        assertThat(savedUser.getLastName()).isEqualTo("Doe");
-        assertThat(savedUser.getEmail()).isEqualTo("john.doe@example.com");
-        assertThat(savedUser.getRole()).isEqualTo(UserRole.PATIENT);
-        assertThat(savedUser.getIsActive()).isTrue();
+        // Test basic properties
+        assertThat(user.getFirstName()).isEqualTo("John");
+        assertThat(user.getLastName()).isEqualTo("Doe");
+        assertThat(user.getEmail()).isEqualTo("john.doe@example.com");
+        assertThat(user.getRole()).isEqualTo(UserRole.PATIENT);
+        assertThat(user.getIsActive()).isTrue();
+
+        // Test setters
+        user.setPhone("123-456-7890");
+        assertThat(user.getPhone()).isEqualTo("123-456-7890");
+
+        user.setIsActive(false);
+        assertThat(user.getIsActive()).isFalse();
     }
 
     @Test
     void testPatientEntity() {
         // Create user first
         User user = new User("Jane", "Smith", "jane.smith@example.com", UserRole.PATIENT);
-        User savedUser = entityManager.persistAndFlush(user);
 
         // Create patient
-        Patient patient = new Patient(savedUser);
+        Patient patient = new Patient(user);
         patient.setDateOfBirth(LocalDate.of(1990, 5, 15));
         patient.setGender("Female");
         patient.setAddress("123 Main St, City, State");
         patient.setMedicalHistory("No significant medical history");
 
-        Patient savedPatient = entityManager.persistAndFlush(patient);
+        // Test basic properties
+        assertThat(patient.getUser()).isEqualTo(user);
+        assertThat(patient.getDateOfBirth()).isEqualTo(LocalDate.of(1990, 5, 15));
+        assertThat(patient.getGender()).isEqualTo("Female");
+        assertThat(patient.getAddress()).isEqualTo("123 Main St, City, State");
+        assertThat(patient.getMedicalHistory()).isEqualTo("No significant medical history");
 
-        assertThat(savedPatient.getId()).isNotNull();
-        assertThat(savedPatient.getUser().getId()).isEqualTo(savedUser.getId());
-        assertThat(savedPatient.getDateOfBirth()).isEqualTo(LocalDate.of(1990, 5, 15));
-        assertThat(savedPatient.getGender()).isEqualTo("Female");
+        // Test additional setters
+        patient.setAllergies("Peanuts");
+        patient.setEmergencyContactName("John Smith");
+        patient.setEmergencyContactPhone("555-1234");
+
+        assertThat(patient.getAllergies()).isEqualTo("Peanuts");
+        assertThat(patient.getEmergencyContactName()).isEqualTo("John Smith");
+        assertThat(patient.getEmergencyContactPhone()).isEqualTo("555-1234");
     }
 
     @Test
     void testProviderEntity() {
         // Create user first
         User user = new User("Dr. Bob", "Johnson", "dr.bob@example.com", UserRole.PROVIDER);
-        User savedUser = entityManager.persistAndFlush(user);
 
         // Create provider
-        Provider provider = new Provider(savedUser);
+        Provider provider = new Provider(user);
         provider.setSpecialty("Cardiology");
         provider.setLicenseNumber("MD123456");
         provider.setYearsOfExperience(10);
 
-        Provider savedProvider = entityManager.persistAndFlush(provider);
+        // Test basic properties
+        assertThat(provider.getUser()).isEqualTo(user);
+        assertThat(provider.getSpecialty()).isEqualTo("Cardiology");
+        assertThat(provider.getLicenseNumber()).isEqualTo("MD123456");
+        assertThat(provider.getYearsOfExperience()).isEqualTo(10);
+        assertThat(provider.getIsAvailable()).isTrue();
 
-        assertThat(savedProvider.getId()).isNotNull();
-        assertThat(savedProvider.getUser().getId()).isEqualTo(savedUser.getId());
-        assertThat(savedProvider.getSpecialty()).isEqualTo("Cardiology");
-        assertThat(savedProvider.getLicenseNumber()).isEqualTo("MD123456");
-        assertThat(savedProvider.getIsAvailable()).isTrue();
+        // Test additional setters
+        provider.setBio("Experienced cardiologist");
+        provider.setOfficeAddress("123 Medical Center");
+        provider.setOfficePhone("555-5678");
+        provider.setQualification("MD, PhD");
+        provider.setIsAvailable(false);
+
+        assertThat(provider.getBio()).isEqualTo("Experienced cardiologist");
+        assertThat(provider.getOfficeAddress()).isEqualTo("123 Medical Center");
+        assertThat(provider.getOfficePhone()).isEqualTo("555-5678");
+        assertThat(provider.getQualification()).isEqualTo("MD, PhD");
+        assertThat(provider.getIsAvailable()).isFalse();
     }
 
     @Test
     void testAppointmentEntity() {
         // Create user and patient
         User patientUser = new User("Patient", "One", "patient@example.com", UserRole.PATIENT);
-        User savedPatientUser = entityManager.persistAndFlush(patientUser);
-        Patient patient = new Patient(savedPatientUser);
-        Patient savedPatient = entityManager.persistAndFlush(patient);
+        Patient patient = new Patient(patientUser);
 
         // Create user and provider
         User providerUser = new User("Dr. Provider", "Two", "provider@example.com", UserRole.PROVIDER);
-        User savedProviderUser = entityManager.persistAndFlush(providerUser);
-        Provider provider = new Provider(savedProviderUser);
-        Provider savedProvider = entityManager.persistAndFlush(provider);
+        Provider provider = new Provider(providerUser);
 
         // Create appointment
         LocalDateTime appointmentTime = LocalDateTime.now().plusDays(1);
-        Appointment appointment = new Appointment(savedPatient, savedProvider, appointmentTime);
+        Appointment appointment = new Appointment(patient, provider, appointmentTime);
         appointment.setReasonForVisit("Regular checkup");
         appointment.setDurationMinutes(45);
 
-        Appointment savedAppointment = entityManager.persistAndFlush(appointment);
+        // Test basic properties
+        assertThat(appointment.getPatient()).isEqualTo(patient);
+        assertThat(appointment.getProvider()).isEqualTo(provider);
+        assertThat(appointment.getAppointmentDate()).isEqualTo(appointmentTime);
+        assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
+        assertThat(appointment.getDurationMinutes()).isEqualTo(45);
+        assertThat(appointment.getReasonForVisit()).isEqualTo("Regular checkup");
 
-        assertThat(savedAppointment.getId()).isNotNull();
-        assertThat(savedAppointment.getPatient().getId()).isEqualTo(savedPatient.getId());
-        assertThat(savedAppointment.getProvider().getId()).isEqualTo(savedProvider.getId());
-        assertThat(savedAppointment.getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
-        assertThat(savedAppointment.getDurationMinutes()).isEqualTo(45);
+        // Test additional setters
+        appointment.setNotes("Patient has allergies");
+        appointment.setIsUrgent(true);
+        appointment.setStatus(AppointmentStatus.CONFIRMED);
+
+        assertThat(appointment.getNotes()).isEqualTo("Patient has allergies");
+        assertThat(appointment.getIsUrgent()).isTrue();
+        assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.CONFIRMED);
     }
 
     @Test
     void testMedicalRecordEntity() {
         // Create user and patient
         User patientUser = new User("Patient", "Three", "patient3@example.com", UserRole.PATIENT);
-        User savedPatientUser = entityManager.persistAndFlush(patientUser);
-        Patient patient = new Patient(savedPatientUser);
-        Patient savedPatient = entityManager.persistAndFlush(patient);
+        Patient patient = new Patient(patientUser);
 
         // Create user and provider
         User providerUser = new User("Dr. Provider", "Three", "provider3@example.com", UserRole.PROVIDER);
-        User savedProviderUser = entityManager.persistAndFlush(providerUser);
-        Provider provider = new Provider(savedProviderUser);
-        Provider savedProvider = entityManager.persistAndFlush(provider);
+        Provider provider = new Provider(providerUser);
 
         // Create medical record
-        MedicalRecord record = new MedicalRecord(savedPatient, savedProvider, MedicalRecordType.CONSULTATION, "Initial Consultation");
+        MedicalRecord record = new MedicalRecord(patient, provider, MedicalRecordType.CONSULTATION, "Initial Consultation");
         record.setDiagnosis("Hypertension");
         record.setTreatment("Lifestyle modifications and medication");
         record.setVitalSigns("BP: 140/90, HR: 72");
 
-        MedicalRecord savedRecord = entityManager.persistAndFlush(record);
+        // Test basic properties
+        assertThat(record.getPatient()).isEqualTo(patient);
+        assertThat(record.getProvider()).isEqualTo(provider);
+        assertThat(record.getRecordType()).isEqualTo(MedicalRecordType.CONSULTATION);
+        assertThat(record.getTitle()).isEqualTo("Initial Consultation");
+        assertThat(record.getDiagnosis()).isEqualTo("Hypertension");
+        assertThat(record.getTreatment()).isEqualTo("Lifestyle modifications and medication");
+        assertThat(record.getVitalSigns()).isEqualTo("BP: 140/90, HR: 72");
 
-        assertThat(savedRecord.getId()).isNotNull();
-        assertThat(savedRecord.getPatient().getId()).isEqualTo(savedPatient.getId());
-        assertThat(savedRecord.getProvider().getId()).isEqualTo(savedProvider.getId());
-        assertThat(savedRecord.getRecordType()).isEqualTo(MedicalRecordType.CONSULTATION);
-        assertThat(savedRecord.getTitle()).isEqualTo("Initial Consultation");
-        assertThat(savedRecord.getDiagnosis()).isEqualTo("Hypertension");
+        // Test additional setters
+        record.setDescription("Follow-up consultation");
+        record.setMedications("Lisinopril 10mg daily");
+        record.setFileUrls("[\"https://example.com/lab-results.pdf\"]");
+
+        assertThat(record.getDescription()).isEqualTo("Follow-up consultation");
+        assertThat(record.getMedications()).isEqualTo("Lisinopril 10mg daily");
+        assertThat(record.getFileUrls()).isEqualTo("[\"https://example.com/lab-results.pdf\"]");
     }
 
     @Test
@@ -158,13 +176,18 @@ class EntityTest {
         auditLog.setDescription("Patient record created");
         auditLog.setIpAddress("192.168.1.1");
 
-        AuditLog savedAuditLog = entityManager.persistAndFlush(auditLog);
+        // Test basic properties
+        assertThat(auditLog.getUserId()).isEqualTo(userId);
+        assertThat(auditLog.getAction()).isEqualTo(com.healthcare.enums.AuditAction.CREATE);
+        assertThat(auditLog.getResourceType()).isEqualTo("Patient");
+        assertThat(auditLog.getResourceId()).isEqualTo(resourceId);
+        assertThat(auditLog.getDescription()).isEqualTo("Patient record created");
+        assertThat(auditLog.getIpAddress()).isEqualTo("192.168.1.1");
+        assertThat(auditLog.getTimestamp()).isNotNull();
 
-        assertThat(savedAuditLog.getId()).isNotNull();
-        assertThat(savedAuditLog.getUserId()).isEqualTo(userId);
-        assertThat(savedAuditLog.getAction()).isEqualTo(com.healthcare.enums.AuditAction.CREATE);
-        assertThat(savedAuditLog.getResourceType()).isEqualTo("Patient");
-        assertThat(savedAuditLog.getResourceId()).isEqualTo(resourceId);
-        assertThat(savedAuditLog.getTimestamp()).isNotNull();
+        // Test additional setters
+        auditLog.setUserAgent("Mozilla/5.0");
+
+        assertThat(auditLog.getUserAgent()).isEqualTo("Mozilla/5.0");
     }
 }

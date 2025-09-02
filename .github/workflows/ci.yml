@@ -20,6 +20,11 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+    - name: Install Maven
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y maven
+
     - name: Cache Maven dependencies
       uses: actions/cache@v3
       with:
