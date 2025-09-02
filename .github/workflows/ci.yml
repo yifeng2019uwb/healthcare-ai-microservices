@@ -1,4 +1,4 @@
-name: Project Structure Check
+name: Project Structure and Shared Module Test
 
 on:
   push:
@@ -13,6 +13,19 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
 
     - name: Validate project structure
       run: |
@@ -40,6 +53,28 @@ jobs:
           exit 1
         fi
 
+        # Check shared module exists
+        if [ -d "services/shared" ]; then
+          echo "✅ services/shared/ directory exists"
+        else
+          echo "❌ services/shared/ directory missing"
+          exit 1
+        fi
+
+        if [ -f "services/shared/pom.xml" ]; then
+          echo "✅ services/shared/pom.xml exists"
+        else
+          echo "❌ services/shared/pom.xml missing"
+          exit 1
+        fi
+
+        if [ -f "services/shared/dev.sh" ]; then
+          echo "✅ services/shared/dev.sh exists"
+        else
+          echo "❌ services/shared/dev.sh missing"
+          exit 1
+        fi
+
         # Check key files exist
         if [ -f "README.md" ]; then
           echo "✅ README.md exists"
@@ -56,3 +91,26 @@ jobs:
         fi
 
         echo "🎉 Project structure validation passed!"
+
+    - name: Test shared module
+      run: |
+        echo "🧪 Testing shared module..."
+        cd services/shared
+
+        # Make dev.sh executable
+        chmod +x dev.sh
+
+        echo "🔨 Building shared module..."
+        ./dev.sh build
+
+        echo "🧪 Running shared module tests..."
+        ./dev.sh test
+
+        echo "✅ Shared module tests passed!"
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: services/shared/target/surefire-reports/

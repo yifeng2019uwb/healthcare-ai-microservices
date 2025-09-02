@@ -50,6 +50,28 @@ else
     exit 1
 fi
 
+# Check shared module exists
+if [ -d "services/shared" ]; then
+    print_status "services/shared/ directory exists"
+else
+    print_error "services/shared/ directory missing"
+    exit 1
+fi
+
+if [ -f "services/shared/pom.xml" ]; then
+    print_status "services/shared/pom.xml exists"
+else
+    print_error "services/shared/pom.xml missing"
+    exit 1
+fi
+
+if [ -f "services/shared/dev.sh" ]; then
+    print_status "services/shared/dev.sh exists"
+else
+    print_error "services/shared/dev.sh missing"
+    exit 1
+fi
+
 # Check key files exist
 if [ -f "README.md" ]; then
     print_status "README.md exists"
@@ -73,15 +95,48 @@ else
 fi
 
 echo ""
+echo "🧪 Testing shared module..."
+
+# Test shared module build and test
+if [ -d "services/shared" ]; then
+    cd services/shared
+
+    # Check if Java and Maven are available
+    if command -v java &> /dev/null && command -v mvn &> /dev/null; then
+        echo "🔨 Building shared module..."
+        if ./dev.sh build; then
+            print_status "Shared module build successful"
+        else
+            print_error "Shared module build failed"
+            exit 1
+        fi
+
+        echo "🧪 Testing shared module..."
+        if ./dev.sh test; then
+            print_status "Shared module tests passed"
+        else
+            print_error "Shared module tests failed"
+            exit 1
+        fi
+    else
+        print_warning "Java or Maven not available, skipping shared module tests"
+    fi
+
+    cd ../..
+fi
+
+echo ""
 echo "====================================="
-print_status "Project structure test completed successfully!"
+print_status "Project structure and shared module test completed successfully!"
 echo ""
 echo "🎯 Summary:"
 echo "   ✅ docs/ directory"
 echo "   ✅ healthcare-infra/ directory"
 echo "   ✅ services/ directory"
+echo "   ✅ services/shared/ module"
 echo "   ✅ README.md"
 echo "   ✅ .gitignore"
 echo "   ✅ CI workflow"
+echo "   ✅ Shared module build & tests"
 echo ""
 echo "🚀 Ready to push to GitHub!"
