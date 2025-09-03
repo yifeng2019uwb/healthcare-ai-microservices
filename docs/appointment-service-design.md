@@ -1,6 +1,6 @@
 # Appointment Service Design
 
-> **🎯 Learning Focus: Appointment Scheduling for Healthcare Microservices**
+> **🎯 Professional Focus: Appointment Scheduling for Healthcare Microservices**
 >
 > This document defines the design for the Appointment Service.
 > **Design Philosophy**: Comprehensive appointment management with clear APIs and scheduling logic.

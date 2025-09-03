@@ -123,7 +123,7 @@ Our healthcare AI microservices platform uses a clear, industry-standard data ar
 │  • timestamp (TIMESTAMPTZ) - Event time with timezone          │
 │  • user_id (UUID FK) - Who performed the action                │
 │  • action_type (ENUM) - Standardized action description        │
-│  • resource_type (VARCHAR) - Type of resource acted upon       │
+│  • resource_type (ENUM) - Type of resource acted upon          │
 │  • resource_id (UUID) - Specific resource identifier           │
 │  • outcome (ENUM) - Success/failure result                     │
 │  • details (JSONB) - Additional unstructured details           │

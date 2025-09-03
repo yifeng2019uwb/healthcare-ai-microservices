@@ -100,7 +100,7 @@ Business services receive validated user context from the Auth Service, includin
 - Complex implementation
 - Database overhead
 - Security responsibility
-- Over-engineered for learning project
+- Over-engineered for MVP project
 
 ### **Solution 3: Hybrid Approach**
 **Infrastructure**: JWT validation + minimal user context storage
@@ -113,14 +113,14 @@ Business services receive validated user context from the Auth Service, includin
 - Moderate complexity
 
 **Cons**:
-- Still complex for learning
+- Still complex for MVP
 - Database dependency
 - Potential data inconsistency
 
 ### **Final Decision**
 **Chosen Solution**: Solution 1 - Stateless JWT Validation Only
 
-**Why**: Perfect for learning project - simple, lightweight, and focused. Leverages proven external authentication (Supabase Auth) while keeping our Auth Service stateless and fast. Allows us to focus on core business services (Patient, Provider, AI) without authentication complexity.
+**Why**: Perfect for MVP project - simple, lightweight, and focused. Leverages proven external authentication (Supabase Auth) while keeping our Auth Service stateless and fast. Allows us to focus on core business services (Patient, Provider, AI) without authentication complexity.
 
 ## 🏗️ **High-Level Design**
 

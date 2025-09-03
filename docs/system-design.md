@@ -48,9 +48,9 @@
 
 ## 🎯 **Project Scope & Philosophy**
 
-### **Learning-Focused Approach** (Keep it Simple!)
-- **Spring Boot Mastery**: Deep dive into Spring Boot microservices
-- **AI Integration**: Learn ML/AI integration with healthcare
+### **Professional Healthcare Service** (Keep it Simple!)
+- **Spring Boot Services**: Production-ready microservices architecture
+- **AI Integration**: ML/AI integration with healthcare data
 - **Microservices Patterns**: Clean architecture and service design
 - **Progressive Complexity**: Start simple, add features incrementally
 - **Avoid Over-Engineering**: Skip Kafka, Redis, complex monitoring for now
@@ -248,11 +248,11 @@ Service → Database → Response to Client
 - **Database Optimization**: Connection pooling and basic query optimization
 - **Frontend State**: Local state management
 
-### **Future Considerations** (Skip for now - learning focus)
+### **Future Considerations** (Skip for now - MVP focus)
 - **High Traffic**: Can be designed later when needed
 - **Event-Driven**: Can be added when business logic requires it
 - **Advanced Caching**: Redis can be added when performance needs it
-- **Service Mesh**: Not needed for learning project
+- **Service Mesh**: Not needed for MVP project
 
 ## 🧪 **AI Service Integration**
 
@@ -303,13 +303,13 @@ Service → Database → Response to Client
 
 ## 🎯 **Success Metrics**
 
-### **Learning Goals**
-- **Spring Boot Mastery**: Confident microservice development
+### **Project Goals**
+- **Spring Boot Services**: Production-ready microservice development
 - **AI Integration**: Understanding ML/AI in healthcare context
 - **Clean Architecture**: Well-designed, maintainable services
 - **Practical Experience**: Working healthcare platform
 
-### **Learning Goals** (Keep it Simple)
+### **MVP Goals** (Keep it Simple)
 - **Working Services**: All services start up and respond to requests
 - **Basic Functionality**: CRUD operations work for each service
 - **Simple Integration**: Services can communicate when needed
@@ -340,7 +340,7 @@ For questions and support:
 **Decision**: Gateway handles orchestration for registration and complex flows
 - **Simple Routing**: Basic request forwarding to services
 - **Orchestration**: Gateway coordinates multi-service operations (registration, complex flows)
-- **Implementation**: Balance between functionality and learning goals
+- **Implementation**: Balance between functionality and MVP goals
 
 ### **2. External Auth Integration Strategy**
 **Decision**: Gateway orchestrates registration, Auth Service validates JWT only
@@ -379,4 +379,4 @@ For questions and support:
 
 ---
 
-*This document provides the high-level system design for a learning-focused healthcare AI microservices platform. Focus on Spring Boot mastery, clean architecture, and progressive complexity.*
+*This document provides the high-level system design for a professional healthcare AI microservices platform. Focus on production-ready Spring Boot services, clean architecture, and progressive complexity.*

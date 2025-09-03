@@ -1,6 +1,6 @@
 # Provider Service Design
 
-> **🎯 Learning Focus: Provider Management for Healthcare Microservices**
+> **🎯 Professional Focus: Provider Management for Healthcare Microservices**
 >
 > This document defines the design for the Provider Service.
 > **Design Philosophy**: Comprehensive provider management with healthcare compliance.
@@ -177,7 +177,7 @@ Key Data Flow - Medical Records Management:
 Provider → Gateway → Auth → Provider Service → Database
   │         │        │         │                │
   │         │        │         │                └── Create/update medical_records table
-  │         │        │         │                │   (with patient_id, provider_id, appointment_id, diagnosis, etc.)
+  │         │        │         │                │   (with appointment_id, record_type, content, etc.)
   │         │        │         │                │
   │         │        │         │                └── Validate appointment exists and provider owns it
   │         │        │         │
@@ -197,7 +197,7 @@ Key Data Flow - Patient Medical Records Access:
 Patient → Gateway → Auth → Provider Service → Database
   │        │        │         │                │
   │        │        │         │                └── Query medical_records table
-  │        │        │         │                │   (WHERE patient_id = JWT.patient_id)
+  │        │        │         │                │   (JOIN appointments WHERE patient_id = JWT.patient_id)
   │        │        │         │                │
   │        │        │         │                └── Validate patient_id matches JWT
   │        │        │         │

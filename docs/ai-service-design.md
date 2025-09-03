@@ -1,6 +1,6 @@
 # Healthcare AI Microservices - AI Service Design
 
-> **🎯 Learning Focus: AI/ML Integration for Healthcare Microservices**
+> **🎯 Professional Focus: AI/ML Integration for Healthcare Microservices**
 >
 > This document defines the design for the AI Service.
 > **Design Philosophy**: Python-based AI service leveraging healthcare data for intelligent insights.

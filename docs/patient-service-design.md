@@ -71,7 +71,7 @@ Patients want to view their complete medical history including past conditions, 
 - **Auto-Create Patient ID During Registration**
   - User registration automatically creates both user profile and patient record
   - Immediate patient access after registration
-  - Simple implementation for learning project
+  - Simple implementation for MVP project
   - Best for direct-to-consumer healthcare platforms
 
 **Note**: Registration flow handled by Gateway orchestration (calls Supabase Auth + Patient Service).
@@ -143,7 +143,7 @@ User → Gateway → Auth → Patient Service → Database
 **Pros**:
 - Covers all required functionality in our scope
 - Good code quality and architecture practices
-- Reasonable complexity for learning
+- Reasonable complexity for MVP
 - Professional structure without over-engineering
 - Easy to extend with additional features later
 
@@ -152,8 +152,8 @@ User → Gateway → Auth → Patient Service → Database
 - Requires some architectural planning
 - More complex than minimal solution
 
-### **Solution 2: Minimal Patient Service for Learning**
-**Description**: A focused, simple patient service that covers only the essential functionality needed for the learning project while keeping implementation straightforward.
+### **Solution 2: Minimal Patient Service for MVP**
+**Description**: A focused, simple patient service that covers only the essential functionality needed for the MVP project while keeping implementation straightforward.
 
 **Database**:
 - **Existing System Tables** (already available):
@@ -165,7 +165,7 @@ User → Gateway → Auth → Patient Service → Database
 **Account-to-Patient Linking Strategy**:
 - **Option 1: Auto-Create Patient ID During Registration**
   - Simple auto-creation during registration
-  - Minimal complexity for learning
+  - Minimal complexity for MVP
   - Immediate patient functionality
 
 **Workflow**:
@@ -177,7 +177,7 @@ User → Gateway → Auth → Patient Service → Database
 **Pros**:
 - Fastest development and implementation
 - Easy to understand and maintain
-- Perfect for learning Spring Boot basics
+- Perfect for building Spring Boot services
 - Low infrastructure requirements
 - Simple deployment and testing
 
@@ -220,12 +220,12 @@ User → Gateway → Auth → Patient Service → Database
 - More complex implementation
 - Complex booking logic
 - Potential failure points
-- Over-engineered for learning
+- Over-engineered for MVP
 
 ### **Final Decision**
 **Chosen Solution**: [To be decided after discussion]
 
-**Why**: [To be filled after decision based on learning goals and timeline preferences]
+**Why**: [To be filled after decision based on MVP goals and timeline preferences]
 
 ## 🔌 **API Design**
 

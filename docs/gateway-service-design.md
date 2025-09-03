@@ -1,6 +1,6 @@
 # Gateway Service Design
 
-> **🎯 Learning Focus: API Gateway for Healthcare Microservices**
+> **🎯 Professional Focus: API Gateway for Healthcare Microservices**
 >
 > This document defines the design for the API Gateway service.
 > **Design Philosophy**: Simple routing and orchestration for healthcare microservices.
@@ -122,7 +122,7 @@ A: [To be defined based on solution choice]
 **Question**: Simple routing vs. orchestration approach?
 - **Simple Routing**: Basic request forwarding, minimal complexity
 - **Orchestration**: Handles registration flow, more complex but better UX
-- **Decision Needed**: Balance learning goals with functionality
+- **Decision Needed**: Balance MVP goals with functionality
 
 ### **2. External Auth Integration**
 **Question**: How does Gateway work with Supabase Auth and Auth Service?

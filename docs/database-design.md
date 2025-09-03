@@ -1,9 +1,9 @@
 # Healthcare AI Microservices - Database Design
 
-> **🎯 Learning Focus: Simple but Healthcare-Compliant**
+> **🎯 Professional Healthcare Service: Simple but Compliant**
 >
 > This document defines the database structure for the healthcare AI microservices platform.
-> **Design Philosophy**: Keep it simple for learning while maintaining healthcare compliance requirements.
+> **Design Philosophy**: Keep it simple while maintaining healthcare compliance requirements.
 
 ## 📋 **Document Information**
 
@@ -16,7 +16,7 @@
 ## 🎯 **Overview**
 
 ### **What This Is**
-This document defines the database schema design for the healthcare AI microservices platform, focusing on simplicity for learning while maintaining healthcare compliance requirements.
+This document defines the database schema design for the healthcare AI microservices platform, focusing on simplicity while maintaining healthcare compliance requirements.
 
 ### **Why This Matters**
 Database design is foundational for all services. A well-designed schema ensures data integrity, performance, and compliance with healthcare regulations like HIPAA.
@@ -28,7 +28,7 @@ Database design is foundational for all services. A well-designed schema ensures
 ## 🏗️ **High-Level Design**
 
 ### **Core Design Principles**
-1. **Simplicity First**: Easy to understand and implement for learning
+1. **Simplicity First**: Easy to understand and implement
 2. **Healthcare Compliance**: Must support HIPAA audit requirements
 3. **Clear Separation**: Authentication vs. business logic vs. audit
 4. **One Role Per Account**: Patients and providers are separate entities
@@ -98,7 +98,7 @@ Support Systems (1 table)
   - ✅ **Realistic**: Multiple medical records per visit is normal
   - ✅ **Simple**: Basic structure, easy to implement
   - ✅ **Extensible**: Can add complexity later
-  - ❌ **Limited**: No ongoing conditions, medications, lab results (acceptable for learning)
+  - ❌ **Limited**: No ongoing conditions, medications, lab results (acceptable for MVP)
 
 ### **3. Support Systems Tables**
 
@@ -124,13 +124,13 @@ Support Systems (1 table)
 | Column Name      | Data Type | Constraints         | Index           | Description |
 |------------------|-----------|---------------------|-----------------|-------------|-
 | id               | UUID         | PK, NOT NULL     | PRIMARY KEY     | Primary key identifier |
-| external_user_id | VARCHAR(255) | NOT NULL         | UNIQUE INDEX | External auth provider ID (Supabase, Auth0, etc.) |
+| auth_id          | VARCHAR(255) | NOT NULL         | UNIQUE INDEX | External auth provider ID (Supabase, Auth0, etc.) |
 | first_name       | VARCHAR(100) | NOT NULL         | COMPOSITE INDEX | User's first name |
 | last_name        | VARCHAR(100) | NOT NULL         | COMPOSITE INDEX | User's last name |
 | email            | VARCHAR(255) | UNIQUE, NOT NULL | UNIQUE INDEX    | User's email address |
 | phone            | VARCHAR(20)  | NOT NULL         | INDEX           | User's phone number |
 | date_of_birth    | DATE         | NOT NULL         | COMPOSITE INDEX | User's date of birth |
-| gender           | VARCHAR(20)  | NOT NULL         | -               | User's gender |
+| gender           | ENUM         | NOT NULL         | -               | User's gender (MALE, FEMALE, OTHER, UNKNOWN) |
 | street_address   | VARCHAR(255) | -                | -               | Street address |
 | city             | VARCHAR(100) | -                | -               | City name |
 | state            | VARCHAR(50)  | -                | -               | State/Province |
@@ -162,7 +162,7 @@ updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 - ✅ **Future-Proof**: Ready for international expansion
 
 #### **Key Design Decisions:**
-- **External Auth Integration**: `external_user_id` links to external auth provider
+- **External Auth Integration**: `auth_id` links to external auth provider
 - **Common Profile Fields**: All users share basic identity information
 - **Structured Address**: Separate columns for better querying and indexing
 - **Role-Agnostic Design**: No patient-specific fields (emergency contacts moved to patient_profiles)
@@ -210,7 +210,7 @@ FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
 |------------------|--------------|--------------|-----------------|-------------|
 | id               | UUID         | PK, NOT NULL | PRIMARY KEY     | Primary key identifier |
 | user_id          | UUID         | FK, NOT NULL | UNIQUE INDEX    | Foreign key to user_profiles.id |
-| license_numbers  | VARCHAR(50)[] | -            | -               | Array of state medical license numbers |
+| license_numbers  | VARCHAR(50)   | -            | -               | State medical license number |
 | npi_number       | VARCHAR(10)  | UNIQUE, NOT NULL | UNIQUE INDEX | National Provider Identifier (NPI) |
 | specialty        | VARCHAR(100) | -            | INDEX           | Primary medical specialty |
 | qualifications   | TEXT         | -            | -               | Medical qualifications and education |
@@ -293,7 +293,7 @@ WHERE status NOT IN ('CANCELLED', 'NO_SHOW');
 |-------------|------------|-------------|-------|-------------|
 | id          | UUID       | PK, NOT NULL | PRIMARY KEY | Primary key identifier |
 | appointment_id | UUID    | FK, NOT NULL | COMPOSITE INDEX | Foreign key to appointments.id (visit identifier) |
-| record_type | ENUM       | NOT NULL | COMPOSITE INDEX | DIAGNOSIS, TREATMENT, SUMMARY, LAB_RESULT, PRESCRIPTION, NOTE |
+| record_type | ENUM       | NOT NULL | COMPOSITE INDEX | DIAGNOSIS, TREATMENT, SUMMARY, LAB_RESULT, PRESCRIPTION, NOTE, OTHER |
 | content     | TEXT       | NOT NULL | - | Medical record content/details |
 | is_patient_visible       | BOOLEAN  | NOT NULL | - | Whether patient can view this record |
 | release_date | TIMESTAMPTZ | -      | - | When record becomes visible to patient |
@@ -326,16 +326,16 @@ CREATE INDEX idx_medical_record_appointment_type ON medical_records (appointment
 
 | Column Name | Data Type | Constraints | Index | Description |
 |-------------|-----------|-------------|-------|-------------|
-| id | UUID | PK, NOT NULL | PRIMARY KEY | Primary key identifier |
-| user_id | UUID | FK, NOT NULL | INDEX | Foreign key to user_profiles.id |
-| action_type | VARCHAR(50) | NOT NULL | INDEX | CREATE, READ, UPDATE, DELETE, LOGIN, LOGOUT |
-| resource_type | VARCHAR(50) | NOT NULL | INDEX | USER_PROFILE, PATIENT_PROFILE, PROVIDER_PROFILE, APPOINTMENT, MEDICAL_RECORD |
-| resource_id | UUID | - | INDEX | ID of the resource being acted upon (nullable for system actions) |
-| outcome | VARCHAR(20) | NOT NULL | INDEX | SUCCESS, FAILURE |
-| details | JSONB | - | - | Additional action details |
-| source_ip | INET | - | - | IP address of the request |
-| user_agent | TEXT | - | - | User agent string |
-| created_at | TIMESTAMPTZ | NOT NULL | INDEX | Action timestamp (timezone-aware) |
+| id          | UUID   | PK, NOT NULL | PRIMARY KEY | Primary key identifier |
+| user_id     | UUID   | FK, NOT NULL | INDEX | Foreign key to user_profiles.id |
+| action_type | ENUM   | NOT NULL | INDEX | CREATE, READ, UPDATE, DELETE, LOGIN, LOGOUT |
+| resource_type | ENUM | NOT NULL | INDEX | USER_PROFILE, PATIENT_PROFILE, PROVIDER_PROFILE, APPOINTMENT, MEDICAL_RECORD |
+| resource_id | UUID   | - | INDEX | ID of the resource being acted upon (nullable for system actions) |
+| outcome     | ENUM   | NOT NULL | INDEX | SUCCESS, FAILURE |
+| details     | JSONB  | - | - | Additional action details |
+| source_ip   | INET   | - | - | IP address of the request |
+| user_agent  | TEXT   | - | - | User agent string |
+| created_at  | TIMESTAMPTZ | NOT NULL | INDEX | Action timestamp (timezone-aware) |
 
 #### **Foreign Key Definitions:**
 ```sql
@@ -354,7 +354,7 @@ FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
 
 ## 🔄 **Future Scaling & Refactoring Considerations**
 
-### **Short Term (Learning Phase)**
+### **Short Term **
 - **Keep Current Structure**: Focus on implementing basic CRUD operations
 - **Simple Queries**: Use basic SQL, avoid complex optimizations
 - **Basic Validation**: Simple field validation, no complex business rules
@@ -383,12 +383,12 @@ FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
 ### **Technical Risks**
 - **Simple Schema**: May need refactoring as requirements grow
 - **Audit Performance**: Large audit_logs table may impact performance
-- **File Ownership**: owner_type string field may be fragile
+- **File Storage**: File metadata stored in custom_data JSONB may need validation
 
 ### **Mitigation Strategies**
 - **Regular Reviews**: Review schema design as requirements evolve
 - **Audit Archiving**: Archive old audit logs to maintain performance
-- **Validation**: Add constraints to prevent invalid owner_type values
+- **Validation**: Add constraints to prevent invalid custom_data JSONB values
 
 ## 📋 **Success Criteria**
 
@@ -409,7 +409,7 @@ FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
 ## 📝 **Design Decisions Summary**
 
 ### **Why We Chose This Design**
-1. **Simplicity**: Easy to understand and implement for learning
+1. **Simplicity**: Easy to understand and implement
 2. **Healthcare Compliance**: Supports HIPAA audit requirements
 3. **Clear Structure**: Logical separation of concerns
 4. **Extensible**: Can add complexity when needed
@@ -417,15 +417,15 @@ FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
 
 ### **Trade-offs Made**
 - **One Role Per Account**: Simplicity over flexibility
-- **Basic Medical Records**: Learning focus over medical complexity
+- **Basic Medical Records**: MVP focus over medical complexity
 - **Simple Audit**: Basic logging over advanced event sourcing
-- **Flexible File Ownership**: Simple approach over complex ownership models
+- **Flexible Data Storage**: Simple JSONB approach over complex structured fields
 
 ### **Future Considerations**
 - **Monitor Performance**: Watch for slow queries as data grows
 - **Plan Refactoring**: Identify when schema needs to change
 - **Add Complexity Gradually**: Don't over-engineer early
-- **Keep Learning Focus**: Remember this is for learning microservices
+- **Keep MVP Focus**: Remember this is for building a working healthcare service
 
 ---
 
