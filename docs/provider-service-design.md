@@ -56,9 +56,6 @@ Providers need to maintain their professional profiles, including updating their
 #### **User Case 3: Provider Discovery**
 Patients need to find and discover healthcare providers based on specialties, location, and credentials. This helps patients make informed decisions about their healthcare providers.
 
-#### **User Case 4: Medical Records Management**
-Providers need to create, view, and update medical records for their patients, including diagnoses, treatments, medications, and clinical notes to maintain comprehensive patient care documentation.
-
 
 
 ## 🔧 **Solution Alternatives**
@@ -106,8 +103,6 @@ Spring Boot service managing healthcare provider data and operations, ensuring H
 1. **Provider Registration**: User registration → Provider profile creation → Credential verification
 2. **Profile Management**: Provider updates profile → Validation → Database update
 3. **Provider Discovery**: Patient searches providers → Filter by specialties → Provider list retrieval
-4. **Medical Records Management**: Provider creates/updates records → Appointment validation → Database storage
-5. **Patient Medical Records Access**: Patient requests records → JWT validation → Secure data retrieval
 
 **Data Flow Diagrams**:
 
@@ -222,131 +217,800 @@ Patient → Gateway → Auth → Provider Service → Database
 | PUT | `/api/providers/profile` | Update my provider profile | Yes |
 | GET | `/api/providers` | List providers (patient access) | Yes |
 
-### **Medical Records APIs**
+### **Provider Discovery APIs**
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| POST | `/api/medical/records` | Create medical record | Yes |
-| GET | `/api/medical/records` | Get my medical records | Yes |
-| PUT | `/api/medical/records/{recordId}` | Update medical record | Yes |
-| GET | `/api/medical/records/patient/{patientId}` | Get patient's medical records | Yes |
+| GET | `/api/providers/search` | Search providers by specialty/location | Yes |
+| GET | `/api/providers/{providerId}` | Get provider details | Yes |
 
-### **Request/Response Example**
+
+
+## 🛠️ **Detailed API Design**
+
+### **1. Provider Registration API**
+
+#### **Endpoint**: `POST /api/providers`
+**Description**: Register a new healthcare provider with professional credentials
+
+#### **Authentication**:
+- **Required**: None (Public registration endpoint)
+- **Note**: JWT validation will be handled by external auth service
+
+#### **Request Body**:
 ```json
-// Create Provider Request
 {
+  "externalUserId": "supabase-uuid-from-auth",
   "firstName": "Dr. Sarah",
   "lastName": "Johnson",
-  "licenseNumber": "MD123456",
-  "specialties": ["Cardiology", "Internal Medicine"],
   "email": "dr.sarah.johnson@email.com",
-  "phone": "+1234567890"
-}
-
-// Provider Response
-{
-  "id": "uuid",
-  "firstName": "Dr. Sarah",
-  "lastName": "Johnson",
-  "licenseNumber": "MD123456",
-  "specialties": ["Cardiology", "Internal Medicine"],
-  "email": "dr.sarah.johnson@email.com",
-  "phone": "+1234567890",
-  "isVerified": false,
-  "createdAt": "timestamp",
-  "updatedAt": "timestamp"
+  "phone": "+1-555-0123",
+  "dateOfBirth": "1985-03-15",
+  "gender": "FEMALE",
+  "officeStreetAddress": "456 Medical Plaza",
+  "officeCity": "Boston",
+  "officeState": "MA",
+  "officePostalCode": "02115",
+  "officeCountry": "USA",
+  "npiNumber": "1234567890",
+  "specialty": "Cardiology",
+  "licenseNumbers": "MD123456",
+  "qualifications": "MD from Harvard Medical School, Board Certified in Cardiology",
+  "bio": "Dr. Sarah Johnson is a board-certified cardiologist with over 10 years of experience in treating cardiovascular diseases.",
+  "officePhone": "+1-555-0124"
 }
 ```
 
-### **Medical Records Request/Response Example**
+#### **Field Specifications**:
+| Field          | Type | Required | Pattern/Validation |
+|----------------|------|----------|-------------------|
+| externalUserId | String | Yes | UUID format |
+| firstName      | String | Yes | 2-50 characters |
+| lastName       | String | Yes | 2-50 characters |
+| email          | String | Yes | Valid email format |
+| phone          | String | No  | +1-XXX-XXX-XXXX format |
+| dateOfBirth    | String | Yes | YYYY-MM-DD format |
+| gender         | String | Yes | MALE, FEMALE, OTHER, UNKNOWN |
+| officeStreetAddress | String | No  | Max 255 characters |
+| officeCity     | String | No  | Max 100 characters |
+| officeState    | String | No  | Max 50 characters |
+| officePostalCode | String | No  | Max 20 characters |
+| officeCountry  | String | No  | Max 50 characters |
+| npiNumber      | String | Yes | 10 digits |
+| specialty      | String | No  | Max 100 characters |
+| licenseNumbers | String | No  | Max 50 characters |
+| qualifications | String | No  | Max 1000 characters |
+| bio            | String | No  | Max 2000 characters |
+| officePhone    | String | No  | +1-XXX-XXX-XXXX format |
+
+#### **Response (201 Created)**:
 ```json
-// Create Medical Record Request
 {
-  "patientId": "uuid",
-  "appointmentId": "uuid",
-  "diagnosis": "Hypertension",
-  "treatment": "Prescribed Lisinopril 10mg daily",
-  "medications": [
-    {
-      "name": "Lisinopril",
-      "dosage": "10mg",
-      "frequency": "daily",
-      "duration": "30 days"
-    }
-  ],
-  "notes": "Patient shows improvement. Follow up in 2 weeks.",
-  "visitDate": "2024-01-15",
-  "recordType": "CONSULTATION",
-  "fileUrls": {
-    "xrays": ["https://s3.amazonaws.com/medical-files/xray-001.jpg"],
-    "lab_reports": ["https://s3.amazonaws.com/medical-files/lab-001.pdf"],
-    "prescriptions": ["https://s3.amazonaws.com/medical-files/prescription-001.pdf"]
+  "success": true,
+  "message": "Provider account created successfully",
+  "providerId": "PR20240115001"
+}
+```
+
+#### **Error Responses**:
+```json
+// 400 Bad Request
+{
+  "error": "BAD_REQUEST",
+  "message": "Invalid request data: NPI number must be 10 digits"
+}
+
+// 409 Conflict
+{
+  "error": "CONFLICT",
+  "message": "Provider already exists with this NPI number"
+}
+
+// 500 Internal Server Error
+{
+  "error": "INTERNAL_ERROR",
+  "message": "An unexpected error occurred"
+}
+```
+
+#### **Future Feature: Provider Credential Validation**
+
+**Planned Validation Steps** (Not implemented yet):
+1. **NPI Number Validation**
+   - Verify NPI number exists in national database
+   - Check NPI number format and checksum
+   - Validate NPI is active and not expired
+
+2. **License Number Verification**
+   - Verify license number with state medical board
+   - Check license status (active, suspended, expired)
+   - Validate license matches provider name and specialty
+
+3. **Email Domain Verification**
+   - Verify email domain belongs to healthcare institution
+   - Check for professional email patterns
+   - Validate email is not from personal domains
+
+4. **Professional Credential Cross-Reference**
+   - Cross-reference NPI with license number
+   - Verify specialty matches license type
+   - Check for any disciplinary actions
+
+5. **Document Verification**
+   - Upload and verify medical degree certificates
+   - Verify board certification documents
+   - Check continuing education requirements
+
+**Implementation Status**:
+- **Current**: Basic format validation only
+- **Future**: Full credential verification system
+- **Timeline**: TBD based on business requirements
+
+### **2. Get Provider Profile API**
+
+#### **Endpoint**: `GET /api/providers/profile`
+**Description**: Retrieve the authenticated provider's profile information
+
+#### **Authentication**:
+- **Required**: JWT Token with `role: "PROVIDER"`
+- **Header**: `Authorization: Bearer <jwt_token>`
+
+#### **Response (200 OK)**:
+```json
+{
+  "userProfile": {
+    "externalUserId": "supabase-uuid-from-auth",
+    "firstName": "Dr. Sarah",
+    "lastName": "Johnson",
+    "email": "dr.sarah.johnson@email.com",
+    "phone": "+1-555-0123",
+    "dateOfBirth": "1985-03-15",
+    "gender": "FEMALE",
+    "role": "PROVIDER",
+    "status": "ACTIVE",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  },
+  "providerProfile": {
+    "npiNumber": "1234567890",
+    "specialty": "Cardiology",
+    "licenseNumbers": "MD123456",
+    "qualifications": "MD from Harvard Medical School, Board Certified in Cardiology",
+    "bio": "Dr. Sarah Johnson is a board-certified cardiologist with over 10 years of experience in treating cardiovascular diseases.",
+    "officeStreetAddress": "456 Medical Plaza",
+    "officeCity": "Boston",
+    "officeState": "MA",
+    "officePostalCode": "02115",
+    "officeCountry": "USA",
+    "officePhone": "+1-555-0124",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
   }
 }
+```
 
-// Medical Record Response
+#### **Error Responses**:
+```json
+// 401 Unauthorized
 {
-  "id": "uuid",
-  "patientId": "uuid",
-  "providerId": "uuid",
-  "appointmentId": "uuid",
-  "diagnosis": "Hypertension",
-  "treatment": "Prescribed Lisinopril 10mg daily",
-  "medications": [...],
-  "notes": "Patient shows improvement. Follow up in 2 weeks.",
-  "visitDate": "2024-01-15",
-  "recordType": "CONSULTATION",
-  "fileUrls": {...},
-  "createdAt": "timestamp",
-  "updatedAt": "timestamp"
+  "error": "UNAUTHORIZED",
+  "message": "Invalid or missing JWT token"
+}
+
+// 403 Forbidden
+{
+  "error": "FORBIDDEN",
+  "message": "Account suspended. Contact support"
+}
+
+// 404 Not Found
+{
+  "error": "NOT_FOUND",
+  "message": "Provider profile not found"
+}
+
+// 500 Internal Server Error
+{
+  "error": "INTERNAL_ERROR",
+  "message": "An unexpected error occurred"
 }
 ```
 
-## 🗄️ **Database Schema Design**
+### **3. Update Provider Personal Profile API**
 
-### **Provider Service Database Tables**
+#### **Endpoint**: `PUT /api/providers/profile`
+**Description**: Update provider's personal information (name, contact, address)
 
-#### **Provider Profiles Table (provider_profiles)**
-| Column | Type | Constraints | Indexes | Description |
-|--------|------|-------------|---------|-------------|
-| id | UUID | PRIMARY KEY | PRIMARY | Unique provider record identifier |
-| user_id | UUID | FOREIGN KEY, NOT NULL | INDEX | Reference to user_profiles.id |
-| license_number | VARCHAR(50) | UNIQUE, NOT NULL | UNIQUE | Professional license number |
-| specialties | TEXT[] | NOT NULL | - | Array of medical specialties |
-| certifications | JSONB | NULL | - | Professional certifications and credentials |
-| rating | DECIMAL(3,2) | NULL | INDEX | Average provider rating (1.00-5.00) |
-| total_reviews | INTEGER | NOT NULL, DEFAULT 0 | - | Total number of reviews |
-| is_verified | BOOLEAN | NOT NULL, DEFAULT FALSE | INDEX | Professional credential verification status |
-| practice_info | JSONB | NULL | - | Practice location, hours, contact info |
-| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | INDEX | Record creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | - | Last update timestamp |
+#### **Authentication**:
+- **Required**: JWT Token with `role: "PROVIDER"`
+- **Header**: `Authorization: Bearer <jwt_token>`
 
-**Indexes**:
-- `PRIMARY KEY` (id) - Unique provider identifier
-- `UNIQUE` (license_number) - For license verification
-- `INDEX` (user_id) - For user profile lookup
+#### **Request Body**:
+```json
+{
+  "firstName": "Dr. Sarah",
+  "lastName": "Johnson",
+  "phone": "+1-555-0123",
+  "officeStreetAddress": "456 Medical Plaza",
+  "officeCity": "Boston",
+  "officeState": "MA",
+  "officePostalCode": "02115",
+  "officeCountry": "USA",
+  "officePhone": "+1-555-0124"
+}
+```
 
-#### **Medical Records Table (medical_records)**
-| Column | Type | Constraints | Indexes | Description |
-|--------|------|-------------|---------|-------------|
-| id | UUID | PRIMARY KEY | PRIMARY | Unique medical record identifier |
-| patient_id | UUID | FOREIGN KEY, NOT NULL | INDEX | Reference to patient_profiles.id |
-| provider_id | UUID | FOREIGN KEY, NOT NULL | INDEX | Reference to provider_profiles.id |
-| appointment_id | UUID | FOREIGN KEY, NOT NULL | INDEX | Reference to appointments.id |
-| diagnosis | TEXT | NULL | - | Medical diagnosis |
-| treatment | TEXT | NULL | - | Treatment plan and recommendations |
-| medications | JSONB | NULL | - | Prescribed medications |
-| notes | TEXT | NULL | - | Clinical notes and observations |
-| file_urls | JSONB | NULL | - | Medical file URLs (xrays, lab_reports, prescriptions) |
-| visit_date | DATE | NOT NULL | INDEX | Date of medical visit |
-| record_type | VARCHAR(50) | NOT NULL | INDEX | Type of medical record (consultation, follow-up, etc.) |
-| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | INDEX | Record creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | - | Last update timestamp |
+#### **Response (200 OK)**:
+```json
+{
+  "userProfile": {
+    "externalUserId": "supabase-uuid-from-auth",
+    "firstName": "Dr. Sarah",
+    "lastName": "Johnson",
+    "email": "dr.sarah.johnson@email.com",
+    "phone": "+1-555-0123",
+    "dateOfBirth": "1985-03-15",
+    "gender": "FEMALE",
+    "role": "PROVIDER",
+    "status": "ACTIVE",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T14:45:00Z"
+  },
+  "providerProfile": {
+    "officeStreetAddress": "456 Medical Plaza",
+    "officeCity": "Boston",
+    "officeState": "MA",
+    "officePostalCode": "02115",
+    "officeCountry": "USA",
+    "officePhone": "+1-555-0124",
+    "updatedAt": "2024-01-15T14:45:00Z"
+  }
+}
+```
 
-**Medical Records Indexes**:
-- `PRIMARY KEY` (id) - Unique medical record identifier
-- `INDEX` (patient_id) - For patient record lookup
-- `INDEX` (provider_id) - For provider record lookup
-- `INDEX` (appointment_id) - For appointment-linked records
+#### **Error Responses**:
+```json
+// 400 Bad Request
+{
+  "error": "BAD_REQUEST",
+  "message": "Invalid request data: Phone number format invalid"
+}
+
+// 401 Unauthorized
+{
+  "error": "UNAUTHORIZED",
+  "message": "Invalid or missing JWT token"
+}
+
+// 404 Not Found
+{
+  "error": "NOT_FOUND",
+  "message": "Provider profile not found"
+}
+
+// 500 Internal Server Error
+{
+  "error": "INTERNAL_ERROR",
+  "message": "An unexpected error occurred"
+}
+```
+
+### **4. Update Provider Professional Information API**
+
+#### **Endpoint**: `PUT /api/providers/professional-info`
+**Description**: Update provider's professional information (NPI, specialty, license)
+
+#### **Authentication**:
+- **Required**: JWT Token with `role: "PROVIDER"`
+- **Header**: `Authorization: Bearer <jwt_token>`
+
+#### **Request Body**:
+```json
+{
+  "npiNumber": "1234567890",
+  "specialty": "Cardiology",
+  "licenseNumbers": "MD123456",
+  "qualifications": "MD from Harvard Medical School, Board Certified in Cardiology",
+  "bio": "Dr. Sarah Johnson is a board-certified cardiologist with over 10 years of experience in treating cardiovascular diseases.",
+  "officeStreetAddress": "456 Medical Plaza",
+  "officeCity": "Boston",
+  "officeState": "MA",
+  "officePostalCode": "02115",
+  "officeCountry": "USA",
+  "officePhone": "+1-555-0124"
+}
+```
+
+#### **Response (200 OK)**:
+```json
+{
+  "providerProfile": {
+    "npiNumber": "1234567890",
+    "specialty": "Cardiology",
+    "licenseNumbers": "MD123456",
+    "qualifications": "MD from Harvard Medical School, Board Certified in Cardiology",
+    "bio": "Dr. Sarah Johnson is a board-certified cardiologist with over 10 years of experience in treating cardiovascular diseases.",
+    "officeStreetAddress": "456 Medical Plaza",
+    "officeCity": "Boston",
+    "officeState": "MA",
+    "officePostalCode": "02115",
+    "officeCountry": "USA",
+    "officePhone": "+1-555-0124",
+    "updatedAt": "2024-01-15T14:45:00Z",
+    "updatedBy": "supabase-uuid-from-auth"
+  }
+}
+```
+
+#### **Error Responses**:
+```json
+// 400 Bad Request
+{
+  "error": "BAD_REQUEST",
+  "message": "Invalid request data: NPI number must be 10 digits"
+}
+
+// 401 Unauthorized
+{
+  "error": "UNAUTHORIZED",
+  "message": "Invalid or missing JWT token"
+}
+
+// 403 Forbidden
+{
+  "error": "FORBIDDEN",
+  "message": "Insufficient permissions to update professional information"
+}
+
+// 404 Not Found
+{
+  "error": "NOT_FOUND",
+  "message": "Provider profile not found"
+}
+
+// 409 Conflict
+{
+  "error": "CONFLICT",
+  "message": "NPI number already exists"
+}
+
+// 500 Internal Server Error
+{
+  "error": "INTERNAL_ERROR",
+  "message": "An unexpected error occurred"
+}
+```
+
+### **5. Provider Search API**
+
+#### **Endpoint**: `GET /api/providers/search`
+**Description**: Search for providers by specialty, location, or other criteria
+
+#### **Authentication**:
+- **Required**: JWT Token with `role: "PATIENT"` or `role: "PROVIDER"`
+- **Header**: `Authorization: Bearer <jwt_token>`
+
+#### **Query Parameters**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| specialty | String | No | Medical specialty filter |
+| city | String | No | City filter |
+| state | String | No | State filter |
+| limit | Integer | No | Number of results (default: 20, max: 100) |
+| offset | Integer | No | Pagination offset (default: 0) |
+
+#### **Example Request**:
+```
+GET /api/providers/search?specialty=Cardiology&city=Boston&limit=10
+```
+
+#### **Response (200 OK)**:
+```json
+{
+  "providers": [
+    {
+      "userProfile": {
+        "externalUserId": "supabase-uuid-from-auth",
+        "firstName": "Dr. Sarah",
+        "lastName": "Johnson",
+        "email": "dr.sarah.johnson@email.com",
+        "phone": "+1-555-0123",
+        "role": "PROVIDER",
+        "status": "ACTIVE"
+      },
+      "providerProfile": {
+        "npiNumber": "1234567890",
+        "specialty": "Cardiology",
+        "licenseNumbers": "MD123456",
+        "qualifications": "MD from Harvard Medical School, Board Certified in Cardiology",
+        "bio": "Dr. Sarah Johnson is a board-certified cardiologist with over 10 years of experience in treating cardiovascular diseases.",
+        "officeStreetAddress": "456 Medical Plaza",
+        "officeCity": "Boston",
+        "officeState": "MA",
+        "officePostalCode": "02115",
+        "officeCountry": "USA",
+        "officePhone": "+1-555-0124"
+      }
+    }
+  ],
+  "pagination": {
+    "total": 1,
+    "limit": 10,
+    "offset": 0,
+    "hasMore": false
+  }
+}
+```
+
+#### **Error Responses**:
+```json
+// 400 Bad Request
+{
+  "error": "BAD_REQUEST",
+  "message": "Invalid query parameters: limit must be between 1 and 100"
+}
+
+// 401 Unauthorized
+{
+  "error": "UNAUTHORIZED",
+  "message": "Invalid or missing JWT token"
+}
+
+// 500 Internal Server Error
+{
+  "error": "INTERNAL_ERROR",
+  "message": "An unexpected error occurred"
+}
+```
+
+### **6. Create Medical Record API**
+
+#### **Endpoint**: `POST /api/providers/medical-records`
+**Description**: Create a new medical record for an appointment
+
+#### **Authentication**:
+- **Required**: JWT Token with `role: "PROVIDER"`
+- **Header**: `Authorization: Bearer <jwt_token>`
+
+#### **Request Body**:
+```json
+{
+  "appointmentId": "appointment-uuid-456",
+  "recordType": "DIAGNOSIS",
+  "content": "Hypertension - Stage 1. Patient shows elevated blood pressure readings.",
+  "isPatientVisible": true,
+  "releaseDate": "2024-01-15T16:00:00Z",
+  "customData": {
+    "diagnosis": "Hypertension - Stage 1",
+    "description": "Patient shows elevated blood pressure readings",
+    "severity": "MILD",
+    "status": "ACTIVE",
+    "clinicalNotes": "BP: 145/95 mmHg. Patient reports occasional headaches. Family history of hypertension."
+  }
+}
+```
+
+#### **Field Specifications**:
+| Field | Type | Required | Pattern/Validation |
+|-------|------|----------|-------------------|
+| appointmentId | String | Yes | UUID format |
+| recordType | String | Yes | DIAGNOSIS, TREATMENT, SUMMARY, LAB_RESULT, PRESCRIPTION, NOTE, OTHER |
+| content | String | Yes | Max 5000 characters |
+| isPatientVisible | Boolean | Yes | true/false |
+| releaseDate | String | No | ISO 8601 timestamp format |
+| customData | Object | No | Structured JSON object for additional data |
+
+#### **Response (201 Created)**:
+```json
+{
+  "medicalRecord": {
+    "id": "record-uuid-123",
+    "appointmentId": "appointment-uuid-456",
+    "patientId": "P20240115001",
+    "patientName": "John Doe",
+    "patientAge": 45,
+    "patientGender": "MALE",
+    "recordType": "DIAGNOSIS",
+    "content": "Hypertension - Stage 1. Patient shows elevated blood pressure readings.",
+    "customData": {
+      "diagnosis": "Hypertension - Stage 1",
+      "description": "Patient shows elevated blood pressure readings",
+      "severity": "MILD",
+      "status": "ACTIVE",
+      "clinicalNotes": "BP: 145/95 mmHg. Patient reports occasional headaches. Family history of hypertension."
+    },
+    "isPatientVisible": true,
+    "releaseDate": "2024-01-15T16:00:00Z",
+    "createdAt": "2024-01-15T15:30:00Z",
+    "updatedAt": "2024-01-15T15:30:00Z",
+    "updatedBy": "PR20240115001"
+  }
+}
+```
+
+#### **Error Responses**:
+```json
+// 400 Bad Request
+{
+  "error": "BAD_REQUEST",
+  "message": "Invalid request data: Record type must be valid ENUM value"
+}
+
+// 401 Unauthorized
+{
+  "error": "UNAUTHORIZED",
+  "message": "Invalid or missing JWT token"
+}
+
+// 403 Forbidden
+{
+  "error": "FORBIDDEN",
+  "message": "Insufficient permissions. Provider role required"
+}
+
+// 404 Not Found
+{
+  "error": "NOT_FOUND",
+  "message": "Appointment not found or not accessible"
+}
+
+// 500 Internal Server Error
+{
+  "error": "INTERNAL_ERROR",
+  "message": "An unexpected error occurred"
+}
+```
+
+### **7. Update Medical Record API**
+
+#### **Endpoint**: `PUT /api/providers/medical-records/{recordId}`
+**Description**: Update an existing medical record
+
+#### **Authentication**:
+- **Required**: JWT Token with `role: "PROVIDER"`
+- **Header**: `Authorization: Bearer <jwt_token>`
+
+#### **Request Body**:
+```json
+{
+  "content": "Hypertension - Stage 1. Patient shows elevated blood pressure readings. Recommended lifestyle changes.",
+  "customData": {
+    "diagnosis": "Hypertension - Stage 1",
+    "description": "Patient shows elevated blood pressure readings. Recommended lifestyle changes.",
+    "severity": "MILD",
+    "status": "ACTIVE",
+    "clinicalNotes": "BP: 145/95 mmHg. Patient reports occasional headaches. Family history of hypertension. Recommended lifestyle changes."
+  },
+  "isPatientVisible": true,
+  "releaseDate": "2024-01-15T16:00:00Z"
+}
+```
+
+#### **Response (200 OK)**:
+```json
+{
+  "medicalRecord": {
+    "id": "record-uuid-123",
+    "appointmentId": "appointment-uuid-456",
+    "patientId": "P20240115001",
+    "patientName": "John Doe",
+    "patientAge": 45,
+    "patientGender": "MALE",
+    "recordType": "DIAGNOSIS",
+    "content": "Hypertension - Stage 1. Patient shows elevated blood pressure readings. Recommended lifestyle changes.",
+    "customData": {
+      "diagnosis": "Hypertension - Stage 1",
+      "description": "Patient shows elevated blood pressure readings. Recommended lifestyle changes.",
+      "severity": "MILD",
+      "status": "ACTIVE",
+      "clinicalNotes": "BP: 145/95 mmHg. Patient reports occasional headaches. Family history of hypertension. Recommended lifestyle changes."
+    },
+    "isPatientVisible": true,
+    "releaseDate": "2024-01-15T16:00:00Z",
+    "updatedAt": "2024-01-15T16:15:00Z",
+    "updatedBy": "PR20240115001"
+  }
+}
+```
+
+### **8. Get Single Medical Record API**
+
+#### **Endpoint**: `GET /api/providers/medical-records/{recordId}`
+**Description**: Get a specific medical record by ID
+
+#### **Authentication**:
+- **Required**: JWT Token with `role: "PROVIDER"`
+- **Header**: `Authorization: Bearer <jwt_token>`
+
+#### **Response (200 OK)**:
+```json
+{
+  "medicalRecord": {
+    "id": "record-uuid-123",
+    "appointmentId": "appointment-uuid-456",
+    "patientName": "John Doe",
+    "recordType": "DIAGNOSIS",
+    "content": "Hypertension - Stage 1. Patient shows elevated blood pressure readings.",
+    "isPatientVisible": true,
+    "releaseDate": "2024-01-15T16:00:00Z",
+    "updatedAt": "2024-01-15T15:30:00Z",
+    "updatedBy": "PR20240115001"
+  }
+}
+```
+
+#### **Error Responses**:
+```json
+// 404 Not Found
+{
+  "error": "NOT_FOUND",
+  "message": "Medical record not found"
+}
+
+// 403 Forbidden
+{
+  "error": "FORBIDDEN",
+  "message": "Access denied to this medical record"
+}
+```
+
+### **9. Get Patient Medical Records API**
+
+#### **Endpoint**: `GET /api/providers/patients/{patientId}/medical-records`
+**Description**: Get all medical records for a specific patient
+
+#### **Authentication**:
+- **Required**: JWT Token with `role: "PROVIDER"`
+- **Header**: `Authorization: Bearer <jwt_token>`
+
+#### **Query Parameters**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| appointmentId | String | No | Filter by specific appointment |
+| recordType | String | No | Filter by record type |
+| limit | Integer | No | Number of results (default: 50, max: 100) |
+| offset | Integer | No | Pagination offset (default: 0) |
+
+#### **Response (200 OK)**:
+```json
+{
+  "medicalRecords": [
+    {
+      "id": "record-uuid-123",
+      "appointmentId": "appointment-uuid-456",
+      "patientName": "John Doe",
+      "recordType": "DIAGNOSIS",
+      "content": "Hypertension - Stage 1",
+      "isPatientVisible": true,
+      "releaseDate": "2024-01-15T16:00:00Z",
+      "createdAt": "2024-01-15T15:30:00Z",
+      "updatedAt": "2024-01-15T15:30:00Z",
+      "updatedBy": "PR20240115001"
+    }
+  ],
+  "pagination": {
+    "total": 1,
+    "limit": 50,
+    "offset": 0,
+    "hasMore": false
+  }
+}
+```
+
+### **10. Health Check API**
+
+#### **Endpoint**: `GET /health`
+**Description**: Service health check endpoint
+
+#### **Response (200 OK)**:
+```json
+{
+  "status": "UP",
+  "service": "provider-service",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "version": "1.0.0"
+}
+```
+
+## 🔐 **Access Control & Security**
+
+### **JWT Token Requirements**
+- **Provider APIs**: Require JWT with `role: "PROVIDER"`
+- **Search APIs**: Require JWT with `role: "PATIENT"` or `role: "PROVIDER"`
+- **Token Validation**: All requests validated by Auth Service
+- **User Context**: JWT contains `sub` field with external user ID
+
+### **Role-Based Access Control**
+- **Provider Self-Service**: Providers can only access their own profile data
+- **Patient Discovery**: Patients can search and view provider public information
+- **Professional Information**: Only providers can update their professional credentials
+- **Audit Trail**: All updates tracked with `updated_by` field
+
+### **Data Privacy & HIPAA Compliance**
+- **PHI Protection**: Personal health information protected per HIPAA guidelines
+- **Audit Logging**: All data access and modifications logged
+- **Access Controls**: Role-based permissions enforced at API level
+- **Data Minimization**: Only necessary data exposed in API responses
+
+## 📊 **Audit Trail Strategy**
+
+### **Dual Audit Approach**
+- **`updated_by` Fields**: Quick audit trail in each table
+- **`audit_logs` Table**: Comprehensive audit history
+- **JWT Integration**: Automatic population from JWT claims
+
+### **JWT Integration for `updated_by` Field**
+
+**Automatic Population:**
+- **JWT Token Claims**: Contains `sub` field with external user ID
+- **Server-Side Extraction**: Application automatically extracts user ID from JWT
+- **Automatic Setting**: `updated_by` field set to extracted user ID on every update
+- **No Client Input**: Client cannot control or fake the `updated_by` value
+
+**JWT Token Structure:**
+```json
+{
+  "sub": "supabase-uuid-from-auth",
+  "role": "PROVIDER",
+  "status": "ACTIVE",
+  "iat": 1640995200,
+  "exp": 1641081600
+}
+```
+
+**Implementation Flow:**
+1. **Client Request**: Sends JWT token in Authorization header
+2. **JWT Validation**: Server validates token and extracts user ID
+3. **Record Update**: `updated_by` automatically set to extracted user ID
+4. **Audit Logging**: Action logged to `audit_logs` table
+5. **Response**: Updated record returned with `updated_by` field
+
+**Security Benefits:**
+- **Audit Integrity**: Guaranteed accurate audit trail
+- **No Tampering**: Client cannot modify `updated_by` value
+- **HIPAA Compliance**: Meets healthcare audit requirements
+- **Automatic Tracking**: No manual intervention required
+
+### **Access Control for `updatedBy` Field**
+
+#### **Provider API Responses:**
+- **`updatedBy` field IS exposed** to providers in API responses
+- **Clinical workflow** - Providers need to know who updated their data
+- **Audit transparency** - Providers can see audit trail information
+- **Professional responsibility** - Important for healthcare team coordination
+
+#### **Patient API Responses:**
+- **`updatedBy` field NOT exposed** to patients in API responses
+- **Patient privacy** - Patients don't need to know who updated provider data
+- **Clean interface** - Simpler API responses for patient clients
+
+#### **Implementation Logic:**
+```java
+// Provider API - Show updatedBy field
+if (userRole == "PROVIDER") {
+    response.includeField("updatedBy");
+}
+
+// Patient API - Hide updatedBy field
+if (userRole == "PATIENT") {
+    response.removeField("updatedBy");
+}
+```
+
+## 🔄 **Future Enhancements**
+
+### **Email Verification Flow**
+**Planned Feature**: Email verification for new provider registrations
+- **Default Status**: New providers start as `INACTIVE`
+- **Email Confirmation**: Required to activate account
+- **Status Update**: Changed to `ACTIVE` after email verification
+- **Implementation**: Future enhancement, not current requirement
+
+### **Credential Verification**
+**Planned Feature**: Automated credential verification
+- **NPI Validation**: Real-time NPI number verification
+- **License Verification**: State medical board integration
+- **Certification Tracking**: Professional certification monitoring
+- **Expiration Alerts**: Automated license expiration notifications
 
 ## ❓ **Q&A**
 
@@ -354,17 +1018,11 @@ Patient → Gateway → Auth → Provider Service → Database
 **Q**: How do we handle provider credential verification?
 **A**: Provider credentials are verified through professional license databases and certification validation processes.
 
+**Q**: How do we ensure provider credential validation?
+**A**: NPI numbers are validated against national databases, and license numbers are verified with state medical boards.
+
 **Q**: What happens when a provider's license expires?
 **A**: The system tracks license expiration dates and can suspend provider access when licenses are not renewed.
-
-**Q**: How do we ensure medical record privacy?
-**A**: JWT validation ensures providers can only access their own records and patients can only access their own records. All access is logged for audit purposes.
-
-**Q**: Why is appointment_id required for medical records?
-**A**: Medical records must be linked to actual appointments to ensure data integrity and provide proper context for both providers and patients.
-
-**Q**: Why can't medical records be deleted?
-**A**: Medical records are immutable for compliance and legal requirements. Records can be updated but never deleted to maintain audit trail.
 
 ## 🔍 **Discussion Points**
 
@@ -374,12 +1032,12 @@ Patient → Gateway → Auth → Provider Service → Database
 - **Supabase Auth**: Handles authentication credentials
 - **Provider Service**: Creates provider business profile
 
-### **2. Medical Records Management**
-**Question**: How should medical records be managed?
-- **Provider Service**: Primary management of medical records
-- **Patient Service**: Read-only access to patient's own records
-- **Integration**: How to coordinate between services?
-- **Decision Needed**: Medical records ownership and access patterns
+### **2. Provider Discovery**
+**Question**: How should provider search and discovery work?
+- **Search Criteria**: Specialty, location, availability, ratings
+- **Filtering**: Advanced filters for patient preferences
+- **Integration**: How to coordinate with appointment availability?
+- **Decision Needed**: Search algorithm and ranking criteria
 
 
 

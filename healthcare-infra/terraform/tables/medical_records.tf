@@ -1,8 +1,20 @@
 # Medical records table - Patient medical records and documents
+
+# Create ENUM type for record_type
+resource "postgresql_sql" "record_type_enum" {
+  provider = postgresql.neon
+  depends_on = [postgresql_schema.public]
+  query = "CREATE TYPE record_type_enum AS ENUM ('DIAGNOSIS', 'TREATMENT', 'SUMMARY', 'LAB_RESULT', 'PRESCRIPTION', 'NOTE', 'OTHER');"
+}
+
 resource "postgresql_table" "medical_records" {
   provider = postgresql.neon
   name     = "medical_records"
   schema   = postgresql_schema.public.name
+
+  depends_on = [
+    postgresql_sql.record_type_enum
+  ]
 
   column {
     name     = "id"
@@ -12,110 +24,64 @@ resource "postgresql_table" "medical_records" {
   }
 
   column {
-    name     = "patient_id"
-    type     = "UUID"
-    null_able = false
-  }
-
-  column {
-    name     = "provider_id"
-    type     = "UUID"
-    null_able = false
-  }
-
-  column {
     name     = "appointment_id"
     type     = "UUID"
-    null_able = true
+    null_able = false
   }
 
   column {
     name     = "record_type"
-    type     = "VARCHAR(50)"
+    type     = "record_type_enum"
     null_able = false
   }
 
   column {
-    name     = "title"
-    type     = "VARCHAR(255)"
+    name     = "content"
+    type     = "TEXT"
     null_able = false
   }
 
   column {
-    name     = "description"
-    type     = "TEXT"
-    null_able = true
-  }
-
-  column {
-    name     = "diagnosis"
-    type     = "TEXT"
-    null_able = true
-  }
-
-  column {
-    name     = "treatment"
-    type     = "TEXT"
-    null_able = true
-  }
-
-  column {
-    name     = "medications"
-    type     = "JSONB"
-    null_able = true
-  }
-
-  column {
-    name     = "vital_signs"
-    type     = "JSONB"
-    null_able = true
-  }
-
-  column {
-    name     = "file_urls"
-    type     = "JSONB"
-    null_able = true
-  }
-
-  column {
-    name     = "is_confidential"
+    name     = "is_patient_visible"
     type     = "BOOLEAN"
     null_able = false
     default  = "false"
   }
 
   column {
+    name     = "release_date"
+    type     = "TIMESTAMPTZ"
+    null_able = true
+  }
+
+  column {
+    name     = "custom_data"
+    type     = "JSONB"
+    null_able = true
+  }
+
+  column {
     name     = "created_at"
-    type     = "TIMESTAMP"
+    type     = "TIMESTAMPTZ"
     null_able = false
     default  = "CURRENT_TIMESTAMP"
   }
 
   column {
     name     = "updated_at"
-    type     = "TIMESTAMP"
+    type     = "TIMESTAMPTZ"
     null_able = false
     default  = "CURRENT_TIMESTAMP"
   }
 
+  column {
+    name     = "updated_by"
+    type     = "VARCHAR(255)"
+    null_able = true
+  }
+
   primary_key {
     columns = ["id"]
-  }
-
-  foreign_key {
-    columns     = ["patient_id"]
-    references {
-      table  = postgresql_table.patients.name
-      column = "id"
-    }
-  }
-
-  foreign_key {
-    columns     = ["provider_id"]
-    references {
-      table  = postgresql_table.providers.name
-      column = "id"
-    }
   }
 
   foreign_key {
@@ -127,29 +93,31 @@ resource "postgresql_table" "medical_records" {
   }
 }
 
-# Create index on patient_id for faster lookups
-resource "postgresql_index" "medical_records_patient_id" {
+# Create composite index for appointment_id + record_type
+# Note: This composite index also efficiently handles queries on appointment_id alone
+resource "postgresql_index" "medical_records_appointment_type" {
   provider = postgresql.neon
-  name     = "idx_medical_records_patient_id"
+  name     = "idx_medical_records_appointment_type"
   table    = postgresql_table.medical_records.name
   schema   = postgresql_schema.public.name
-  columns  = ["patient_id"]
+  columns  = ["appointment_id", "record_type"]
 }
 
-# Create index on provider_id for faster lookups
-resource "postgresql_index" "medical_records_provider_id" {
+# Patient-visible filter index for portal requests
+# Efficient when serving portal requests (patients only see their released data)
+resource "postgresql_index" "medical_records_patient_visible" {
   provider = postgresql.neon
-  name     = "idx_medical_records_provider_id"
+  name     = "idx_medical_records_patient_visible"
   table    = postgresql_table.medical_records.name
   schema   = postgresql_schema.public.name
-  columns  = ["provider_id"]
+  columns  = ["appointment_id", "is_patient_visible", "release_date"]
 }
 
-# Create index on record_type for filtering
-resource "postgresql_index" "medical_records_type" {
+# Create index on updated_by
+resource "postgresql_index" "medical_records_updated_by" {
   provider = postgresql.neon
-  name     = "idx_medical_records_type"
+  name     = "idx_medical_records_updated_by"
   table    = postgresql_table.medical_records.name
   schema   = postgresql_schema.public.name
-  columns  = ["record_type"]
+  columns  = ["updated_by"]
 }

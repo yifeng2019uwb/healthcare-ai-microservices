@@ -159,7 +159,7 @@ User → Gateway → Auth → Patient Service → Database
 - **Existing System Tables** (already available):
   - `user_profiles` table: Basic user information (ID, username, name, role, status)
 - **Patient Service Uses** (existing table):
-  - `patient_profiles` table: Patient-specific data (medical history, allergies, assigned providers)
+  - `patient_profiles` table: Patient-specific data (medical history, allergies, emergency contacts)
 - **No New Tables Required**: Uses existing database schema
 
 **Account-to-Patient Linking Strategy**:
@@ -238,27 +238,542 @@ User → Gateway → Auth → Patient Service → Database
 |  PUT   | `/api/patients/profile`         | Update my patient profile  | Yes  |
 |  GET   | `/api/patients/medical-history` | Get my medical history     | Yes  |
 
-### **Request/Response Example**
+## 🔌 **API Documentation**
+
+### **1. Create Patient Account**
+**Endpoint**: `POST /api/patients`
+**Description**: Create a new patient account (orchestrated by Gateway)
+**Authentication**: Required (JWT token)
+
+#### **Request Body**:
 ```json
-// Create Patient Request
+{
+  "externalUserId": "supabase-uuid-from-auth",
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "phone": "+1-555-0123",
+  "dateOfBirth": "1990-05-15",
+  "gender": "MALE",
+  "streetAddress": "123 Main St",
+  "city": "New York",
+  "state": "NY",
+  "postalCode": "10001",
+  "country": "USA",
+  "emergencyContactName": "Jane Doe",
+  "emergencyContactPhone": "+1-555-0124"
+}
+```
+
+#### **Request Field Specifications**:
+
+| Field | Type | Required | Pattern/Format | Description |
+|-------|------|----------|----------------|-------------|
+| `externalUserId` | String | ✅ Required | UUID format | Supabase user ID from authentication |
+| `firstName` | String | ✅ Required | 2-100 characters, letters only | User's first name |
+| `lastName` | String | ✅ Required | 2-100 characters, letters only | User's last name |
+| `email` | String | ✅ Required | Valid email format | Contact email address |
+| `phone` | String | ✅ Required | E.164 format (+1-555-0123) | Contact phone number |
+| `dateOfBirth` | String | ✅ Required | YYYY-MM-DD, not future date | User's date of birth |
+| `gender` | String | ✅ Required | MALE, FEMALE, OTHER, UNKNOWN | User's gender |
+| `streetAddress` | String | ❌ Optional | 1-255 characters | Street address |
+| `city` | String | ❌ Optional | 1-100 characters | City name |
+| `state` | String | ❌ Optional | 1-50 characters | State or province |
+| `postalCode` | String | ❌ Optional | 1-20 characters | Postal or ZIP code |
+| `country` | String | ❌ Optional | 1-50 characters | Country name |
+| `emergencyContactName` | String | ❌ Optional | 1-100 characters | Emergency contact name |
+| `emergencyContactPhone` | String | ❌ Optional | E.164 format (+1-555-0124) | Emergency contact phone |
+| `primaryCarePhysician` | String | ❌ Optional | 1-100 characters | Primary care physician name |
+| `insuranceProvider` | String | ❌ Optional | 1-100 characters | Insurance provider name |
+| `insurancePolicyNumber` | String | ❌ Optional | 1-50 characters | Insurance policy number |
+| `medicalHistory` | Object | ❌ Optional | JSON object | Medical history and conditions |
+| `allergies` | Object | ❌ Optional | JSON object | Known allergies and reactions |
+
+#### **Response (201 Created)**:
+```json
+{
+  "success": true,
+  "message": "Account created successfully"
+}
+```
+
+#### **Future Enhancement: Email Verification Flow**:
+
+##### **Planned Registration Process**:
+1. **User submits registration** → Account created with `status: "INACTIVE"` (future default)
+2. **Email sent** → Verification email sent to user's email address
+3. **User clicks link** → Email verification endpoint called
+4. **Status updated** → Account status changed to `ACTIVE`
+5. **Full access** → User can now access all protected endpoints
+
+##### **Status Values**:
+- **`INACTIVE`** - New registration, email verification pending (future default)
+- **`ACTIVE`** - Email verified, full access granted (current default)
+- **`SUSPENDED`** - Account suspended by admin
+
+##### **Current vs Future Behavior**:
+- **Current**: New accounts default to `ACTIVE` status
+- **Future**: New accounts will default to `INACTIVE` until email verification
+- **Authorization**: Status will be checked during login and JWT generation
+
+#### **Error Responses**:
+
+##### **400 Bad Request**:
+```json
+{
+  "error": "BAD_REQUEST",
+  "message": "Invalid request data or missing required fields"
+}
+```
+
+##### **409 Conflict**:
+```json
+{
+  "error": "CONFLICT",
+  "message": "User or email already exists"
+}
+```
+
+##### **401 Unauthorized**:
+```json
+{
+  "error": "UNAUTHORIZED",
+  "message": "Invalid or expired JWT token"
+}
+```
+
+##### **500 Internal Server Error**:
+```json
+{
+  "error": "INTERNAL_SERVER_ERROR",
+  "message": "An unexpected error occurred while creating patient account"
+}
+```
+
+### **2. Get Patient Profile**
+**Endpoint**: `GET /api/patients/profile`
+**Description**: Get current patient's profile information
+**Authentication**: Required (JWT token)
+
+#### **Response (200 OK)**:
+```json
+{
+  "userProfile": {
+    "externalUserId": "supabase-uuid-from-auth",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "phone": "+1-555-0123",
+    "dateOfBirth": "1990-05-15",
+    "gender": "MALE",
+    "streetAddress": "123 Main St",
+    "city": "New York",
+    "state": "NY",
+    "postalCode": "10001",
+    "country": "USA",
+    "role": "PATIENT",
+    "status": "ACTIVE",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  },
+  "patientProfile": {
+    "patientNumber": "P20240115001",
+    "medicalHistory": {
+      "conditions": ["Hypertension", "Type 2 Diabetes"],
+      "surgeries": ["Appendectomy (2010)"],
+      "hospitalizations": ["Emergency visit (2023-05-15)"]
+    },
+    "allergies": {
+      "penicillin": {
+        "severity": "SEVERE",
+        "reaction": "Anaphylaxis",
+        "diagnosedDate": "2015-06-10"
+      },
+      "shellfish": {
+        "severity": "MODERATE",
+        "reaction": "Hives and swelling",
+        "diagnosedDate": "2018-03-22"
+      }
+    },
+    "insuranceProvider": "Blue Cross Blue Shield",
+    "insurancePolicyNumber": "BC123456789",
+    "primaryCarePhysician": "Dr. Sarah Johnson",
+    "emergencyContactName": "Jane Doe",
+    "emergencyContactPhone": "+1-555-0124",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+#### **Error Responses**:
+
+##### **401 Unauthorized**:
+```json
+{
+  "error": "UNAUTHORIZED",
+  "message": "Invalid or expired JWT token"
+}
+```
+
+##### **403 Forbidden**:
+```json
+{
+  "error": "FORBIDDEN",
+  "message": "Account is suspended"
+}
+```
+
+##### **404 Not Found**:
+```json
+{
+  "error": "NOT_FOUND",
+  "message": "Patient profile not found or account is inactive"
+}
+```
+
+##### **500 Internal Server Error**:
+```json
+{
+  "error": "INTERNAL_SERVER_ERROR",
+  "message": "An unexpected error occurred while retrieving profile"
+}
+```
+
+### **3. Update Personal Profile**
+**Endpoint**: `PUT /api/patients/profile`
+**Description**: Update personal information (name, contact, address)
+**Authentication**: Required (JWT token)
+
+#### **Request Body**:
+```json
 {
   "firstName": "John",
   "lastName": "Doe",
-  "dateOfBirth": "1990-01-01",
-  "email": "john.doe@email.com",
-  "phone": "+1234567890"
+  "phone": "+1-555-0123",
+  "streetAddress": "456 Oak Ave",
+  "city": "Brooklyn",
+  "state": "NY",
+  "postalCode": "11201",
+  "country": "USA",
+  "emergencyContactName": "Jane Doe",
+  "emergencyContactPhone": "+1-555-0124"
+}
+```
+
+#### **Response (200 OK)**:
+```json
+{
+  "userProfile": {
+    "externalUserId": "supabase-uuid-from-auth",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "phone": "+1-555-0123",
+    "dateOfBirth": "1990-05-15",
+    "gender": "MALE",
+    "streetAddress": "456 Oak Ave",
+    "city": "Brooklyn",
+    "state": "NY",
+    "postalCode": "11201",
+    "country": "USA",
+    "role": "PATIENT",
+    "status": "ACTIVE",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T14:45:00Z"
+  },
+  "patientProfile": {
+    "patientNumber": "P20240115001",
+    "emergencyContactName": "Jane Doe",
+    "emergencyContactPhone": "+1-555-0124",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T14:45:00Z"
+  }
+}
+```
+
+#### **Request Field Specifications**:
+
+| Field | Type | Required | Pattern/Format | Description |
+|-------|------|----------|----------------|-------------|
+| `firstName` | String | ❌ Optional | 2-100 characters, letters only | User's first name |
+| `lastName` | String | ❌ Optional | 2-100 characters, letters only | User's last name |
+| `phone` | String | ❌ Optional | E.164 format (+1-555-0123) | Contact phone number |
+| `streetAddress` | String | ❌ Optional | 1-255 characters | Street address |
+| `city` | String | ❌ Optional | 1-100 characters | City name |
+| `state` | String | ❌ Optional | 1-50 characters | State or province |
+| `postalCode` | String | ❌ Optional | 1-20 characters | Postal or ZIP code |
+| `country` | String | ❌ Optional | 1-50 characters | Country name |
+| `emergencyContactName` | String | ❌ Optional | 1-100 characters | Emergency contact name |
+| `emergencyContactPhone` | String | ❌ Optional | E.164 format (+1-555-0124) | Emergency contact phone |
+
+#### **Error Responses**:
+
+##### **400 Bad Request**:
+```json
+{
+  "error": "BAD_REQUEST",
+  "message": "Invalid request data or phone number format is invalid"
+}
+```
+
+##### **401 Unauthorized**:
+```json
+{
+  "error": "UNAUTHORIZED",
+  "message": "Invalid or expired JWT token"
+}
+```
+
+##### **404 Not Found**:
+```json
+{
+  "error": "NOT_FOUND",
+  "message": "Patient profile not found or account is inactive"
+}
+```
+
+##### **500 Internal Server Error**:
+```json
+{
+  "error": "INTERNAL_SERVER_ERROR",
+  "message": "An unexpected error occurred while updating profile"
+}
+```
+
+---
+
+### **4. Update Medical Information**
+**Endpoint**: `PUT /api/patients/medical-info`
+**Description**: Update medical information (history, allergies, insurance, physician)
+**Authentication**: Required (JWT token)
+**Note**: This endpoint can be used by both patients and providers
+
+#### **Request Body**:
+```json
+{
+  "medicalHistory": {
+    "conditions": ["Hypertension", "Type 2 Diabetes"],
+    "surgeries": ["Appendectomy (2010)"],
+    "hospitalizations": ["Emergency visit (2023-05-15)"]
+  },
+  "allergies": {
+    "penicillin": {
+      "severity": "SEVERE",
+      "reaction": "Anaphylaxis",
+      "diagnosedDate": "2015-06-10"
+    },
+    "shellfish": {
+      "severity": "MODERATE",
+      "reaction": "Hives and swelling",
+      "diagnosedDate": "2018-03-22"
+    }
+  },
+  "insuranceProvider": "Blue Cross Blue Shield",
+  "insurancePolicyNumber": "BC123456789",
+  "primaryCarePhysician": "Dr. Sarah Johnson"
+}
+```
+
+#### **Response (200 OK)**:
+```json
+{
+  "patientProfile": {
+    "patientNumber": "P20240115001",
+    "medicalHistory": {
+      "conditions": ["Hypertension", "Type 2 Diabetes"],
+      "surgeries": ["Appendectomy (2010)"],
+      "hospitalizations": ["Emergency visit (2023-05-15)"]
+    },
+    "allergies": {
+      "penicillin": {
+        "severity": "SEVERE",
+        "reaction": "Anaphylaxis",
+        "diagnosedDate": "2015-06-10"
+      },
+      "shellfish": {
+        "severity": "MODERATE",
+        "reaction": "Hives and swelling",
+        "diagnosedDate": "2018-03-22"
+      }
+    },
+    "insuranceProvider": "Blue Cross Blue Shield",
+    "insurancePolicyNumber": "BC123456789",
+    "primaryCarePhysician": "Dr. Sarah Johnson",
+    "updatedAt": "2024-01-15T14:45:00Z"
+  }
+}
+```
+
+#### **Request Field Specifications**:
+
+| Field | Type | Required | Pattern/Format | Description |
+|-------|------|----------|----------------|-------------|
+| `medicalHistory` | Object | ❌ Optional | JSON object | Medical history and conditions |
+| `allergies` | Object | ❌ Optional | JSON object | Known allergies and reactions |
+| `insuranceProvider` | String | ❌ Optional | 1-100 characters | Insurance provider name |
+| `insurancePolicyNumber` | String | ❌ Optional | 1-50 characters | Insurance policy number |
+| `primaryCarePhysician` | String | ❌ Optional | 1-100 characters | Primary care physician name |
+
+#### **Error Responses**:
+
+##### **400 Bad Request**:
+```json
+{
+  "error": "BAD_REQUEST",
+  "message": "Invalid medical data format"
+}
+```
+
+##### **401 Unauthorized**:
+```json
+{
+  "error": "UNAUTHORIZED",
+  "message": "Invalid or expired JWT token"
+}
+```
+
+##### **403 Forbidden**:
+```json
+{
+  "error": "FORBIDDEN",
+  "message": "Insufficient permissions to update medical information"
+}
+```
+
+##### **404 Not Found**:
+```json
+{
+  "error": "NOT_FOUND",
+  "message": "Patient profile not found or account is inactive"
+}
+```
+
+##### **500 Internal Server Error**:
+```json
+{
+  "error": "INTERNAL_SERVER_ERROR",
+  "message": "An unexpected error occurred while updating medical information"
+}
+```
+
+#### **Access Control for `updatedBy` Field:**
+
+##### **Patient API Responses:**
+- **`updatedBy` field NOT exposed** to patients in any API response
+- **Internal audit field** - Used only for server-side audit trails
+- **Patient privacy** - Patients don't need to know who updated their data
+- **Clean interface** - Simpler API responses for patient clients
+
+##### **Provider API Responses:**
+- **`updatedBy` field IS exposed** to providers in API responses
+- **Clinical workflow** - Providers need to know who updated patient data
+- **Audit transparency** - Providers can see audit trail information
+- **Professional responsibility** - Important for healthcare team coordination
+
+##### **Implementation Logic:**
+```java
+// Patient API - Hide updatedBy field
+if (userRole == "PATIENT") {
+    response.removeField("updatedBy");
 }
 
-// Patient Response
+// Provider API - Show updatedBy field
+if (userRole == "PROVIDER") {
+    response.includeField("updatedBy");
+}
+```
+
+### **5. Get Medical History**
+**Endpoint**: `GET /api/patients/medical-history`
+**Description**: Get patient's medical history from completed appointments and released medical records
+**Authentication**: Required (JWT token with `role: "PATIENT"`)
+
+#### **Response (200 OK)**:
+```json
 {
-  "id": "uuid",
-  "firstName": "John",
-  "lastName": "Doe",
-  "dateOfBirth": "1990-01-01",
-  "email": "john.doe@email.com",
-  "phone": "+1234567890",
-  "createdAt": "timestamp",
-  "updatedAt": "timestamp"
+  "appointments": [
+    {
+      "id": "789e0123-e89b-12d3-a456-426614174002",
+      "providerId": "provider-123",
+      "providerName": "Dr. Sarah Johnson",
+      "scheduledAt": "2024-01-20T14:00:00Z",
+      "status": "COMPLETED",
+      "appointmentType": "REGULAR_CONSULTATION",
+      "medicalRecords": [
+        {
+          "id": "record-123",
+          "recordType": "DIAGNOSIS",
+          "content": "Hypertension - Stage 1",
+          "isPatientVisible": true,
+          "releaseDate": "2024-01-20T16:00:00Z",
+          "createdAt": "2024-01-20T15:30:00Z"
+        },
+        {
+          "id": "record-124",
+          "recordType": "TREATMENT",
+          "content": "Prescribed Lisinopril 10mg daily",
+          "isPatientVisible": true,
+          "releaseDate": "2024-01-20T16:00:00Z",
+          "createdAt": "2024-01-20T15:35:00Z"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "totalAppointments": 1,
+    "completedAppointments": 1,
+    "upcomingAppointments": 0,
+    "lastVisit": "2024-01-20T14:00:00Z"
+  }
+}
+```
+
+#### **Error Responses**:
+```json
+// 401 Unauthorized
+{
+  "error": "UNAUTHORIZED",
+  "message": "Invalid or missing JWT token"
+}
+
+// 403 Forbidden
+{
+  "error": "FORBIDDEN",
+  "message": "Insufficient permissions. Patient role required"
+}
+
+// 500 Internal Server Error
+{
+  "error": "INTERNAL_ERROR",
+  "message": "An unexpected error occurred"
+}
+```
+
+#### **Data Access Notes**:
+- **Read-Only Access**: Patients can only view medical records marked as `is_patient_visible: true`
+- **Release Date Control**: Records are only shown if `release_date` has passed
+- **Appointment Context**: Medical records are grouped by appointment/visit
+- **Provider Information**: Includes provider name and specialty for context
+- **Service Integration**: This endpoint calls Appointment Service to get appointment data and medical records
+
+### **6. Health Check**
+**Endpoint**: `GET /health`
+**Description**: Service health check
+**Authentication**: Not required
+
+#### **Response (200 OK)**:
+```json
+{
+  "status": "UP",
+  "service": "patient-service",
+  "version": "1.0.0",
+  "timestamp": "2024-01-15T12:00:00Z",
+  "database": "UP",
+  "dependencies": {
+    "database": "UP",
+    "auth-service": "UP"
+  }
 }
 ```
 
@@ -285,177 +800,38 @@ For enhanced patient experience before medical visits, the following APIs can be
 - **Data storage**: Store in existing `patient_profiles` table JSON fields
 - **Audit logging**: Track all pre-visit updates for compliance
 
-## 🗄️ **Database Schema Design**
+## ❓ **Q&A**
 
-### **Patient Service Database Tables**
+### **Common Questions**
+**Q**: How do we handle patient data privacy and HIPAA compliance?
+**A**: All patient data is encrypted, access is logged, and only authorized users can access patient information through proper authentication and role-based access control.
 
-#### **1. User Profiles Table (user_profiles)**
-| Column        | Type         | Constraints                 | Indexes | Description |
-|---------------|--------------|-----------------------------|---------|-------------|
-| id            | UUID         | PRIMARY KEY                 | PRIMARY | Unique user identifier |
-| username      | VARCHAR(255) | UNIQUE, NOT NULL            | UNIQUE | Email address for login |
-| first_name    | VARCHAR(100) | NOT NULL                    | - | User's first name |
-| last_name     | VARCHAR(100) | NOT NULL                    | - | User's last name |
-| date_of_birth | DATE         | NOT NULL                    | - | User's date of birth |
-| phone         | VARCHAR(20)  | NULL                        | INDEX | Contact phone number |
-| email         | VARCHAR(255) | NOT NULL                    | - | Contact email address |
-| role          | ENUM         | NOT NULL, DEFAULT 'PATIENT' | - | User role (PATIENT, PROVIDER) |
-| status        | ENUM         | NOT NULL, DEFAULT 'ACTIVE'  | - | Account status (ACTIVE, INACTIVE) |
-| created_at    | TIMESTAMP    | NOT NULL, DEFAULT NOW()     | - | Record creation timestamp |
-| updated_at    | TIMESTAMP    | NOT NULL, DEFAULT NOW()     | - | Last update timestamp |
+**Q**: What happens when a patient wants to delete their data?
+**A**: Patient data deletion follows GDPR and HIPAA requirements - data is anonymized rather than completely deleted to maintain medical record integrity.
 
-**Composite Indexes:**
-- `idx_user_profiles_name_dob` (last_name, first_name, date_of_birth) - For exact patient identification
+## 🔍 **Discussion Points**
 
-#### **2. Patient Profiles Table (patient_profiles)**
-| Column            | Type      | Constraints             | Indexes | Description                           |
-|-------------------|-----------|-------------------------|---------|---------------------------------------|
-| id                | UUID      | PRIMARY KEY             | PRIMARY | Unique patient identifier |
-| user_id           | UUID      | FOREIGN KEY, NOT NULL   | INDEX   | Reference to user_profiles.id |
-| patient_number    | VARCHAR(50) | UNIQUE, NOT NULL      | UNIQUE  | Auto-generated patient number
-| allergies         | JSONB     | NULL                    | - | Patient allergies array |
-| assigned_providers| UUID[]    | NULL                    | - | Array of provider IDs |
-| health_goals      | JSONB     | NULL                    | - | Patient health objectives |
-| risk_factors      | JSONB     | NULL                    | - | Health risk factors |
-| emergency_contact | JSONB     | NULL                    | - | Emergency contact information |
-| created_at        | TIMESTAMP | NOT NULL, DEFAULT NOW() | - | Record creation timestamp |
-| updated_at        | TIMESTAMP | NOT NULL, DEFAULT NOW() | - | Last update timestamp |
+### **1. Registration Flow Responsibility**
+**Question**: Who handles patient registration?
+- **Option A**: Gateway orchestrates (calls Patient Service for validation, creates Supabase account)
+- **Option B**: External auth provider handles (Patient Service only manages business data)
+- **Option C**: Patient Service handles (integrates with external auth)
+- **Decision Needed**: Clear responsibility assignment
 
-**Foreign Key Indexes:**
-- `idx_patient_profiles_user_id` (user_id) - For patient self-service queries (auto-created by FK)
+### **2. Business Validation Strategy**
+**Question**: Where does business rule validation happen?
+- **Patient Service**: Validates patient-specific business rules
+- **Gateway**: Basic format validation only
 
-#### **Allergies (JSONB)**
-```json
-[
-  {
-    "allergen": "Penicillin",
-    "severity": "SEVERE",
-    "reaction": "Anaphylaxis",
-    "diagnosed_date": "2015-06-10"
-  }
-]
-```
+### **3. Service Communication**
+**Question**: How should Patient Service communicate with other services?
+- **Direct Data Access**: Primary approach for data operations
+- **Service Calls**: When business logic requires other service data
+- **Decision Needed**: Communication patterns and error handling
 
-#### **Health Goals (JSONB)**
-```json
-[
-  {
-    "goal": "Reduce blood sugar levels",
-    "target_date": "2024-12-31",
-    "status": "ACTIVE",
-    "notes": "Target A1C < 7%"
-  }
-]
-```
-
-#### **Risk Factors (JSONB)**
-```json
-[
-  {
-    "factor": "Family history of diabetes",
-    "category": "FAMILY_HISTORY",
-    "severity": "HIGH",
-    "notes": "Both parents have diabetes"
-  }
-]
-```
-
-#### **Emergency Contact (JSONB)**
-```json
-{
-  "name": "John Smith",
-  "relationship": "Spouse",
-  "phone": "+1-555-0123",
-  "email": "john.smith@email.com"
-}
-```
-
-### **Table Relationships**
-
-#### **Primary Relationships**
-- **patient_profiles.user_id** → **user_profiles.id** (One-to-One)
-- Each patient record belongs to exactly one user profile
-- Each user profile can have at most one patient record
-
-#### **Data Access Patterns**
-- **Patient Self-Service**: Query by `patient_profiles.user_id` (authenticated user)
-- **Provider Lookup**: Query by `user_profiles` name/DOB, join to `patient_profiles`
-- **System Query**: Query by `user_profiles.role = 'PATIENT'`
-
-### **Data Validation Rules**
-
-#### **User Profile Validation**
-| Field | Validation Rules |
-|-------|------------------|
-| username | Required, valid email format, unique |
-| first_name | Required, 2-50 characters |
-| last_name | Required, 2-50 characters |
-| date_of_birth | Required, valid date, not in future |
-| phone | Optional, strict format: +1-XXX-XXX-XXXX (US format), unique if provided |
-| email | Required, valid email format |
-| role | Must be "PATIENT" for this service |
-| status | Must be "ACTIVE" for new registrations |
-
-#### **Patient Data Validation**
-| Field | Validation Rules |
-|-------|------------------|
-| user_id | Required, must reference existing user_profiles.id |
-| patient_number | Auto-generated, unique, format: "P" + timestamp |
-| medical_history | JSON structure validation |
-| allergies | Array validation, allergen names required |
-| assigned_providers | Array of valid UUIDs |
-| health_goals | Array validation, goal text required |
-| risk_factors | Array validation, factor name required |
-| emergency_contact | Optional, but if provided must have name and phone |
-
-### **Phone Number Validation Rules**
-
-#### **Strict Format Requirements**
-- **Format**: `+1-XXX-XXX-XXXX` (US phone number format)
-- **Country Code**: Must start with `+1` for US
-- **Area Code**: 3 digits (XXX)
-- **Prefix**: 3 digits (XXX)
-- **Line Number**: 4 digits (XXXX)
-- **Separators**: Hyphens required between sections
-
-#### **Validation Examples**
-| Valid Format | Invalid Format | Reason |
-|--------------|----------------|---------|
-| `+1-555-123-4567` | `555-123-4567` | Missing country code |
-| `+1-555-123-4567` | `+15551234567` | Missing hyphens |
-| `+1-555-123-4567` | `+1-555-123-456` | Wrong number of digits |
-| `+1-555-123-4567` | `+1-555-123-45678` | Too many digits |
-
-#### **Database Constraints**
-- **Unique constraint**: Phone numbers must be unique across all patients
-- **Index**: Fast lookup by phone number
-- **Nullable**: Patients can exist without phone numbers
-
-#### **Business Rules**
-- **Optional field**: Patients can register without phone number
-- **Unique identification**: If provided, must be unique for accurate searches
-- **Search capability**: Providers can find patients by phone number
-- **Format consistency**: Ensures reliable search results
-
-### **Service Boundaries**
-
-#### **Patient Service Handles**
-- ✅ Patient registration and profile management
-- ✅ Patient self-service data (allergies, goals, risk factors)
-- ✅ Emergency contact information
-- ✅ Basic patient identification
-
-#### **Provider Service Will Handle**
-- 🏥 Medical records and diagnoses
-- 🏥 Treatment plans and medications
-- 🏥 Lab results and imaging
-- 🏥 Visit/appointment documentation
-- 🏥 Provider-patient relationships
-- 🏥 Clinical notes and medical history
-
-#### **Appointment Service Will Handle**
-- 📅 Appointment scheduling and booking
-- 📅 Visit management and status tracking
+## 📚 **References**
+- [System Design](system-design.md)
+- [Database Design](database-design.md)
 - 📅 Calendar integration
 - 📅 Reminders and notifications
 

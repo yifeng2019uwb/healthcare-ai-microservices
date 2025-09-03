@@ -1,5 +1,6 @@
 # Patient Profiles table - Patient-specific profile data
 # Industry standard: Separate table for role-specific data
+
 resource "postgresql_table" "patient_profiles" {
   provider = postgresql.neon
   name     = "patient_profiles"
@@ -19,35 +20,83 @@ resource "postgresql_table" "patient_profiles" {
   }
 
   column {
-    name     = "medical_history"
-    type     = "TEXT"
-    null_able = true
-  }
-
-  column {
-    name     = "allergies"
-    type     = "TEXT"
-    null_able = true
-  }
-
-  column {
     name     = "patient_number"
     type     = "VARCHAR(50)"
     null_able = false
   }
 
   column {
+    name     = "medical_history"
+    type     = "JSONB"
+    null_able = true
+  }
+
+  column {
+    name     = "allergies"
+    type     = "JSONB"
+    null_able = true
+  }
+
+  column {
+    name     = "current_medications"
+    type     = "TEXT"
+    null_able = true
+  }
+
+  column {
+    name     = "insurance_provider"
+    type     = "VARCHAR(100)"
+    null_able = true
+  }
+
+  column {
+    name     = "insurance_policy_number"
+    type     = "VARCHAR(50)"
+    null_able = true
+  }
+
+  column {
+    name     = "emergency_contact_name"
+    type     = "VARCHAR(100)"
+    null_able = true
+  }
+
+  column {
+    name     = "emergency_contact_phone"
+    type     = "VARCHAR(20)"
+    null_able = true
+  }
+
+  column {
+    name     = "primary_care_physician"
+    type     = "VARCHAR(100)"
+    null_able = true
+  }
+
+  column {
+    name     = "custom_data"
+    type     = "JSONB"
+    null_able = true
+  }
+
+  column {
     name     = "created_at"
-    type     = "TIMESTAMP"
+    type     = "TIMESTAMPTZ"
     null_able = false
     default  = "CURRENT_TIMESTAMP"
   }
 
   column {
     name     = "updated_at"
-    type     = "TIMESTAMP"
+    type     = "TIMESTAMPTZ"
     null_able = false
     default  = "CURRENT_TIMESTAMP"
+  }
+
+  column {
+    name     = "updated_by"
+    type     = "VARCHAR(255)"
+    null_able = true
   }
 
   primary_key {
@@ -63,6 +112,16 @@ resource "postgresql_table" "patient_profiles" {
   }
 }
 
+# Create unique index on user_id
+resource "postgresql_index" "patient_profiles_user_id_unique" {
+  provider = postgresql.neon
+  name     = "idx_patient_profiles_user_id_unique"
+  table    = postgresql_table.patient_profiles.name
+  schema   = postgresql_schema.public.name
+  columns  = ["user_id"]
+  unique   = true
+}
+
 # Create unique index on patient_number
 resource "postgresql_index" "patient_profiles_patient_number_unique" {
   provider = postgresql.neon
@@ -73,11 +132,11 @@ resource "postgresql_index" "patient_profiles_patient_number_unique" {
   unique   = true
 }
 
-# Create index on user_id for faster lookups
-resource "postgresql_index" "patient_profiles_user_id" {
+# Create index on updated_by
+resource "postgresql_index" "patient_profiles_updated_by" {
   provider = postgresql.neon
-  name     = "idx_patient_profiles_user_id"
+  name     = "idx_patient_profiles_updated_by"
   table    = postgresql_table.patient_profiles.name
   schema   = postgresql_schema.public.name
-  columns  = ["user_id"]
+  columns  = ["updated_by"]
 }

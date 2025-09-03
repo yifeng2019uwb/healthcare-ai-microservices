@@ -1,8 +1,34 @@
 # Audit logs table - Track all data changes for compliance and security
+
+# Create ENUM types for audit logs
+resource "postgresql_sql" "action_type_enum" {
+  provider = postgresql.neon
+  depends_on = [postgresql_schema.public]
+  query = "CREATE TYPE action_type_enum AS ENUM ('CREATE', 'READ', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT');"
+}
+
+resource "postgresql_sql" "resource_type_enum" {
+  provider = postgresql.neon
+  depends_on = [postgresql_schema.public]
+  query = "CREATE TYPE resource_type_enum AS ENUM ('USER_PROFILE', 'PATIENT_PROFILE', 'PROVIDER_PROFILE', 'APPOINTMENT', 'MEDICAL_RECORD');"
+}
+
+resource "postgresql_sql" "outcome_enum" {
+  provider = postgresql.neon
+  depends_on = [postgresql_schema.public]
+  query = "CREATE TYPE outcome_enum AS ENUM ('SUCCESS', 'FAILURE');"
+}
+
 resource "postgresql_table" "audit_logs" {
   provider = postgresql.neon
   name     = "audit_logs"
   schema   = postgresql_schema.public.name
+
+  depends_on = [
+    postgresql_sql.action_type_enum,
+    postgresql_sql.resource_type_enum,
+    postgresql_sql.outcome_enum
+  ]
 
   column {
     name     = "id"
@@ -12,49 +38,43 @@ resource "postgresql_table" "audit_logs" {
   }
 
   column {
-    name     = "table_name"
-    type     = "VARCHAR(100)"
-    null_able = false
-  }
-
-  column {
-    name     = "record_id"
-    type     = "UUID"
-    null_able = false
-  }
-
-  column {
-    name     = "operation"
-    type     = "VARCHAR(20)"
-    null_able = false
-  }
-
-  column {
     name     = "user_id"
     type     = "UUID"
+    null_able = false
+  }
+
+  column {
+    name     = "action_type"
+    type     = "action_type_enum"
+    null_able = false
+  }
+
+  column {
+    name     = "resource_type"
+    type     = "resource_type_enum"
+    null_able = false
+  }
+
+  column {
+    name     = "resource_id"
+    type     = "UUID"
     null_able = true
   }
 
   column {
-    name     = "user_type"
-    type     = "VARCHAR(20)"
-    null_able = true
+    name     = "outcome"
+    type     = "outcome_enum"
+    null_able = false
   }
 
   column {
-    name     = "old_values"
+    name     = "details"
     type     = "JSONB"
     null_able = true
   }
 
   column {
-    name     = "new_values"
-    type     = "JSONB"
-    null_able = true
-  }
-
-  column {
-    name     = "ip_address"
+    name     = "source_ip"
     type     = "INET"
     null_able = true
   }
@@ -66,14 +86,8 @@ resource "postgresql_table" "audit_logs" {
   }
 
   column {
-    name     = "session_id"
-    type     = "VARCHAR(255)"
-    null_able = true
-  }
-
-  column {
     name     = "created_at"
-    type     = "TIMESTAMP"
+    type     = "TIMESTAMPTZ"
     null_able = false
     default  = "CURRENT_TIMESTAMP"
   }
@@ -85,53 +99,40 @@ resource "postgresql_table" "audit_logs" {
   foreign_key {
     columns     = ["user_id"]
     references {
-      table  = postgresql_table.users.name
+      table  = postgresql_table.user_profiles.name
       column = "id"
     }
   }
 }
 
-# Create index on table_name for faster lookups
-resource "postgresql_index" "audit_logs_table_name" {
+# Create optimized composite indexes for frequent query patterns
+# Note: Individual field indexes removed to reduce write cost - composite indexes handle most queries efficiently
+
+# For user activity queries: "show me this user's latest activity" or "last 100 records for user"
+resource "postgresql_index" "audit_logs_user_activity" {
   provider = postgresql.neon
-  name     = "idx_audit_logs_table_name"
+  name     = "idx_audit_logs_user_activity"
   table    = postgresql_table.audit_logs.name
   schema   = postgresql_schema.public.name
-  columns  = ["table_name"]
+  columns  = ["user_id", "created_at"]
+  # Note: DESC ordering handled at query level for better performance
 }
 
-# Create index on record_id for faster lookups
-resource "postgresql_index" "audit_logs_record_id" {
+# For resource activity queries: "all activity for this resource, ordered by time" (common in audit views)
+resource "postgresql_index" "audit_logs_resource_activity" {
   provider = postgresql.neon
-  name     = "idx_audit_logs_record_id"
+  name     = "idx_audit_logs_resource_activity"
   table    = postgresql_table.audit_logs.name
   schema   = postgresql_schema.public.name
-  columns  = ["record_id"]
+  columns  = ["resource_type", "resource_id", "created_at"]
+  # Note: DESC ordering handled at query level for better performance
 }
 
-# Create index on user_id for user activity tracking
-resource "postgresql_index" "audit_logs_user_id" {
+# For security monitoring: "all failed logins" or "all failed updates in last 24h"
+resource "postgresql_index" "audit_logs_security_monitoring" {
   provider = postgresql.neon
-  name     = "idx_audit_logs_user_id"
+  name     = "idx_audit_logs_security_monitoring"
   table    = postgresql_table.audit_logs.name
   schema   = postgresql_schema.public.name
-  columns  = ["user_id"]
-}
-
-# Create index on operation for filtering by action type
-resource "postgresql_index" "audit_logs_operation" {
-  provider = postgresql.neon
-  name     = "idx_audit_logs_operation"
-  table    = postgresql_table.audit_logs.name
-  schema   = postgresql_schema.public.name
-  columns  = ["operation"]
-}
-
-# Create composite index for time-based queries
-resource "postgresql_index" "audit_logs_created_at" {
-  provider = postgresql.neon
-  name     = "idx_audit_logs_created_at"
-  table    = postgresql_table.audit_logs.name
-  schema   = postgresql_schema.public.name
-  columns  = ["created_at"]
+  columns  = ["action_type", "outcome", "created_at"]
 }

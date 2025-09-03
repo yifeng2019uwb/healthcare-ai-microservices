@@ -140,7 +140,8 @@ Support Systems (1 table)
 | status           | ENUM         | NOT NULL         | -               | ACTIVE, INACTIVE, SUSPENDED |
 | custom_data      | JSONB        | -                | -               | Flexible data storage |
 | created_at       | TIMESTAMPTZ  | NOT NULL         | -               | Record creation timestamp (timezone-aware) |
-| updated_at       | TIMESTAMPTZ  | NOT NULL         | -               | Record update timestamp (timezone-aware) |-
+| updated_at       | TIMESTAMPTZ  | NOT NULL         | -               | Record update timestamp (timezone-aware) |
+| updated_by       | VARCHAR(255) | -                | INDEX           | External user ID who last updated this record |-
 
 #### **Composite Index Definition:**
 ```sql
@@ -188,6 +189,7 @@ updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 | custom_data            | JSONB        | -            | -     | Flexible data storage |
 | created_at             | TIMESTAMPTZ  | NOT NULL     | -     | Record creation timestamp (timezone-aware) |
 | updated_at             | TIMESTAMPTZ  | NOT NULL     | -     | Record update timestamp (timezone-aware) |
+| updated_by             | VARCHAR(255) | -            | INDEX | External user ID who last updated this record |
 
 #### **Foreign Key Constraint:**
 ```sql
@@ -219,6 +221,7 @@ FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
 | custom_data      | JSONB        | -            | -               | Flexible data storage |
 | created_at       | TIMESTAMPTZ  | NOT NULL     | -               | Record creation timestamp (timezone-aware) |
 | updated_at       | TIMESTAMPTZ  | NOT NULL     | -               | Record update timestamp (timezone-aware) |
+| updated_by       | VARCHAR(255) | -            | INDEX           | External user ID who last updated this record |
 
 #### **Foreign Key Constraint:**
 ```sql
@@ -240,15 +243,17 @@ FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
 | Column Name      | Data Type    | Constraints  | Index           | Description |
 |------------------|--------------|--------------|-----------------|-------------|
 | id               | UUID         | PK, NOT NULL | PRIMARY KEY     | Primary key identifier |
-| patient_id       | UUID         | FK, -        | INDEX           | Foreign key to patient_profiles.id (null if not booked) |
+| patient_id       | UUID         | FK, -        | COMPOSITE INDEX | Foreign key to patient_profiles.id (null if not booked) |
 | provider_id      | UUID         | FK, NOT NULL | COMPOSITE INDEX | Foreign key to provider_profiles.id |
 | scheduled_at     | TIMESTAMPTZ  | NOT NULL     | COMPOSITE INDEX | Appointment date and time (timezone-aware) |
-| status           | ENUM         | NOT NULL     | INDEX           | AVAILABLE, SCHEDULED, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW |
+| checkin_time     | TIMESTAMPTZ  | -            | -               | When patient actually checked in (timezone-aware) |
+| status           | ENUM         | NOT NULL     | COMPOSITE INDEX | AVAILABLE, SCHEDULED, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW |
 | appointment_type | ENUM         | NOT NULL     | -               | REGULAR_CONSULTATION (30min), FOLLOW_UP (15min), NEW_PATIENT_INTAKE (60min), PROCEDURE_CONSULTATION (45min) |
 | notes            | TEXT         | -            | -               | Appointment notes |
 | custom_data      | JSONB        | -            | -               | Flexible data storage |
 | created_at       | TIMESTAMPTZ  | NOT NULL     | -               | Record creation timestamp (timezone-aware) |
 | updated_at       | TIMESTAMPTZ  | NOT NULL     | -               | Record update timestamp (timezone-aware) |
+| updated_by       | VARCHAR(255) | -            | INDEX           | External user ID who last updated this record |
 
 #### **Foreign Key Constraints:**
 ```sql
@@ -261,10 +266,35 @@ ADD CONSTRAINT fk_appointment_provider_id
 FOREIGN KEY (provider_id) REFERENCES provider_profiles(id) ON DELETE CASCADE;
 ```
 
-#### **Composite Index Definition:**
+#### **Optimized Index Definitions:**
 ```sql
-CREATE INDEX idx_appointment_provider_schedule ON appointments (provider_id, scheduled_at);
+-- For provider calendar & conflict checks (3-column composite - sweet spot)
+CREATE INDEX idx_provider_schedule ON appointments (provider_id, status, scheduled_at);
+
+-- For patient history (DESC order for most recent first)
+CREATE INDEX idx_patient_schedule ON appointments (patient_id, scheduled_at DESC);
 ```
+
+#### **Composite Index Strategy:**
+
+##### **1. Provider Schedule Index `(provider_id, status, scheduled_at)`**
+**Why This Index:**
+- **Provider Calendar**: Most common query is "show me this provider's schedule"
+- **Status Filtering**: Need to filter by appointment status (AVAILABLE, SCHEDULED, etc.)
+- **Conflict Detection**: Must check for overlapping appointments when booking
+- **3-Column Sweet Spot**: Handles provider + status + time queries in single index scan
+
+##### **2. Patient Schedule Index `(patient_id, scheduled_at DESC)`**
+**Why This Index:**
+- **Patient History**: Most common query is "show me this patient's appointments"
+- **Chronological Order**: Patients want to see most recent appointments first
+- **Portal Performance**: Critical for patient portal responsiveness
+- **DESC Ordering**: Optimized for "latest first" patient timeline views
+
+##### **Index Strategy Benefits:**
+- **Write Cost Reduction**: 2 composite indexes instead of 4+ individual indexes
+- **Real-World Usage**: Matches actual appointment system query patterns
+- **Performance**: Critical for appointment booking and calendar functionality
 
 #### **Overlap Prevention:**
 ```sql
@@ -300,6 +330,7 @@ WHERE status NOT IN ('CANCELLED', 'NO_SHOW');
 | custom_data | JSONB      | -        | - | Flexible data storage |
 | created_at | TIMESTAMPTZ | NOT NULL | - | Record creation timestamp (timezone-aware) |
 | updated_at | TIMESTAMPTZ | NOT NULL | - | Record update timestamp (timezone-aware) |
+| updated_by | VARCHAR(255) | -      | INDEX | External user ID who last updated this record |
 
 #### **Foreign Key Definitions:**
 ```sql
@@ -308,10 +339,30 @@ ADD CONSTRAINT fk_medical_record_appointment_id
 FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE;
 ```
 
-#### **Index Definition:**
+#### **Index Definitions:**
 ```sql
+-- For appointment-based record queries
 CREATE INDEX idx_medical_record_appointment_type ON medical_records (appointment_id, record_type);
+
+-- For patient portal requests (patients only see their released data)
+CREATE INDEX idx_medical_records_patient_visible ON medical_records (appointment_id, is_patient_visible, release_date);
 ```
+
+#### **Composite Index Strategy:**
+
+##### **1. Appointment + Record Type Index `(appointment_id, record_type)`**
+**Why This Index:**
+- **Appointment Context**: All medical records are linked to appointments (visits)
+- **Record Type Filtering**: Need to filter by record type (DIAGNOSIS, TREATMENT, etc.)
+- **Single Index Efficiency**: Handles both appointment queries and type filtering
+- **Storage Optimization**: One index instead of separate appointment_id and record_type indexes
+
+##### **2. Patient-Visible Filter Index `(appointment_id, is_patient_visible, release_date)`**
+**Why This Index:**
+- **Patient Portal**: Patients can only see records marked as visible and released
+- **Privacy Compliance**: Critical for HIPAA compliance and patient data privacy
+- **Release Date Control**: Providers control when records become visible to patients
+- **Portal Performance**: Essential for responsive patient portal experience
 
 #### **Key Design Decisions:**
 - **Visit-Based Records**: All medical records linked to appointments (visits)
@@ -327,15 +378,15 @@ CREATE INDEX idx_medical_record_appointment_type ON medical_records (appointment
 | Column Name | Data Type | Constraints | Index | Description |
 |-------------|-----------|-------------|-------|-------------|
 | id          | UUID   | PK, NOT NULL | PRIMARY KEY | Primary key identifier |
-| user_id     | UUID   | FK, NOT NULL | INDEX | Foreign key to user_profiles.id |
-| action_type | ENUM   | NOT NULL | INDEX | CREATE, READ, UPDATE, DELETE, LOGIN, LOGOUT |
-| resource_type | ENUM | NOT NULL | INDEX | USER_PROFILE, PATIENT_PROFILE, PROVIDER_PROFILE, APPOINTMENT, MEDICAL_RECORD |
-| resource_id | UUID   | - | INDEX | ID of the resource being acted upon (nullable for system actions) |
-| outcome     | ENUM   | NOT NULL | INDEX | SUCCESS, FAILURE |
+| user_id     | UUID   | FK, NOT NULL | COMPOSITE INDEX | Foreign key to user_profiles.id |
+| action_type | ENUM   | NOT NULL | COMPOSITE INDEX | CREATE, READ, UPDATE, DELETE, LOGIN, LOGOUT |
+| resource_type | ENUM | NOT NULL | COMPOSITE INDEX | USER_PROFILE, PATIENT_PROFILE, PROVIDER_PROFILE, APPOINTMENT, MEDICAL_RECORD |
+| resource_id | UUID   | - | COMPOSITE INDEX | ID of the resource being acted upon (nullable for system actions) |
+| outcome     | ENUM   | NOT NULL | COMPOSITE INDEX | SUCCESS, FAILURE |
 | details     | JSONB  | - | - | Additional action details |
 | source_ip   | INET   | - | - | IP address of the request |
 | user_agent  | TEXT   | - | - | User agent string |
-| created_at  | TIMESTAMPTZ | NOT NULL | INDEX | Action timestamp (timezone-aware) |
+| created_at  | TIMESTAMPTZ | NOT NULL | COMPOSITE INDEX | Action timestamp (timezone-aware) |
 
 #### **Foreign Key Definitions:**
 ```sql
@@ -343,6 +394,110 @@ ALTER TABLE audit_logs
 ADD CONSTRAINT fk_audit_user_id
 FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
 ```
+
+#### **Audit Trail Strategy:**
+
+##### **Dual Audit Approach:**
+1. **`updated_by` fields** - Track who last modified each record (lightweight, fast queries)
+2. **`audit_logs` table** - Complete audit trail of all actions (comprehensive, detailed)
+
+##### **`updated_by` Field Benefits:**
+- **Fast queries** - Quick lookup of who last updated any record
+- **Simple implementation** - Single field per table
+- **Real-time tracking** - Always shows current state
+- **Efficient storage** - Minimal overhead per record
+
+##### **`audit_logs` Table Benefits:**
+- **Complete history** - Every action logged with full details
+- **HIPAA compliance** - Comprehensive audit trail for healthcare
+- **Security monitoring** - Track failed attempts, suspicious activity
+- **Forensic analysis** - Detailed investigation capabilities
+
+##### **Combined Usage:**
+```sql
+-- Quick check: Who last updated this patient's profile?
+SELECT updated_by, updated_at FROM patient_profiles WHERE id = ?;
+
+-- Detailed audit: Show all changes to this patient's profile
+SELECT al.*, up.first_name, up.last_name
+FROM audit_logs al
+JOIN user_profiles up ON al.user_id = up.id
+WHERE al.resource_type = 'PATIENT_PROFILE'
+  AND al.resource_id = ?
+ORDER BY al.created_at DESC;
+```
+
+##### **JWT Integration for `updated_by` Field:**
+
+**Automatic Population:**
+- **JWT Token Claims**: Contains `sub` field with external user ID
+- **Server-Side Extraction**: Application automatically extracts user ID from JWT
+- **Automatic Setting**: `updated_by` field set to extracted user ID on every update
+- **No Client Input**: Client cannot control or fake the `updated_by` value
+
+**JWT Token Structure:**
+```json
+{
+  "sub": "supabase-uuid-from-auth",
+  "role": "PATIENT",
+  "status": "ACTIVE",
+  "iat": 1640995200,
+  "exp": 1641081600
+}
+```
+
+**Implementation Flow:**
+1. **Client Request**: Sends JWT token in Authorization header
+2. **JWT Validation**: Server validates token and extracts user ID
+3. **Record Update**: `updated_by` automatically set to extracted user ID
+4. **Audit Logging**: Action logged to `audit_logs` table
+5. **Response**: Updated record returned with `updated_by` field
+
+**Security Benefits:**
+- **Audit Integrity**: Guaranteed accurate audit trail
+- **No Tampering**: Client cannot modify `updated_by` value
+- **HIPAA Compliance**: Meets healthcare audit requirements
+- **Automatic Tracking**: No manual intervention required
+
+#### **Optimized Composite Index Definitions:**
+```sql
+-- For user activity queries: "show me this user's latest activity" or "last 100 records for user"
+CREATE INDEX idx_audit_logs_user_activity ON audit_logs (user_id, created_at);
+
+-- For resource activity queries: "all activity for this resource, ordered by time" (common in audit views)
+CREATE INDEX idx_audit_logs_resource_activity ON audit_logs (resource_type, resource_id, created_at);
+
+-- For security monitoring: "all failed logins" or "all failed updates in last 24h"
+CREATE INDEX idx_audit_logs_security_monitoring ON audit_logs (action_type, outcome, created_at);
+```
+
+#### **Composite Index Strategy:**
+
+##### **1. User Activity Index `(user_id, created_at)`**
+**Why This Index:**
+- **User Timeline**: Most common audit query is "show me this user's activity"
+- **Chronological Order**: Users want to see latest activity first (DESC ordering)
+- **HIPAA Compliance**: Required for user activity tracking and audit trails
+- **Performance**: Critical for user activity pages and audit reports
+
+##### **2. Resource Activity Index `(resource_type, resource_id, created_at)`**
+**Why This Index:**
+- **Audit Trails**: Need to track all activity for specific resources (appointments, records)
+- **Compliance Reports**: Required for HIPAA compliance and resource change tracking
+- **Resource History**: Providers need to see all changes to specific medical records
+- **Chronological Order**: Activity must be ordered by time for audit purposes
+
+##### **3. Security Monitoring Index `(action_type, outcome, created_at)`**
+**Why This Index:**
+- **Security Monitoring**: Must detect failed login attempts and security incidents
+- **HIPAA Compliance**: Required for security audit and incident analysis
+- **Real-time Alerts**: Security systems need fast queries for failed operations
+- **Compliance Auditing**: Generate security reports for regulatory requirements
+
+##### **Index Strategy Benefits:**
+- **Write Cost Reduction**: 50% fewer indexes (6 → 3) for better INSERT/UPDATE performance
+- **Real-World Usage**: Indexes match actual audit log query patterns
+- **HIPAA Compliance**: Optimized for healthcare audit requirements
 
 #### **Key Design Decisions:**
 - **Comprehensive Logging**: All user actions logged for HIPAA compliance

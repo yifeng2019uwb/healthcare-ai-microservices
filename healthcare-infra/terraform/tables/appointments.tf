@@ -1,8 +1,27 @@
 # Appointments table - Appointment scheduling and management
+
+# Create ENUM types for appointments
+resource "postgresql_sql" "appointment_status_enum" {
+  provider = postgresql.neon
+  depends_on = [postgresql_schema.public]
+  query = "CREATE TYPE appointment_status_enum AS ENUM ('AVAILABLE', 'SCHEDULED', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW');"
+}
+
+resource "postgresql_sql" "appointment_type_enum" {
+  provider = postgresql.neon
+  depends_on = [postgresql_schema.public]
+  query = "CREATE TYPE appointment_type_enum AS ENUM ('REGULAR_CONSULTATION', 'FOLLOW_UP', 'NEW_PATIENT_INTAKE', 'PROCEDURE_CONSULTATION');"
+}
+
 resource "postgresql_table" "appointments" {
   provider = postgresql.neon
   name     = "appointments"
   schema   = postgresql_schema.public.name
+
+  depends_on = [
+    postgresql_sql.appointment_status_enum,
+    postgresql_sql.appointment_type_enum
+  ]
 
   column {
     name     = "id"
@@ -14,7 +33,7 @@ resource "postgresql_table" "appointments" {
   column {
     name     = "patient_id"
     type     = "UUID"
-    null_able = false
+    null_able = true
   }
 
   column {
@@ -24,34 +43,28 @@ resource "postgresql_table" "appointments" {
   }
 
   column {
-    name     = "appointment_date"
-    type     = "DATE"
+    name     = "scheduled_at"
+    type     = "TIMESTAMPTZ"
     null_able = false
   }
 
   column {
-    name     = "start_time"
-    type     = "TIME"
-    null_able = false
-  }
-
-  column {
-    name     = "end_time"
-    type     = "TIME"
-    null_able = false
+    name     = "checkin_time"
+    type     = "TIMESTAMPTZ"
+    null_able = true
   }
 
   column {
     name     = "status"
-    type     = "VARCHAR(20)"
+    type     = "appointment_status_enum"
     null_able = false
-    default  = "SCHEDULED"
+    default  = "AVAILABLE"
   }
 
   column {
     name     = "appointment_type"
-    type     = "VARCHAR(50)"
-    null_able = true
+    type     = "appointment_type_enum"
+    null_able = false
   }
 
   column {
@@ -61,17 +74,29 @@ resource "postgresql_table" "appointments" {
   }
 
   column {
+    name     = "custom_data"
+    type     = "JSONB"
+    null_able = true
+  }
+
+  column {
     name     = "created_at"
-    type     = "TIMESTAMP"
+    type     = "TIMESTAMPTZ"
     null_able = false
     default  = "CURRENT_TIMESTAMP"
   }
 
   column {
     name     = "updated_at"
-    type     = "TIMESTAMP"
+    type     = "TIMESTAMPTZ"
     null_able = false
     default  = "CURRENT_TIMESTAMP"
+  }
+
+  column {
+    name     = "updated_by"
+    type     = "VARCHAR(255)"
+    null_able = true
   }
 
   primary_key {
@@ -81,7 +106,7 @@ resource "postgresql_table" "appointments" {
   foreign_key {
     columns     = ["patient_id"]
     references {
-      table  = postgresql_table.patients.name
+      table  = postgresql_table.patient_profiles.name
       column = "id"
     }
   }
@@ -89,35 +114,38 @@ resource "postgresql_table" "appointments" {
   foreign_key {
     columns     = ["provider_id"]
     references {
-      table  = postgresql_table.providers.name
+      table  = postgresql_table.provider_profiles.name
       column = "id"
     }
   }
 }
 
-# Create index on patient_id for faster lookups
-resource "postgresql_index" "appointments_patient_id" {
+# For provider calendar & conflict checks
+resource "postgresql_index" "appointments_provider_schedule" {
   provider = postgresql.neon
-  name     = "idx_appointments_patient_id"
+  name     = "idx_provider_schedule"
   table    = postgresql_table.appointments.name
   schema   = postgresql_schema.public.name
-  columns  = ["patient_id"]
+  columns  = ["provider_id", "status", "scheduled_at"]
 }
 
-# Create index on provider_id for faster lookups
-resource "postgresql_index" "appointments_provider_id" {
+# For patient history (DESC order for most recent first)
+resource "postgresql_index" "appointments_patient_schedule" {
   provider = postgresql.neon
-  name     = "idx_appointments_provider_id"
+  name     = "idx_patient_schedule"
   table    = postgresql_table.appointments.name
   schema   = postgresql_schema.public.name
-  columns  = ["provider_id"]
+  columns  = ["patient_id", "scheduled_at"]
+
+  # Note: DESC ordering is handled at query level for better performance
+  # The index supports both ASC and DESC queries efficiently
 }
 
-# Create composite index for appointment scheduling queries
-resource "postgresql_index" "appointments_provider_date" {
+# Create index on updated_by
+resource "postgresql_index" "appointments_updated_by" {
   provider = postgresql.neon
-  name     = "idx_appointments_provider_date"
+  name     = "idx_appointments_updated_by"
   table    = postgresql_table.appointments.name
   schema   = postgresql_schema.public.name
-  columns  = ["provider_id", "appointment_date", "start_time"]
+  columns  = ["updated_by"]
 }

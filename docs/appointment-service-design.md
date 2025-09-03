@@ -172,147 +172,570 @@ Provider → Gateway → Auth → Appointment Service → Database
   └── Submit availability schedule
 ```
 
-## 🛠️ **API Design**
+## 🛠️ **Detailed API Design**
 
-### **Provider Availability Management**
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST   | `/api/appointments/availability` | Set my available slots | Provider |
-| GET    | `/api/appointments/availability` | Get my availability | Provider |
-| PUT    | `/api/appointments/availability/{slotId}` | Update slot | Provider |
-| DELETE | `/api/appointments/availability/{slotId}` | Remove slot | Provider |
+### **1. Book Appointment API**
 
-### **Patient Appointment Booking**
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET    | `/api/appointments/available-slots` | Find available slots | Public |
-| POST   | `/api/appointments` | Book appointment | Patient |
-| GET    | `/api/appointments` | View my appointments | Patient |
+#### **Endpoint**: `PUT /api/appointments/{id}`
+**Description**: Book an existing appointment slot with a healthcare provider
 
-### **Appointment Management APIs**
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET    | `/api/appointments/provider/{providerId}` | Get provider's appointments | Provider |
-| PUT    | `/api/appointments/{id}/status` | Change appointment status | Provider |
-| PUT    | `/api/appointments/{id}/reschedule` | Reschedule appointment | Patient/Provider |
-| DELETE | `/api/appointments/{id}` | Cancel appointment | Patient/Provider |
+#### **Authentication**:
+- **Required**: JWT Token with `role: "PATIENT"`
+- **Header**: `Authorization: Bearer <jwt_token>`
 
-### **Appointment Lifecycle APIs**
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST  | `/api/appointments/{id}/checkin` | Patient check-in | Patient |
-| POST  | `/api/appointments/{id}/complete` | Mark appointment complete | Provider |
-
-
-
-### **Request/Response Examples**
-
-#### **1. Provider Sets Available Slots**
+#### **Request Body**:
 ```json
-POST /api/appointments/availability
 {
-    "dayOfWeek": 1,           // Monday
-    "startTime": "09:00:00",  // 9 AM
-    "endTime": "17:00:00",    // 5 PM
-    "durationMinutes": 30,    // 30-minute slots
-    "recurringWeeks": 4       // Create for next 4 weeks
+  "notes": "Annual checkup and blood pressure review"
 }
 ```
 
-**Response**: System creates 16 available slots (9:00, 9:30, 10:00, ..., 16:30)
+#### **Field Specifications**:
+| Field           | Type | Required | Pattern/Validation |
+|-----------------|------|----------|-------------------|
+| notes           | String | No | Max 1000 characters |
 
-#### **2. Patient Finds Available Slots**
+#### **Response (200 OK)**:
 ```json
-GET /api/appointments/available-slots?providerId=uuid&date=2024-01-15
-```
-
-**Response**: List of available 30-minute slots for the requested date
-
-#### **3. Patient Books Appointment**
-```json
-POST /api/appointments
 {
-    "providerId": "uuid",
-    "slotTime": "2024-01-15T10:00:00Z",
-    "notes": "Annual checkup"
+  "appointment": {
+    "id": "appointment-uuid-456",
+    "providerName": "Dr. Sarah Johnson",
+    "scheduledAt": "2024-01-20T14:00:00Z",
+    "checkinTime": null,
+    "status": "SCHEDULED",
+    "appointmentType": "REGULAR_CONSULTATION",
+    "notes": "Annual checkup and blood pressure review",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  }
 }
 ```
 
-**Response**: Appointment confirmation with booking details
+#### **Error Responses**:
+```json
+// 400 Bad Request
+{
+  "error": "BAD_REQUEST",
+  "message": "Invalid request data: Appointment slot is no longer available"
+}
 
-## 🗄️ **Database Schema Design**
+// 401 Unauthorized
+{
+  "error": "UNAUTHORIZED",
+  "message": "Invalid or missing JWT token"
+}
+
+// 403 Forbidden
+{
+  "error": "FORBIDDEN",
+  "message": "Insufficient permissions. Patient role required"
+}
+
+// 409 Conflict
+{
+  "error": "CONFLICT",
+  "message": "Time slot is no longer available"
+}
+
+// 500 Internal Server Error
+{
+  "error": "INTERNAL_ERROR",
+  "message": "An unexpected error occurred"
+}
+```
+
+### **2. Search Available Slots API**
+
+#### **Endpoint**: `GET /api/appointments/available-slots`
+**Description**: Patients search for available appointment slots
+
+#### **Authentication**:
+- **Required**: None (Public endpoint for slot discovery)
+
+#### **Query Parameters**:
+| Parameter  | Type | Required | Description |
+|------------|------|----------|-------------|
+| providerId | String | No | Filter by specific provider (business ID) |
+| date       | String | No | Specific date (YYYY-MM-DD) |
+| startDate  | String | No | Start date for range (YYYY-MM-DD) |
+| endDate    | String | No | End date for range (YYYY-MM-DD) |
+| appointmentType | String | No | Filter by appointment type |
+
+#### **Response (200 OK)**:
+```json
+{
+  "availableSlots": [
+    {
+      "id": "appointment-uuid-001",
+      "providerName": "Dr. Sarah Johnson",
+      "scheduledAt": "2024-01-20T09:00:00Z",
+      "appointmentType": "REGULAR_CONSULTATION",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "appointment-uuid-002",
+      "providerName": "Dr. Sarah Johnson",
+      "scheduledAt": "2024-01-20T09:30:00Z",
+      "appointmentType": "REGULAR_CONSULTATION",
+      "status": "AVAILABLE"
+    }
+  ],
+  "totalSlots": 2
+}
+```
+
+### **3. Get Patient Appointments API**
+
+#### **Endpoint**: `GET /api/appointments`
+**Description**: Get all appointments for the authenticated patient
+
+#### **Authentication**:
+- **Required**: JWT Token with `role: "PATIENT"`
+- **Header**: `Authorization: Bearer <jwt_token>`
+
+#### **Query Parameters**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| status | String | No | Filter by appointment status |
+| limit | Integer | No | Number of results (default: 20, max: 100) |
+| offset | Integer | No | Pagination offset (default: 0) |
+
+#### **Response (200 OK)**:
+```json
+{
+  "appointments": [
+    {
+      "id": "appointment-uuid-456",
+      "providerName": "Dr. Sarah Johnson",
+      "scheduledAt": "2024-01-20T14:00:00Z",
+      "checkinTime": null,
+      "status": "SCHEDULED",
+      "appointmentType": "REGULAR_CONSULTATION",
+      "notes": "Annual checkup and blood pressure review",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "pagination": {
+    "total": 1,
+    "limit": 20,
+    "offset": 0,
+    "hasMore": false
+  }
+}
+```
+
+### **4. Patient Check-in API**
+
+#### **Endpoint**: `PUT /api/appointments/{id}/checkin`
+**Description**: Patient checks in for their appointment
+
+#### **Authentication**:
+- **Required**: JWT Token with `role: "PATIENT"`
+- **Header**: `Authorization: Bearer <jwt_token>`
+
+#### **Response (200 OK)**:
+```json
+{
+  "appointment": {
+    "id": "appointment-uuid-456",
+    "providerName": "Dr. Sarah Johnson",
+    "scheduledAt": "2024-01-20T14:00:00Z",
+    "checkinTime": "2024-01-20T14:05:00Z",
+    "status": "IN_PROGRESS",
+    "appointmentType": "REGULAR_CONSULTATION",
+    "notes": "Annual checkup and blood pressure review",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-20T14:05:00Z"
+  }
+}
+```
+
+### **5. Update Appointment Status API**
+
+#### **Endpoint**: `PUT /api/appointments/{id}/status`
+**Description**: Provider updates appointment status (confirm, complete, cancel, no-show)
+
+#### **Authentication**:
+- **Required**: JWT Token with `role: "PROVIDER"`
+- **Header**: `Authorization: Bearer <jwt_token>`
+
+#### **Request Body**:
+```json
+{
+  "status": "COMPLETED",
+  "notes": "Patient completed annual checkup. Blood pressure normal. Follow-up in 6 months."
+}
+```
+
+#### **Field Specifications**:
+| Field | Type | Required | Pattern/Validation |
+|-------|------|----------|-------------------|
+| status | String | Yes | SCHEDULED, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW |
+| notes | String | No | Max 1000 characters |
+
+#### **Response (200 OK)**:
+```json
+{
+  "appointment": {
+    "id": "appointment-uuid-456",
+    "providerId": "PR20240115001",
+    "providerName": "Dr. Sarah Johnson",
+    "patientId": "P20240115001",
+    "scheduledAt": "2024-01-20T14:00:00Z",
+    "checkinTime": "2024-01-20T14:05:00Z",
+    "status": "COMPLETED",
+    "appointmentType": "REGULAR_CONSULTATION",
+    "notes": "Patient completed annual checkup. Blood pressure normal. Follow-up in 6 months.",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-20T15:30:00Z",
+    "updatedBy": "PR20240115001"
+  }
+}
+```
+
+### **6. Get Provider Appointments API**
+
+#### **Endpoint**: `GET /api/appointments/provider/{providerId}`
+**Description**: Get all appointments for a specific provider
+
+#### **Authentication**:
+- **Required**: JWT Token with `role: "PROVIDER"`
+- **Header**: `Authorization: Bearer <jwt_token>`
+
+#### **Query Parameters**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| status | String | No | Filter by appointment status |
+| date | String | No | Filter by specific date (YYYY-MM-DD) |
+| limit | Integer | No | Number of results (default: 50, max: 100) |
+| offset | Integer | No | Pagination offset (default: 0) |
+
+#### **Response (200 OK)**:
+```json
+{
+  "appointments": [
+    {
+      "id": "appointment-uuid-456",
+      "providerId": "PR20240115001",
+      "providerName": "Dr. Sarah Johnson",
+      "patientId": "P20240115001",
+      "patientName": "John Doe",
+      "scheduledAt": "2024-01-20T14:00:00Z",
+      "checkinTime": "2024-01-20T14:05:00Z",
+      "status": "COMPLETED",
+      "appointmentType": "REGULAR_CONSULTATION",
+      "notes": "Patient completed annual checkup. Blood pressure normal. Follow-up in 6 months.",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-01-20T15:30:00Z"
+    }
+  ],
+  "pagination": {
+    "total": 1,
+    "limit": 50,
+    "offset": 0,
+    "hasMore": false
+  }
+}
+```
+
+### **7. Cancel Appointment API**
+
+#### **Endpoint**: `PUT /api/appointments/{id}/cancel`
+**Description**: Cancel an appointment (available to both patients and providers)
+
+#### **Authentication**:
+- **Required**: JWT Token with `role: "PATIENT"` or `role: "PROVIDER"`
+- **Header**: `Authorization: Bearer <jwt_token>`
+
+#### **Request Body**:
+```json
+{
+  "reason": "Patient requested cancellation due to illness"
+}
+```
+
+#### **Response (200 OK)**:
+```json
+{
+  "appointment": {
+    "id": "appointment-uuid-456",
+    "providerName": "Dr. Sarah Johnson",
+    "scheduledAt": "2024-01-20T14:00:00Z",
+    "checkinTime": null,
+    "status": "CANCELLED",
+    "appointmentType": "REGULAR_CONSULTATION",
+    "notes": "Patient requested cancellation due to illness",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-19T16:45:00Z"
+  }
+}
+```
+
+### **8. Set Provider Availability API**
+
+#### **Endpoint**: `POST /api/appointments/availability`
+**Description**: Provider sets their availability for a specific date. Business logic automatically creates appointment slots based on appointment type duration.
+
+#### **Authentication**:
+- **Required**: JWT Token with `role: "PROVIDER"`
+- **Header**: `Authorization: Bearer <jwt_token>`
+
+#### **Request Body**:
+```json
+{
+  "date": "2024-01-20",
+  "startTime": "09:00:00",
+  "endTime": "17:00:00",
+  "appointmentType": "REGULAR_CONSULTATION"
+}
+```
+
+#### **Field Specifications**:
+| Field           | Type | Required | Pattern/Validation |
+|-----------------|------|----------|-------------------|
+| date            | String | Yes | Date in YYYY-MM-DD format |
+| startTime       | String | Yes | Time in HH:MM:SS format (24-hour) |
+| endTime         | String | Yes | Time in HH:MM:SS format (24-hour) |
+| appointmentType | String | Yes | REGULAR_CONSULTATION (30min), FOLLOW_UP (15min), NEW_PATIENT_INTAKE (60min), PROCEDURE_CONSULTATION (45min) |
+
+#### **Business Logic**:
+- **REGULAR_CONSULTATION**: Creates 30-minute slots (9:00, 9:30, 10:00, etc.)
+- **FOLLOW_UP**: Creates 15-minute slots (9:00, 9:15, 9:30, etc.)
+- **NEW_PATIENT_INTAKE**: Creates 60-minute slots (9:00, 10:00, 11:00, etc.)
+- **PROCEDURE_CONSULTATION**: Creates 45-minute slots (9:00, 9:45, 10:30, etc.)
+
+#### **Response (201 Created)**:
+```json
+{
+  "appointments": [
+    {
+      "id": "appointment-uuid-001",
+      "providerId": "PR20240115001",
+      "providerName": "Dr. Sarah Johnson",
+      "scheduledAt": "2024-01-20T09:00:00Z",
+      "appointmentType": "REGULAR_CONSULTATION",
+      "status": "AVAILABLE",
+      "createdAt": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": "appointment-uuid-002",
+      "providerId": "PR20240115001",
+      "providerName": "Dr. Sarah Johnson",
+      "scheduledAt": "2024-01-20T09:30:00Z",
+      "appointmentType": "REGULAR_CONSULTATION",
+      "status": "AVAILABLE",
+      "createdAt": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": "appointment-uuid-003",
+      "providerId": "PR20240115001",
+      "providerName": "Dr. Sarah Johnson",
+      "scheduledAt": "2024-01-20T10:00:00Z",
+      "appointmentType": "REGULAR_CONSULTATION",
+      "status": "AVAILABLE",
+      "createdAt": "2024-01-15T10:30:00Z"
+    }
+  ]
+}
+```
+
+#### **Error Responses**:
+```json
+// 400 Bad Request
+{
+  "error": "BAD_REQUEST",
+  "message": "Invalid time range: endTime must be after startTime"
+}
+
+// 409 Conflict
+{
+  "error": "CONFLICT",
+  "message": "Availability already exists for this date and time range"
+}
+```
+
+### **9. Health Check API**
+
+#### **Endpoint**: `GET /health`
+**Description**: Service health check endpoint
+
+#### **Response (200 OK)**:
+```json
+{
+  "status": "UP",
+  "service": "appointment-service",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "version": "1.0.0"
+}
+```
+
+
+
+## 🔐 **Access Control & Security**
+
+### **JWT Token Requirements**
+- **Patient APIs**: Require JWT with `role: "PATIENT"`
+- **Provider APIs**: Require JWT with `role: "PROVIDER"`
+- **Mixed APIs**: Some endpoints accept both patient and provider roles
+- **Token Validation**: All requests validated by Auth Service
+- **User Context**: JWT contains `sub` field with external user ID
+
+### **Role-Based Access Control**
+- **Patient Self-Service**: Patients can only access their own appointments
+- **Provider Management**: Providers can manage appointments for their patients
+- **Cross-Role Operations**: Both patients and providers can cancel appointments
+- **Audit Trail**: All updates tracked with `updated_by` field
+
+### **Data Privacy & HIPAA Compliance**
+- **PHI Protection**: Appointment data protected per HIPAA guidelines
+- **Audit Logging**: All appointment actions logged
+- **Access Controls**: Role-based permissions enforced at API level
+- **Data Minimization**: Only necessary data exposed in API responses
+
+## 📊 **Audit Trail Strategy**
+
+### **Dual Audit Approach**
+- **`updated_by` Fields**: Quick audit trail in appointments table
+- **`audit_logs` Table**: Comprehensive audit history
+- **JWT Integration**: Automatic population from JWT claims
+
+### **JWT Integration for `updated_by` Field**
+
+**Automatic Population:**
+- **JWT Token Claims**: Contains `sub` field with external user ID
+- **Server-Side Extraction**: Application automatically extracts user ID from JWT
+- **Automatic Setting**: `updated_by` field set to extracted user ID on every update
+- **No Client Input**: Client cannot control or fake the `updated_by` value
+
+**JWT Token Structure:**
+```json
+{
+  "sub": "supabase-uuid-from-auth",
+  "role": "PATIENT",
+  "status": "ACTIVE",
+  "iat": 1640995200,
+  "exp": 1641081600
+}
+```
+
+**Implementation Flow:**
+1. **Client Request**: Sends JWT token in Authorization header
+2. **JWT Validation**: Server validates token and extracts user ID
+3. **Record Update**: `updated_by` automatically set to extracted user ID
+4. **Audit Logging**: Action logged to `audit_logs` table
+5. **Response**: Updated record returned with `updated_by` field
+
+**Security Benefits:**
+- **Audit Integrity**: Guaranteed accurate audit trail
+- **No Tampering**: Client cannot modify `updated_by` value
+- **HIPAA Compliance**: Meets healthcare audit requirements
+- **Automatic Tracking**: No manual intervention required
+
+### **Access Control for `updatedBy` Field**
+
+#### **Patient API Responses:**
+- **`updatedBy` field NOT exposed** to patients in API responses
+- **Internal audit field** - Used only for server-side audit trails
+- **Patient privacy** - Patients don't need to know who updated their appointments
+- **Clean interface** - Simpler API responses for patient clients
+
+#### **Provider API Responses:**
+- **`updatedBy` field IS exposed** to providers in API responses
+- **Clinical workflow** - Providers need to know who updated appointment data
+- **Audit transparency** - Providers can see audit trail information
+- **Professional responsibility** - Important for healthcare team coordination
+
+#### **Implementation Logic:**
+```java
+// Patient API - Hide updatedBy field
+if (userRole == "PATIENT") {
+    response.removeField("updatedBy");
+}
+
+// Provider API - Show updatedBy field
+if (userRole == "PROVIDER") {
+    response.includeField("updatedBy");
+}
+```
+
+## 🔄 **Future Enhancements**
+
+### **Availability Management**
+**Planned Feature**: Provider availability and slot management
+- **Availability Windows**: Providers set their available time slots
+- **Slot Generation**: Automatic generation of appointment slots
+- **Conflict Prevention**: Real-time availability checking
+- **Recurring Schedules**: Weekly/monthly availability patterns
+
+### **Notification System**
+**Planned Feature**: Automated appointment notifications
+- **Appointment Reminders**: 24h and 1h before appointment
+- **Status Updates**: Notifications for appointment changes
+- **Multi-channel**: Email, SMS, push notifications
+- **Configurable**: User preference management
+
+## 🗄️ **Database Schema Reference**
 
 ### **Appointment Service Database Tables**
 
-#### **Appointments Table (appointments)**
-| Column Name      | Data Type    | Constraints  | Index           | Description |
-|------------------|--------------|--------------|-----------------|-------------|
-| id               | UUID         | PK, NOT NULL | PRIMARY KEY     | Primary key identifier |
-| patient_id       | UUID         | FK, -        | INDEX           | Foreign key to patient_profiles.id (null if not booked) |
-| provider_id      | UUID         | FK, NOT NULL | COMPOSITE INDEX | Foreign key to provider_profiles.id |
-| scheduled_at     | TIMESTAMPTZ  | NOT NULL     | COMPOSITE INDEX | Appointment date and time (timezone-aware) |
-| status           | ENUM         | NOT NULL     | INDEX           | AVAILABLE, SCHEDULED, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW |
-| appointment_type | ENUM         | NOT NULL     | -               | REGULAR_CONSULTATION (30min), FOLLOW_UP (15min), NEW_PATIENT_INTAKE (60min), PROCEDURE_CONSULTATION (45min) |
-| notes            | TEXT         | -            | -               | Appointment notes |
-| custom_data      | JSONB        | -            | -               | Flexible data storage |
-| created_at       | TIMESTAMPTZ  | NOT NULL     | -               | Record creation timestamp (timezone-aware) |
-| updated_at       | TIMESTAMPTZ  | NOT NULL     | -               | Record update timestamp (timezone-aware) |
+**Reference**: See [Database Design](database-design.md) for complete table definitions and relationships.
 
-**ENUM: APPOINTMENT_STATUS**
-- `AVAILABLE` - Provider available slot (no patient assigned)
-- `SCHEDULED` - Appointment is scheduled
-- `CONFIRMED` - Appointment is confirmed
-- `IN_PROGRESS` - Appointment is in progress
-- `COMPLETED` - Appointment is completed
-- `CANCELLED` - Appointment is cancelled
-- `NO_SHOW` - Patient did not show up
+#### **Key Tables Used by Appointment Service**:
+- **`appointments`** - Core appointment data with `checkin_time` field
+- **`user_profiles`** - User information for patients and providers
+- **`patient_profiles`** - Patient-specific data
+- **`provider_profiles`** - Provider-specific data
+- **`audit_logs`** - Comprehensive audit trail
 
-**ENUM: APPOINTMENT_TYPE**
-- `REGULAR_CONSULTATION` - 30 minutes
-- `FOLLOW_UP` - 15 minutes
-- `NEW_PATIENT_INTAKE` - 60 minutes
-- `PROCEDURE_CONSULTATION` - 45 minutes
-
-**Indexes**:
-- `PRIMARY KEY` (id) - Primary key identifier
-- `COMPOSITE INDEX` (provider_id, scheduled_at) - For provider schedule queries
-- `INDEX` (patient_id) - For patient appointment lookup
-- `INDEX` (status) - For status-based queries
+#### **Key Features**:
+- **`checkin_time`** - Tracks when patient actually arrives vs scheduled time
+- **Status Management** - Complete appointment lifecycle tracking
+- **Audit Trail** - All changes tracked with `updated_by` field
+- **Timezone Support** - All timestamps use `TIMESTAMPTZ`
+- **Flexible Data** - `custom_data` JSONB for extensibility
 
 ## ❓ **Q&A**
 
 ### **Common Questions**
 **Q**: How do we prevent double-booking appointments?
-**A**: The service uses database constraints and real-time availability checking to prevent scheduling conflicts.
+**A**: The service uses database constraints and real-time availability checking to prevent scheduling conflicts. The composite index on `(provider_id, status, scheduled_at)` enables efficient conflict detection.
 
 **Q**: What happens when a patient cancels an appointment?
-**A**: The appointment status is updated to CANCELLED, the time slot becomes available, and notifications are sent to the provider.
+**A**: The appointment status is updated to CANCELLED, the `updated_by` field tracks who cancelled it, and the change is logged in the audit system. The time slot becomes available for rebooking.
+
+**Q**: How does the check-in process work?
+**A**: Patients use the `PUT /api/appointments/{id}/checkin` API to check in. The `checkin_time` field is automatically set to the current timestamp, and the status changes to IN_PROGRESS.
 
 **Q**: How do we handle appointment reminders?
-**A**: The service automatically sends reminders based on configured timing (24h, 1h before appointment) via email, SMS, or push notifications.
+**A**: This is a planned future feature. The service will automatically send reminders based on configured timing (24h, 1h before appointment) via email, SMS, or push notifications.
 
-## 🔍 **Discussion Points**
+**Q**: What's the difference between `scheduled_at` and `checkin_time`?
+**A**: `scheduled_at` is when the appointment was originally scheduled (e.g., 2:00 PM). `checkin_time` is when the patient actually arrived (e.g., 2:15 PM). This allows tracking of no-shows and actual service times.
 
-### **1. Availability Management Strategy**
-**Question**: How should provider availability be managed?
-- **Fixed Schedule**: Providers set fixed weekly schedules
-- **Dynamic Availability**: Providers can update availability in real-time
-- **Block Booking**: Providers can block specific time periods
-- **Decision Needed**: Availability management approach
+## 🔍 **Implementation Notes**
 
-### **2. Appointment Booking Flow**
-**Question**: How should the appointment booking process work?
-- **Real-time Booking**: Immediate confirmation and booking
-- **Request-based**: Patient requests, provider confirms
-- **Hybrid Approach**: Real-time for some types, request-based for others
-- **Decision Needed**: Booking flow strategy
+### **1. Appointment Booking Flow**
+**Current Implementation**: Real-time booking with immediate confirmation
+- **Direct Booking**: Patients can book available slots immediately
+- **Conflict Prevention**: Database constraints prevent double-booking
+- **Status Tracking**: Complete appointment lifecycle management
+- **Future Enhancement**: Request-based booking for complex appointments
 
-### **3. Notification Strategy**
-**Question**: How should appointment notifications be handled?
-- **Email Only**: Simple email notifications
-- **Multi-channel**: Email, SMS, push notifications
-- **Configurable**: Provider_profiles/patient_profiles can choose notification preferences
-- **Decision Needed**: Notification approach and channels
+### **2. Check-in and No-Show Management**
+**Current Implementation**: Dual timestamp tracking
+- **Scheduled Time**: `scheduled_at` for appointment scheduling
+- **Actual Arrival**: `checkin_time` for real service time
+- **No-Show Detection**: Automatic detection when `checkin_time` is null after grace period
+- **Service Analytics**: Track actual vs scheduled service times
+
+### **3. Audit and Compliance**
+**Current Implementation**: Comprehensive audit trail
+- **Dual Audit**: `updated_by` fields + `audit_logs` table
+- **JWT Integration**: Automatic audit field population
+- **HIPAA Compliance**: All appointment actions logged
+- **Role-Based Access**: Different audit visibility for patients vs providers
 
 ## 📚 **References**
 

@@ -153,17 +153,20 @@
 ### **Service Boundaries (Industry Standard)**
 - **Provider Service**:
   - ✅ `user_profiles` + `provider_profiles` management
-  - ✅ Medical records management (via appointments and medical_records)
   - ✅ Provider profile and credentials management
+  - ✅ Provider discovery and search functionality
+  - ❌ Medical records management (handled by Appointment Service via appointments)
   - ❌ Appointment slots (handled by Appointment Service)
 - **Patient Service**:
   - ✅ `user_profiles` + `patient_profiles` management
-  - ✅ Medical history viewing (via appointments and medical_records)
   - ✅ Patient profile and demographics management
+  - ✅ Medical history viewing (via appointments and medical_records)
   - ❌ Appointment booking (handled by Appointment Service)
 - **Appointment Service**:
-  - ✅ Availability windows, slot generation, booking, lifecycle
-  - ❌ Profile management (handled by Patient/Provider Services)
+  - ✅ Appointment scheduling and lifecycle management
+  - ✅ Medical records management (via appointments and medical_records)
+  - ✅ Provider availability and slot management
+  - ❌ Provider/patient profile management (handled by respective services)
 
 ### **Service Ports**
 | Service | Port | External Access | Technology |
