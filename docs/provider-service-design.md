@@ -73,7 +73,7 @@ Providers need to create, view, and update medical records for their patients, i
 
 **Database Tables**:
 - `user_profiles` - Core user information
-- `providers` - Provider-specific data
+- `provider_profiles` - Provider-specific data
 - `medical_records` - Clinical medical data
 
 
@@ -127,7 +127,7 @@ Provider Service Component Architecture:
                     │  Shared Database│
                     │                 │
                     │ • user_profiles │
-                    │ • providers     │
+                    │ • provider_profiles │
                     │ • audit_logs    │
                     └─────────────────┘
 ```
@@ -136,7 +136,7 @@ Provider Service Component Architecture:
 Key Data Flow - Provider Registration:
 Provider → Gateway → Auth → Provider Service → Database
   │         │        │         │                │
-  │         │        │         │                └── Create user_profiles + providers
+  │         │        │         │                └── Create user_profiles + provider_profiles
   │         │        │         │                │   (with license verification)
   │         │        │         │                │
   │         │        │         │                └── Set is_verified = false
@@ -156,7 +156,7 @@ Provider → Gateway → Auth → Provider Service → Database
 Key Data Flow - Provider Discovery:
 Patient → Gateway → Auth → Provider Service → Database
   │        │        │         │                │
-  │        │        │         │                └── Query providers table
+  │        │        │         │                └── Query provider_profiles table
   │        │        │         │                │   (filter by specialties, verified status)
   │        │        │         │                │
   │        │        │         │                └── Join with user_profiles for basic info
@@ -305,7 +305,7 @@ Patient → Gateway → Auth → Provider Service → Database
 
 ### **Provider Service Database Tables**
 
-#### **Providers Table (providers)**
+#### **Provider Profiles Table (provider_profiles)**
 | Column | Type | Constraints | Indexes | Description |
 |--------|------|-------------|---------|-------------|
 | id | UUID | PRIMARY KEY | PRIMARY | Unique provider record identifier |
@@ -329,8 +329,8 @@ Patient → Gateway → Auth → Provider Service → Database
 | Column | Type | Constraints | Indexes | Description |
 |--------|------|-------------|---------|-------------|
 | id | UUID | PRIMARY KEY | PRIMARY | Unique medical record identifier |
-| patient_id | UUID | FOREIGN KEY, NOT NULL | INDEX | Reference to patients.id |
-| provider_id | UUID | FOREIGN KEY, NOT NULL | INDEX | Reference to providers.id |
+| patient_id | UUID | FOREIGN KEY, NOT NULL | INDEX | Reference to patient_profiles.id |
+| provider_id | UUID | FOREIGN KEY, NOT NULL | INDEX | Reference to provider_profiles.id |
 | appointment_id | UUID | FOREIGN KEY, NOT NULL | INDEX | Reference to appointments.id |
 | diagnosis | TEXT | NULL | - | Medical diagnosis |
 | treatment | TEXT | NULL | - | Treatment plan and recommendations |

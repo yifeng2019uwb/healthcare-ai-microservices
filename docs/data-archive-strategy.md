@@ -21,7 +21,7 @@ This document defines the data archive strategy for managing data lifecycle, per
 
 ### **Why This Matters**
 - **Performance**: Keep active tables small and fast
-- **Compliance**: Maintain healthcare data retention requirements
+- **Compliance**: Maintain healthcare data retention requirements (6-year HIPAA requirement)
 - **Cost**: Optimize storage costs for different data tiers
 - **Legal**: Support legal hold and discovery requirements
 
@@ -31,15 +31,17 @@ This document defines the data archive strategy for managing data lifecycle, per
 
 ## 🗄️ **Archive Table Structure**
 
-### **Current Active Tables (8)**
+### **Current Active Tables (6)**
 ```
 user_profiles
-patients
-providers
+patient_profiles
+provider_profiles
 appointments
 medical_records
 audit_logs
 ```
+
+> **📋 Current Schema**: See [Data Strategy](data-strategy.md) for complete current table structure and relationships.
 
 ### **Added Archive Tables (4)**
 ```
@@ -89,9 +91,9 @@ audit_logs_deleted
 
 #### **Low Volume Tables (No Archiving)**
 ❌ **user_profiles** (never archive - always needed)
-
-❌ **patients** (static reference data)
-❌ **providers** (static reference data)
+❌ **patient_profiles** (static reference data)
+❌ **provider_profiles** (static reference data)
+❌ **medical_record_extensions** (low volume, keep with medical_records)
 
 ### **Movement Triggers**
 - **To Archive**: Automated monthly job (data older than 2 years)
@@ -193,8 +195,8 @@ archived_by VARCHAR(255)
 
 ## 🔗 **Related Documents**
 
-- [Database Design](database-design.md) - Core table structure
-- [Data Strategy](data-strategy.md) - Overall data approach
+- [Data Strategy](data-strategy.md) - Current data architecture and HIPAA compliance
+- [Database Design](database-design.md) - Detailed table specifications
 - [System Design](system-design.md) - Overall architecture
 
 ---

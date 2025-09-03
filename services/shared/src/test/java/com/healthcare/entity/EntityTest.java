@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class EntityTest {
 
-    @Test
+        @Test
     void testUserEntity() {
         // Create a user
         User user = new User("John", "Doe", "john.doe@example.com", UserRole.PATIENT);
@@ -33,37 +33,50 @@ class EntityTest {
         user.setPhone("123-456-7890");
         assertThat(user.getPhone()).isEqualTo("123-456-7890");
 
+        user.setDateOfBirth(LocalDate.of(1990, 5, 15));
+        assertThat(user.getDateOfBirth()).isEqualTo(LocalDate.of(1990, 5, 15));
+
+        user.setGender("Female");
+        assertThat(user.getGender()).isEqualTo("Female");
+
+        user.setAddress("123 Main St, City, State");
+        assertThat(user.getAddress()).isEqualTo("123 Main St, City, State");
+
+        user.setEmergencyContactName("John Smith");
+        user.setEmergencyContactPhone("555-1234");
+        assertThat(user.getEmergencyContactName()).isEqualTo("John Smith");
+        assertThat(user.getEmergencyContactPhone()).isEqualTo("555-1234");
+
         user.setIsActive(false);
         assertThat(user.getIsActive()).isFalse();
     }
 
-    @Test
+        @Test
     void testPatientEntity() {
         // Create user first
         User user = new User("Jane", "Smith", "jane.smith@example.com", UserRole.PATIENT);
+        user.setDateOfBirth(LocalDate.of(1990, 5, 15));
+        user.setGender("Female");
+        user.setAddress("123 Main St, City, State");
+        user.setEmergencyContactName("John Smith");
+        user.setEmergencyContactPhone("555-1234");
 
         // Create patient
         Patient patient = new Patient(user);
-        patient.setDateOfBirth(LocalDate.of(1990, 5, 15));
-        patient.setGender("Female");
-        patient.setAddress("123 Main St, City, State");
         patient.setMedicalHistory("No significant medical history");
 
         // Test basic properties
         assertThat(patient.getUser()).isEqualTo(user);
-        assertThat(patient.getDateOfBirth()).isEqualTo(LocalDate.of(1990, 5, 15));
-        assertThat(patient.getGender()).isEqualTo("Female");
-        assertThat(patient.getAddress()).isEqualTo("123 Main St, City, State");
+        assertThat(patient.getUser().getDateOfBirth()).isEqualTo(LocalDate.of(1990, 5, 15));
+        assertThat(patient.getUser().getGender()).isEqualTo("Female");
+        assertThat(patient.getUser().getAddress()).isEqualTo("123 Main St, City, State");
+        assertThat(patient.getUser().getEmergencyContactName()).isEqualTo("John Smith");
+        assertThat(patient.getUser().getEmergencyContactPhone()).isEqualTo("555-1234");
         assertThat(patient.getMedicalHistory()).isEqualTo("No significant medical history");
 
         // Test additional setters
         patient.setAllergies("Peanuts");
-        patient.setEmergencyContactName("John Smith");
-        patient.setEmergencyContactPhone("555-1234");
-
         assertThat(patient.getAllergies()).isEqualTo("Peanuts");
-        assertThat(patient.getEmergencyContactName()).isEqualTo("John Smith");
-        assertThat(patient.getEmergencyContactPhone()).isEqualTo("555-1234");
     }
 
     @Test

@@ -6,7 +6,7 @@ package com.healthcare.constants;
 public final class DatabaseConstants {
 
     // Table Names
-    public static final String TABLE_USERS = "users";
+    public static final String TABLE_USER_PROFILES = "user_profiles";
     public static final String TABLE_PATIENTS = "patients";
     public static final String TABLE_PROVIDERS = "providers";
     public static final String TABLE_APPOINTMENTS = "appointments";

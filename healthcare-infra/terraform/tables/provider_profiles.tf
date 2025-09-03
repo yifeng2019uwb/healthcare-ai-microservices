@@ -1,7 +1,8 @@
-# Providers table - Healthcare provider profiles and credentials
-resource "postgresql_table" "providers" {
+# Provider Profiles table - Provider-specific profile data
+# Industry standard: Separate table for role-specific data
+resource "postgresql_table" "provider_profiles" {
   provider = postgresql.neon
-  name     = "providers"
+  name     = "provider_profiles"
   schema   = postgresql_schema.public.name
 
   column {
@@ -25,19 +26,19 @@ resource "postgresql_table" "providers" {
 
   column {
     name     = "license_number"
-    type     = "VARCHAR(20)"
+    type     = "VARCHAR(50)"
     null_able = true
   }
 
   column {
     name     = "qualification"
-    type     = "VARCHAR(100)"
+    type     = "TEXT"
     null_able = true
   }
 
   column {
     name     = "bio"
-    type     = "VARCHAR(2000)"
+    type     = "TEXT"
     null_able = true
   }
 
@@ -93,20 +94,30 @@ resource "postgresql_table" "providers" {
   }
 }
 
-# Create index on user_id for faster lookups
-resource "postgresql_index" "providers_user_id" {
+# Create unique index on license_number
+resource "postgresql_index" "provider_profiles_license_number_unique" {
   provider = postgresql.neon
-  name     = "idx_providers_user_id"
-  table    = postgresql_table.providers.name
+  name     = "idx_provider_profiles_license_number_unique"
+  table    = postgresql_table.provider_profiles.name
+  schema   = postgresql_schema.public.name
+  columns  = ["license_number"]
+  unique   = true
+}
+
+# Create index on user_id for faster lookups
+resource "postgresql_index" "provider_profiles_user_id" {
+  provider = postgresql.neon
+  name     = "idx_provider_profiles_user_id"
+  table    = postgresql_table.provider_profiles.name
   schema   = postgresql_schema.public.name
   columns  = ["user_id"]
 }
 
 # Create index on specialty for provider search
-resource "postgresql_index" "providers_specialty" {
+resource "postgresql_index" "provider_profiles_specialty" {
   provider = postgresql.neon
-  name     = "idx_providers_specialty"
-  table    = postgresql_table.providers.name
+  name     = "idx_provider_profiles_specialty"
+  table    = postgresql_table.provider_profiles.name
   schema   = postgresql_schema.public.name
   columns  = ["specialty"]
 }

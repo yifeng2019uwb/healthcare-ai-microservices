@@ -38,19 +38,20 @@ Database design is foundational for all services. A well-designed schema ensures
 ```
 🗄️ Core Tables Structure (6 tables total)
 
-Identity & Authentication (2 tables)
-├── user_profiles          - Basic user information and role
-├── patients              - Patient-specific data (if role = PATIENT)
-└── providers             - Provider-specific data (if role = PROVIDER)
+Identity & Profiles (3 tables)
+├── user_profiles          - Core identity and common fields for all users
+├── patient_profiles       - Medical-specific data (history, allergies, patient number)
+└── provider_profiles      - Professional-specific data (specialty, license, qualifications)
 
 Healthcare Operations (2 tables)
 ├── appointments          - Scheduling between patients and providers
-└── medical_records      - Basic medical data per appointment
+└── medical_records      - Unified medical data per appointment
 
 Support Systems (1 table)
-
 └── audit_logs          - Comprehensive audit trail for HIPAA compliance
 ```
+
+> **📋 Data Strategy**: See [Data Strategy](data-strategy.md) for complete table relationships and architecture overview.
 
 ## 🔗 **Table Relationships & Design Decisions**
 
@@ -119,80 +120,237 @@ Support Systems (1 table)
 > See [Data Archive Strategy](data-archive-strategy.md) for detailed implementation plan.
 
 ### **Table 1: user_profiles**
+
+| Column Name      | Data Type | Constraints         | Index           | Description |
+|------------------|-----------|---------------------|-----------------|-------------|-
+| id               | UUID         | PK, NOT NULL     | PRIMARY KEY     | Primary key identifier |
+| external_user_id | VARCHAR(255) | NOT NULL         | UNIQUE INDEX | External auth provider ID (Supabase, Auth0, etc.) |
+| first_name       | VARCHAR(100) | NOT NULL         | COMPOSITE INDEX | User's first name |
+| last_name        | VARCHAR(100) | NOT NULL         | COMPOSITE INDEX | User's last name |
+| email            | VARCHAR(255) | UNIQUE, NOT NULL | UNIQUE INDEX    | User's email address |
+| phone            | VARCHAR(20)  | NOT NULL         | INDEX           | User's phone number |
+| date_of_birth    | DATE         | NOT NULL         | COMPOSITE INDEX | User's date of birth |
+| gender           | VARCHAR(20)  | NOT NULL         | -               | User's gender |
+| street_address   | VARCHAR(255) | -                | -               | Street address |
+| city             | VARCHAR(100) | -                | -               | City name |
+| state            | VARCHAR(50)  | -                | -               | State/Province |
+| postal_code      | VARCHAR(20)  | -                | -               | Postal/ZIP code |
+| country          | VARCHAR(50)  | -                | -               | Country name |
+| role             | ENUM         | NOT NULL         | -               | PATIENT or PROVIDER |
+| status           | ENUM         | NOT NULL         | -               | ACTIVE, INACTIVE, SUSPENDED |
+| custom_data      | JSONB        | -                | -               | Flexible data storage |
+| created_at       | TIMESTAMPTZ  | NOT NULL         | -               | Record creation timestamp (timezone-aware) |
+| updated_at       | TIMESTAMPTZ  | NOT NULL         | -               | Record update timestamp (timezone-aware) |-
+
+#### **Composite Index Definition:**
+```sql
+CREATE INDEX idx_user_name_dob ON user_profiles (last_name, first_name, date_of_birth);
 ```
-id (UUID PK)
-username (email, unique)
-notification_email
-first_name, last_name
-role (PATIENT/PROVIDER)
-status (ACTIVE/INACTIVE/SUSPENDED)
-created_at, updated_at
+
+#### **Timezone-Aware Timestamps:**
+```sql
+-- All timestamp fields use TIMESTAMPTZ for global compatibility
+created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 ```
+
+**Why TIMESTAMPTZ is Critical:**
+- ✅ **Global Application**: Supports users across different time zones
+- ✅ **HIPAA Compliance**: Accurate audit trails regardless of user location
+- ✅ **Legal Requirements**: Precise timestamps for healthcare records
+- ✅ **Data Consistency**: No timezone conversion issues
+- ✅ **Future-Proof**: Ready for international expansion
+
+#### **Key Design Decisions:**
+- **External Auth Integration**: `external_user_id` links to external auth provider
+- **Common Profile Fields**: All users share basic identity information
+- **Structured Address**: Separate columns for better querying and indexing
+- **Role-Agnostic Design**: No patient-specific fields (emergency contacts moved to patient_profiles)
+- **Custom Data**: JSONB column for future extensibility
+- **No Password Fields**: Authentication handled externally
 
 
 
-### **Table 2: patients**
-```
-id (UUID PK)
-user_id (UUID FK → user_profiles.id)
-patient_number (unique)
-medical_history (JSON)
-allergies (JSON)
-assigned_providers (UUID array)
-health_goals (JSON)
-risk_factors (JSON)
-created_at, updated_at
+### **Table 2: patient_profiles**
+
+| Column Name            | Data Type    | Constraints  | Index | Description |
+|------------------------|--------------|--------------|-------|-------------|
+| id                     | UUID         | PK, NOT NULL | PRIMARY KEY | Primary key identifier |
+| user_id                | UUID         | FK, NOT NULL | UNIQUE INDEX | Foreign key to user_profiles.id |
+| patient_number         | VARCHAR(50)  | UNIQUE, NOT NULL | UNIQUE INDEX | Unique patient identifier |
+| medical_history        | JSONB        | -            | -     | Patient's medical history |
+| allergies              | JSONB        | -            | -     | Patient's allergies and reactions |
+| emergency_contact_name | VARCHAR(100) | -            | -     | Emergency contact name |
+| emergency_contact_phone| VARCHAR(20)  | -            | -     | Emergency contact phone |
+| insurance_provider     | VARCHAR(100) | -            | -     | Insurance company name |
+| insurance_policy_number| VARCHAR(50)  | -            | -     | Insurance policy number |
+| primary_care_physician | VARCHAR(100) | -            | -     | Primary care physician name |
+| custom_data            | JSONB        | -            | -     | Flexible data storage |
+| created_at             | TIMESTAMPTZ  | NOT NULL     | -     | Record creation timestamp (timezone-aware) |
+| updated_at             | TIMESTAMPTZ  | NOT NULL     | -     | Record update timestamp (timezone-aware) |
+
+#### **Foreign Key Constraint:**
+```sql
+ALTER TABLE patient_profiles
+ADD CONSTRAINT fk_patient_user_id
+FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
 ```
 
-### **Table 3: providers**
+#### **Key Design Decisions:**
+- **1:1 Relationship**: Each user can have only one patient profile
+- **Patient-Specific Data**: Medical history, allergies, emergency contacts
+- **Healthcare Compliance**: Emergency contacts required for patient care
+- **Insurance Information**: Support for insurance verification
+- **Flexible Medical Data**: JSONB for complex medical information
+- **Timezone-Aware**: All timestamps use TIMESTAMPTZ
+
+### **Table 3: provider_profiles**
+
+| Column Name      | Data Type    | Constraints  | Index           | Description |
+|------------------|--------------|--------------|-----------------|-------------|
+| id               | UUID         | PK, NOT NULL | PRIMARY KEY     | Primary key identifier |
+| user_id          | UUID         | FK, NOT NULL | UNIQUE INDEX    | Foreign key to user_profiles.id |
+| license_numbers  | VARCHAR(50)[] | -            | -               | Array of state medical license numbers |
+| npi_number       | VARCHAR(10)  | UNIQUE, NOT NULL | UNIQUE INDEX | National Provider Identifier (NPI) |
+| specialty        | VARCHAR(100) | -            | INDEX           | Primary medical specialty |
+| qualifications   | TEXT         | -            | -               | Medical qualifications and education |
+| bio              | TEXT         | -            | -               | Provider biography |
+| office_phone     | VARCHAR(20)  | -            | -               | Office phone number |
+| custom_data      | JSONB        | -            | -               | Flexible data storage |
+| created_at       | TIMESTAMPTZ  | NOT NULL     | -               | Record creation timestamp (timezone-aware) |
+| updated_at       | TIMESTAMPTZ  | NOT NULL     | -               | Record update timestamp (timezone-aware) |
+
+#### **Foreign Key Constraint:**
+```sql
+ALTER TABLE provider_profiles
+ADD CONSTRAINT fk_provider_user_id
+FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
 ```
-id (UUID PK)
-user_id (UUID FK → user_profiles.id)
-license_number (unique)
-specialties (array)
-certifications (JSON)
-rating, total_reviews
-is_verified (boolean)
-created_at, updated_at
-```
+
+#### **Key Design Decisions:**
+- **1:1 Relationship**: Each user can have only one provider profile
+- **Professional Data**: License, specialty, qualifications, bio
+- **Office Contact**: Office phone (location in user_profiles)
+- **Availability via Appointments**: Provider availability managed through appointment slots
+- **Flexible Data**: JSONB for future extensibility
+- **Timezone-Aware**: All timestamps use TIMESTAMPTZ
 
 ### **Table 4: appointments**
+
+| Column Name      | Data Type    | Constraints  | Index           | Description |
+|------------------|--------------|--------------|-----------------|-------------|
+| id               | UUID         | PK, NOT NULL | PRIMARY KEY     | Primary key identifier |
+| patient_id       | UUID         | FK, -        | INDEX           | Foreign key to patient_profiles.id (null if not booked) |
+| provider_id      | UUID         | FK, NOT NULL | COMPOSITE INDEX | Foreign key to provider_profiles.id |
+| scheduled_at     | TIMESTAMPTZ  | NOT NULL     | COMPOSITE INDEX | Appointment date and time (timezone-aware) |
+| status           | ENUM         | NOT NULL     | INDEX           | AVAILABLE, SCHEDULED, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW |
+| appointment_type | ENUM         | NOT NULL     | -               | REGULAR_CONSULTATION (30min), FOLLOW_UP (15min), NEW_PATIENT_INTAKE (60min), PROCEDURE_CONSULTATION (45min) |
+| notes            | TEXT         | -            | -               | Appointment notes |
+| custom_data      | JSONB        | -            | -               | Flexible data storage |
+| created_at       | TIMESTAMPTZ  | NOT NULL     | -               | Record creation timestamp (timezone-aware) |
+| updated_at       | TIMESTAMPTZ  | NOT NULL     | -               | Record update timestamp (timezone-aware) |
+
+#### **Foreign Key Constraints:**
+```sql
+ALTER TABLE appointments
+ADD CONSTRAINT fk_appointment_patient_id
+FOREIGN KEY (patient_id) REFERENCES patient_profiles(id) ON DELETE CASCADE;
+
+ALTER TABLE appointments
+ADD CONSTRAINT fk_appointment_provider_id
+FOREIGN KEY (provider_id) REFERENCES provider_profiles(id) ON DELETE CASCADE;
 ```
-id (UUID PK)
-patient_id (UUID FK → patients.id)
-provider_id (UUID FK → providers.id)
-scheduled_at
-status (SCHEDULED/COMPLETED/CANCELLED)
-duration_minutes
-location (JSON)
-notes
-created_at, updated_at
+
+#### **Composite Index Definition:**
+```sql
+CREATE INDEX idx_appointment_provider_schedule ON appointments (provider_id, scheduled_at);
 ```
+
+#### **Overlap Prevention:**
+```sql
+-- Prevent overlapping appointments for the same provider
+-- Different durations: 15min, 30min, 45min, 60min based on appointment_type
+CREATE UNIQUE INDEX idx_no_overlap_appointments
+ON appointments (provider_id, scheduled_at)
+WHERE status NOT IN ('CANCELLED', 'NO_SHOW');
+
+-- Application logic must validate no time conflicts
+-- Check: scheduled_at + appointment_type_duration doesn't overlap with existing appointments
+```
+
+#### **Key Design Decisions:**
+- **Appointment Types**: ENUM with predefined durations (15, 30, 45, 60 minutes)
+- **Appointment Slots**: Providers create available slots (status = 'AVAILABLE', patient_id = null)
+- **Patient Booking**: Patients book available slots (status = 'SCHEDULED', patient_id populated)
+- **Status Flow**: AVAILABLE → SCHEDULED → CONFIRMED → IN_PROGRESS → COMPLETED
+- **Timezone-Aware Scheduling**: All appointment times use TIMESTAMPTZ
+- **Overlap Prevention**: Application logic validates no time conflicts
+- **Flexible Data**: JSONB for future extensibility
 
 ### **Table 5: medical_records**
-```
-id (UUID PK)
-patient_id (UUID FK → patients.id)
-provider_id (UUID FK → providers.id)
-appointment_id (UUID FK → appointments.id)
-diagnosis
-treatment
-notes
-created_at, updated_at
+
+| Column Name | Data Type  | Constraints | Index | Description |
+|-------------|------------|-------------|-------|-------------|
+| id          | UUID       | PK, NOT NULL | PRIMARY KEY | Primary key identifier |
+| appointment_id | UUID    | FK, NOT NULL | COMPOSITE INDEX | Foreign key to appointments.id (visit identifier) |
+| record_type | ENUM       | NOT NULL | COMPOSITE INDEX | DIAGNOSIS, TREATMENT, SUMMARY, LAB_RESULT, PRESCRIPTION, NOTE |
+| content     | TEXT       | NOT NULL | - | Medical record content/details |
+| is_patient_visible       | BOOLEAN  | NOT NULL | - | Whether patient can view this record |
+| release_date | TIMESTAMPTZ | -      | - | When record becomes visible to patient |
+| custom_data | JSONB      | -        | - | Flexible data storage |
+| created_at | TIMESTAMPTZ | NOT NULL | - | Record creation timestamp (timezone-aware) |
+| updated_at | TIMESTAMPTZ | NOT NULL | - | Record update timestamp (timezone-aware) |
+
+#### **Foreign Key Definitions:**
+```sql
+ALTER TABLE medical_records
+ADD CONSTRAINT fk_medical_record_appointment_id
+FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE;
 ```
 
+#### **Index Definition:**
+```sql
+CREATE INDEX idx_medical_record_appointment_type ON medical_records (appointment_id, record_type);
+```
+
+#### **Key Design Decisions:**
+- **Visit-Based Records**: All medical records linked to appointments (visits)
+- **Patient/Provider via Appointment**: Get patient and provider info through appointment relationship
+- **Patient Visibility Control**: `is_patient_visible` and `release_date` for privacy
+- **Record Types**: ENUM for standardized medical record categories
+- **Simplified Relationships**: Single foreign key to appointments table
+- **Timezone-Aware**: All timestamps use TIMESTAMPTZ
+- **Flexible Data**: JSONB for future extensibility
+
 ### **Table 6: audit_logs**
+
+| Column Name | Data Type | Constraints | Index | Description |
+|-------------|-----------|-------------|-------|-------------|
+| id | UUID | PK, NOT NULL | PRIMARY KEY | Primary key identifier |
+| user_id | UUID | FK, NOT NULL | INDEX | Foreign key to user_profiles.id |
+| action_type | VARCHAR(50) | NOT NULL | INDEX | CREATE, READ, UPDATE, DELETE, LOGIN, LOGOUT |
+| resource_type | VARCHAR(50) | NOT NULL | INDEX | USER_PROFILE, PATIENT_PROFILE, PROVIDER_PROFILE, APPOINTMENT, MEDICAL_RECORD |
+| resource_id | UUID | - | INDEX | ID of the resource being acted upon (nullable for system actions) |
+| outcome | VARCHAR(20) | NOT NULL | INDEX | SUCCESS, FAILURE |
+| details | JSONB | - | - | Additional action details |
+| source_ip | INET | - | - | IP address of the request |
+| user_agent | TEXT | - | - | User agent string |
+| created_at | TIMESTAMPTZ | NOT NULL | INDEX | Action timestamp (timezone-aware) |
+
+#### **Foreign Key Definitions:**
+```sql
+ALTER TABLE audit_logs
+ADD CONSTRAINT fk_audit_user_id
+FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
 ```
-id (UUID PK)
-user_id (UUID FK → user_profiles.id)
-resource_type (PATIENT/PROVIDER/APPOINTMENT/MEDICAL_RECORD/FILE)
-resource_id (UUID)
-action (CREATE/READ/UPDATE/DELETE)
-timestamp
-ip_address
-user_agent
-details (JSON)
-```
+
+#### **Key Design Decisions:**
+- **Comprehensive Logging**: All user actions logged for HIPAA compliance
+- **Resource Tracking**: Track actions on specific resources
+- **Outcome Tracking**: Success/failure for security monitoring
+- **IP Tracking**: Source IP for security analysis
+- **Timezone-Aware**: All timestamps use TIMESTAMPTZ
+- **Flexible Details**: JSONB for additional context
 
 ## 🔄 **Future Scaling & Refactoring Considerations**
 

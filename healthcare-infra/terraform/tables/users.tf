@@ -1,7 +1,8 @@
-# Users table - Core user authentication and profile data
-resource "postgresql_table" "users" {
+# User Profiles table - Core user profile data (no authentication)
+# Industry standard: Common fields only, role-specific data in separate tables
+resource "postgresql_table" "user_profiles" {
   provider = postgresql.neon
-  name     = "users"
+  name     = "user_profiles"
   schema   = postgresql_schema.public.name
 
   column {
@@ -12,28 +13,76 @@ resource "postgresql_table" "users" {
   }
 
   column {
+    name     = "external_user_id"
+    type     = "VARCHAR(255)"
+    null_able = false
+  }
+
+  column {
     name     = "email"
     type     = "VARCHAR(255)"
     null_able = false
   }
 
   column {
-    name     = "password_hash"
-    type     = "VARCHAR(255)"
+    name     = "first_name"
+    type     = "VARCHAR(100)"
+    null_able = false
+  }
+
+  column {
+    name     = "last_name"
+    type     = "VARCHAR(100)"
+    null_able = false
+  }
+
+  column {
+    name     = "date_of_birth"
+    type     = "DATE"
     null_able = true
   }
 
   column {
-    name     = "user_type"
+    name     = "phone"
+    type     = "VARCHAR(20)"
+    null_able = true
+  }
+
+  column {
+    name     = "gender"
+    type     = "VARCHAR(10)"
+    null_able = true
+  }
+
+  column {
+    name     = "address"
+    type     = "VARCHAR(500)"
+    null_able = true
+  }
+
+  column {
+    name     = "emergency_contact_name"
+    type     = "VARCHAR(100)"
+    null_able = true
+  }
+
+  column {
+    name     = "emergency_contact_phone"
+    type     = "VARCHAR(20)"
+    null_able = true
+  }
+
+  column {
+    name     = "role"
     type     = "VARCHAR(20)"
     null_able = false
   }
 
   column {
-    name     = "is_active"
-    type     = "BOOLEAN"
+    name     = "status"
+    type     = "VARCHAR(20)"
     null_able = false
-    default  = "true"
+    default  = "ACTIVE"
   }
 
   column {
@@ -56,10 +105,10 @@ resource "postgresql_table" "users" {
 }
 
 # Create unique index on email
-resource "postgresql_index" "users_email_unique" {
+resource "postgresql_index" "user_profiles_email_unique" {
   provider = postgresql.neon
-  name     = "idx_users_email_unique"
-  table    = postgresql_table.users.name
+  name     = "idx_user_profiles_email_unique"
+  table    = postgresql_table.user_profiles.name
   schema   = postgresql_schema.public.name
   columns  = ["email"]
   unique   = true

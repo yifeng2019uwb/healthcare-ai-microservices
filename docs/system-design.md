@@ -80,19 +80,44 @@
 - **Role-Based Access**: Patient, Provider roles with permissions
 - **Session Management**: Token validation and refresh
 
-### **User Roles & Permissions**
+### **User Roles & Permissions (Industry Standard)**
 ```
-┌─────────────-┐    ┌─────────────-┐
-│   Patient    │    │  Provider    │
-│              │    │              │
-├─────────────-┤    ├─────────────-┤
-│• View own    │    │• View        │
-│  data        │    │  patients    │
-│• Update      │    │• Manage      │
-│  profile     │    │  schedules   │
-│• Book        │    │• View        │
-│  appointments│    │  appointments│
-└─────────────-┘    └─────────────-┘
+┌─────────────────────────────────────────────────────────────┐
+│                    USER PROFILES (Core Identity)            │
+│  • Common fields: name, email, phone, address, role        │
+│  • Role: PATIENT, PROVIDER, ADMIN, NURSE, THIRD_PARTY     │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                    ┌─────────┴─────────┐
+                    │                   │
+        ┌───────────▼───────────┐      ┌▼─────────────────────┐
+        │   PATIENT PROFILES    │      │  PROVIDER PROFILES   │
+        │  • Medical history    │      │  • Specialty         │
+        │  • Allergies          │      │  • License number    │
+        │  • Patient number     │      │  • Qualifications    │
+        └───────────────────────┘      └─────────────────────┘
+                    │                           │
+                    └───────────┬───────────────┘
+                                │
+                    ┌───────────▼───────────┐
+                    │     APPOINTMENTS      │
+                    │  • id (UUID PK)       │
+                    │  • patient_id (FK)    │
+                    │  • provider_id (FK)   │
+                    │  • Scheduling         │
+                    │  • Status tracking    │
+                    └───────────────────────┘
+                                │ 1:1 or 1:M
+                                │ appointment_id
+                    ┌───────────▼───────────┐
+                    │   MEDICAL RECORDS     │
+                    │  • id (UUID PK)       │
+                    │  • appointment_id (FK)│
+                    │  • record_type (enum) │
+                    │  • content (JSON/text)│
+                    │  • is_patient_visible │
+                    │  • release_date       │
+                    └───────────────────────┘
 ```
 
 ## 🗄️ **Data Layer Strategy**
@@ -110,19 +135,35 @@
 
 ## 🚀 **Service Architecture**
 
-### **Backend Service Responsibilities**
+### **Backend Service Responsibilities (Industry Standard)**
 - **Auth Service**: JWT token validation
 - **Gateway**: Routes requests to business services
-- **Patient Service**: Patient profile management and medical history viewing
-- **Provider Service**: Provider profile management and medical records management
+- **Patient Service**:
+  - `user_profiles` + `patient_profiles` management
+  - Medical history viewing (via appointments and medical_records)
+  - Patient profile and demographics management
+- **Provider Service**:
+  - `user_profiles` + `provider_profiles` management
+  - Medical records management (via appointments and medical_records)
+  - Provider profile and credentials management
 - **Appointment Service**: Appointment scheduling, availability management, and lifecycle
 - **AI Service**: Healthcare analytics and clinical insights
 - **Data Layer**: Data access for all services
 
-### **Service Boundaries**
-- **Provider Service**: ✅ Provider profiles, credentials, medical records ❌ Appointment slots
-- **Appointment Service**: ✅ Availability windows, slot generation, booking, lifecycle ❌ Provider profiles, medical records
-- **Patient Service**: ✅ Patient profiles, medical history viewing ❌ Appointment booking, medical records
+### **Service Boundaries (Industry Standard)**
+- **Provider Service**:
+  - ✅ `user_profiles` + `provider_profiles` management
+  - ✅ Medical records management (via appointments and medical_records)
+  - ✅ Provider profile and credentials management
+  - ❌ Appointment slots (handled by Appointment Service)
+- **Patient Service**:
+  - ✅ `user_profiles` + `patient_profiles` management
+  - ✅ Medical history viewing (via appointments and medical_records)
+  - ✅ Patient profile and demographics management
+  - ❌ Appointment booking (handled by Appointment Service)
+- **Appointment Service**:
+  - ✅ Availability windows, slot generation, booking, lifecycle
+  - ❌ Profile management (handled by Patient/Provider Services)
 
 ### **Service Ports**
 | Service | Port | External Access | Technology |

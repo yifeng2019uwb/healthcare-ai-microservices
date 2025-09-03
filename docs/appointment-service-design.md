@@ -81,8 +81,8 @@ Patients need to check in for their appointments, and providers need to mark app
 
 **Database Tables**:
 - `user_profiles` - Core user information
-- `patients` - Patient-specific data
-- `providers` - Provider-specific data
+- `patient_profiles` - Patient-specific data
+- `provider_profiles` - Provider-specific data
 - `appointments` - Unified slots and appointments (provider_id + slot_time as composite PK)
 
 **Core Workflow**:
@@ -127,8 +127,8 @@ Appointment Service Component Architecture:
                     │                 │
                     │ • appointments  │
                     │ • user_profiles │
-                    │ • patients      │
-                    │ • providers     │
+                    │ • patient_profiles │
+                    │ • provider_profiles │
                     └─────────────────┘
 ```
 
@@ -245,29 +245,37 @@ POST /api/appointments
 ### **Appointment Service Database Tables**
 
 #### **Appointments Table (appointments)**
-| Column       | Type        | Constraints | Indexes | Description |
-|--------------|-------------|-------------|---------|-------------|
-| provider_id  | UUID        | PRIMARY KEY | PRIMARY | Reference to providers.id |
-| slot_time    | TIMESTAMP   | SORT KEY | INDEX | Time slot for appointment |
-| slot_id      | UUID        | UNIQUE | INDEX | Unique appointment identifier |
-| patient_id   | UUID        | FOREIGN KEY, NULL | INDEX | Reference to patients.id (NULL for available slots) |
-| status       | APPOINTMENT_STATUS | NOT NULL, DEFAULT AVAILABLE | INDEX | Appointment status |
-| duration_minutes | INTEGER | NOT NULL, DEFAULT 30 | - | Appointment duration in minutes |
-| notes        | TEXT        | NULL | - | Appointment notes and status change notes |
-| created_at   | TIMESTAMP   | NOT NULL, DEFAULT NOW() | - | Record creation timestamp |
-| updated_at   | TIMESTAMP  | NOT NULL, DEFAULT NOW() | - | Last update timestamp |
+| Column Name      | Data Type    | Constraints  | Index           | Description |
+|------------------|--------------|--------------|-----------------|-------------|
+| id               | UUID         | PK, NOT NULL | PRIMARY KEY     | Primary key identifier |
+| patient_id       | UUID         | FK, -        | INDEX           | Foreign key to patient_profiles.id (null if not booked) |
+| provider_id      | UUID         | FK, NOT NULL | COMPOSITE INDEX | Foreign key to provider_profiles.id |
+| scheduled_at     | TIMESTAMPTZ  | NOT NULL     | COMPOSITE INDEX | Appointment date and time (timezone-aware) |
+| status           | ENUM         | NOT NULL     | INDEX           | AVAILABLE, SCHEDULED, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW |
+| appointment_type | ENUM         | NOT NULL     | -               | REGULAR_CONSULTATION (30min), FOLLOW_UP (15min), NEW_PATIENT_INTAKE (60min), PROCEDURE_CONSULTATION (45min) |
+| notes            | TEXT         | -            | -               | Appointment notes |
+| custom_data      | JSONB        | -            | -               | Flexible data storage |
+| created_at       | TIMESTAMPTZ  | NOT NULL     | -               | Record creation timestamp (timezone-aware) |
+| updated_at       | TIMESTAMPTZ  | NOT NULL     | -               | Record update timestamp (timezone-aware) |
 
 **ENUM: APPOINTMENT_STATUS**
 - `AVAILABLE` - Provider available slot (no patient assigned)
 - `SCHEDULED` - Appointment is scheduled
 - `CONFIRMED` - Appointment is confirmed
+- `IN_PROGRESS` - Appointment is in progress
 - `COMPLETED` - Appointment is completed
 - `CANCELLED` - Appointment is cancelled
 - `NO_SHOW` - Patient did not show up
 
+**ENUM: APPOINTMENT_TYPE**
+- `REGULAR_CONSULTATION` - 30 minutes
+- `FOLLOW_UP` - 15 minutes
+- `NEW_PATIENT_INTAKE` - 60 minutes
+- `PROCEDURE_CONSULTATION` - 45 minutes
+
 **Indexes**:
-- `PRIMARY KEY` (provider_id, slot_time) - Composite primary key
-- `UNIQUE` (slot_id) - Unique appointment identifier
+- `PRIMARY KEY` (id) - Primary key identifier
+- `COMPOSITE INDEX` (provider_id, scheduled_at) - For provider schedule queries
 - `INDEX` (patient_id) - For patient appointment lookup
 - `INDEX` (status) - For status-based queries
 
@@ -303,7 +311,7 @@ POST /api/appointments
 **Question**: How should appointment notifications be handled?
 - **Email Only**: Simple email notifications
 - **Multi-channel**: Email, SMS, push notifications
-- **Configurable**: Providers/patients can choose notification preferences
+- **Configurable**: Provider_profiles/patient_profiles can choose notification preferences
 - **Decision Needed**: Notification approach and channels
 
 ## 📚 **References**

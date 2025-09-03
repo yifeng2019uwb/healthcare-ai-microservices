@@ -1,4 +1,5 @@
-# Patients table - Patient profile and medical information
+# Patients table - Visit and medical record tracking
+# Industry standard: Separate table for visit/medical records, not profile data
 resource "postgresql_table" "patients" {
   provider = postgresql.neon
   name     = "patients"
@@ -12,50 +13,20 @@ resource "postgresql_table" "patients" {
   }
 
   column {
-    name     = "user_id"
+    name     = "patient_profile_id"
     type     = "UUID"
     null_able = false
   }
 
   column {
-    name     = "first_name"
-    type     = "VARCHAR(100)"
-    null_able = false
-  }
-
-  column {
-    name     = "last_name"
-    type     = "VARCHAR(100)"
-    null_able = false
-  }
-
-  column {
-    name     = "date_of_birth"
-    type     = "DATE"
-    null_able = false
-  }
-
-  column {
-    name     = "phone"
-    type     = "VARCHAR(20)"
+    name     = "appointment_ids"
+    type     = "UUID[]"
     null_able = true
   }
 
   column {
-    name     = "address"
-    type     = "TEXT"
-    null_able = true
-  }
-
-  column {
-    name     = "emergency_contact"
-    type     = "JSONB"
-    null_able = true
-  }
-
-  column {
-    name     = "medical_history"
-    type     = "JSONB"
+    name     = "medical_record_ids"
+    type     = "UUID[]"
     null_able = true
   }
 
@@ -78,19 +49,19 @@ resource "postgresql_table" "patients" {
   }
 
   foreign_key {
-    columns     = ["user_id"]
+    columns     = ["patient_profile_id"]
     references {
-      table  = postgresql_table.users.name
+      table  = postgresql_table.patient_profiles.name
       column = "id"
     }
   }
 }
 
-# Create index on user_id for faster lookups
-resource "postgresql_index" "patients_user_id" {
+# Create index on patient_profile_id for faster lookups
+resource "postgresql_index" "patients_patient_profile_id" {
   provider = postgresql.neon
-  name     = "idx_patients_user_id"
+  name     = "idx_patients_patient_profile_id"
   table    = postgresql_table.patients.name
   schema   = postgresql_schema.public.name
-  columns  = ["user_id"]
+  columns  = ["patient_profile_id"]
 }

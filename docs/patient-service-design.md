@@ -63,7 +63,7 @@ Patients want to view their complete medical history including past conditions, 
 
 **Database Tables**:
 - `user_profiles` - Core user information
-- `patients` - Patient-specific data
+- `patient_profiles` - Patient-specific data
 
 
 
@@ -118,7 +118,7 @@ Patient Service Component Architecture:
                     │  Shared Database│
                     │                 │
                     │ • user_profiles │
-                    │ • patients      │
+                    │ • patient_profiles │
                     │ • audit_logs    │
                     └─────────────────┘
 ```
@@ -127,7 +127,7 @@ Patient Service Component Architecture:
 Key Data Flow - Account Creation:
 User → Gateway → Auth → Patient Service → Database
   │      │        │         │            │
-  │      │        │         │            └── Create user_profiles + patients
+  │      │        │         │            └── Create user_profiles + patient_profiles
   │      │        │         │
   │      │        │         └── Return success response
   │      │        │
@@ -159,7 +159,7 @@ User → Gateway → Auth → Patient Service → Database
 - **Existing System Tables** (already available):
   - `user_profiles` table: Basic user information (ID, username, name, role, status)
 - **Patient Service Uses** (existing table):
-  - `patients` table: Patient-specific data (medical history, allergies, assigned providers)
+  - `patient_profiles` table: Patient-specific data (medical history, allergies, assigned providers)
 - **No New Tables Required**: Uses existing database schema
 
 **Account-to-Patient Linking Strategy**:
@@ -194,7 +194,7 @@ User → Gateway → Auth → Patient Service → Database
 - **Existing System Tables** (already available):
   - `user_profiles` table: Core user information
 - **Patient Service Uses** (existing table):
-  - `patients` table: Patient-specific data (created only when needed)
+  - `patient_profiles` table: Patient-specific data (created only when needed)
 - **No New Tables Required**: Uses existing database schema
 
 **Account-to-Patient Linking Strategy**:
@@ -282,7 +282,7 @@ For enhanced patient experience before medical visits, the following APIs can be
 #### **Implementation Notes**
 - **Current approach**: Use existing `PUT /api/patients/profile` for all updates
 - **Future enhancement**: Add specific pre-visit endpoints when needed
-- **Data storage**: Store in existing `patients` table JSON fields
+- **Data storage**: Store in existing `patient_profiles` table JSON fields
 - **Audit logging**: Track all pre-visit updates for compliance
 
 ## 🗄️ **Database Schema Design**
@@ -307,7 +307,7 @@ For enhanced patient experience before medical visits, the following APIs can be
 **Composite Indexes:**
 - `idx_user_profiles_name_dob` (last_name, first_name, date_of_birth) - For exact patient identification
 
-#### **2. Patients Table (patients)**
+#### **2. Patient Profiles Table (patient_profiles)**
 | Column            | Type      | Constraints             | Indexes | Description                           |
 |-------------------|-----------|-------------------------|---------|---------------------------------------|
 | id                | UUID      | PRIMARY KEY             | PRIMARY | Unique patient identifier |
@@ -322,7 +322,7 @@ For enhanced patient experience before medical visits, the following APIs can be
 | updated_at        | TIMESTAMP | NOT NULL, DEFAULT NOW() | - | Last update timestamp |
 
 **Foreign Key Indexes:**
-- `idx_patients_user_id` (user_id) - For patient self-service queries (auto-created by FK)
+- `idx_patient_profiles_user_id` (user_id) - For patient self-service queries (auto-created by FK)
 
 #### **Allergies (JSONB)**
 ```json
@@ -373,13 +373,13 @@ For enhanced patient experience before medical visits, the following APIs can be
 ### **Table Relationships**
 
 #### **Primary Relationships**
-- **patients.user_id** → **user_profiles.id** (One-to-One)
+- **patient_profiles.user_id** → **user_profiles.id** (One-to-One)
 - Each patient record belongs to exactly one user profile
 - Each user profile can have at most one patient record
 
 #### **Data Access Patterns**
-- **Patient Self-Service**: Query by `patients.user_id` (authenticated user)
-- **Provider Lookup**: Query by `user_profiles` name/DOB, join to `patients`
+- **Patient Self-Service**: Query by `patient_profiles.user_id` (authenticated user)
+- **Provider Lookup**: Query by `user_profiles` name/DOB, join to `patient_profiles`
 - **System Query**: Query by `user_profiles.role = 'PATIENT'`
 
 ### **Data Validation Rules**
