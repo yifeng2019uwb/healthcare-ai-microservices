@@ -1,69 +1,214 @@
-# GitHub Actions CI/CD
+# Healthcare AI Microservices Platform
 
-> **🚀 Automated Build and Test Pipeline**
->
-> This directory contains GitHub Actions workflows for automated build and testing.
+> **Learning-Focused Healthcare AI Platform** - Master Spring Boot, AI Integration, and Microservices Architecture
 
-## 📁 **Workflows**
+## 📋 **Overview**
 
-### **`ci.yml` - Build and Test**
-- **Triggers**: Push to `main`/`develop` branches, Pull Requests
-- **Actions**:
-  - ✅ **Unit Tests** - Run Maven unit tests
-  - ✅ **Build** - Compile and package Java applications
-  - ✅ **Test Reports** - Generate and upload test results
-  - ✅ **Artifacts** - Upload JAR files for deployment
+A comprehensive healthcare AI microservices platform designed for learning Spring Boot, AI integration, and microservices patterns. Built with clean architecture principles and progressive complexity.
 
-## 🔧 **Configuration**
+### **Key Features**
+- **🔐 Authentication**: JWT-based authentication with Supabase Auth
+- **🏥 Healthcare Services**: Patient, Provider, and Appointment management
+- **🤖 AI Integration**: Healthcare analytics and clinical insights
+- **📊 Data Management**: Neon PostgreSQL with AWS S3 file storage
+- **🚀 Microservices**: Spring Boot services with API Gateway
 
-### **Java Setup**
-- **JDK Version**: 17 (Temurin distribution)
-- **Build Tool**: Maven
-- **Test Framework**: JUnit (via Spring Boot)
+## 🏗️ **Project Structure**
 
-### **Caching**
-- **Maven Dependencies**: Cached for faster builds
-- **Cache Key**: Based on `pom.xml` file hash
+```
+healthcare-ai-microservices/
+├── docs/                           # Design documentation
+│   ├── system-design.md           # System architecture
+│   ├── authentication-design.md   # Auth strategy
+│   ├── database-design.md         # Database schema
+│   └── BACKLOG.md                 # Implementation planning
+├── healthcare-infra/              # Infrastructure as Code
+│   ├── terraform/                 # Database tables
+│   └── config/                    # Credentials (ignored by git)
+├── services/                      # Backend services
+│   ├── gateway/                   # API Gateway (Port 8080)
+│   ├── auth/                      # Auth Service (Port 8001)
+│   ├── patient/                   # Patient Service (Port 8002)
+│   ├── provider/                  # Provider Service (Port 8003)
+│   ├── appointment/               # Appointment Service (Port 8004)
+│   └── ai/                        # AI Service (Port 8005)
+├── frontend/                      # React applications
+│   ├── patient-portal/            # Patient web app
+│   └── provider-portal/           # Provider web app
+├── scripts/                       # Development scripts
+└── .github/workflows/             # CI/CD pipelines
+```
 
-### **Test Environment**
-- **Profile**: `test` (Spring profiles)
-- **Database**: Not required for unit tests
-- **Dependencies**: All external dependencies mocked
+## 🚀 **Installation / Setup**
 
-## 📊 **Workflow Steps**
+### **Prerequisites**
+- **Java 17+** - For Spring Boot services
+- **Maven 3.8+** - Build tool
+- **Node.js 18+** - For React frontend
+- **Docker** - Containerization
+- **Git** - Version control
 
-1. **Checkout Code** - Get latest source code
-2. **Setup Java 17** - Install JDK and Maven
-3. **Cache Dependencies** - Speed up build process
-4. **Run Unit Tests** - Execute all test cases
-5. **Build Application** - Compile and package
-6. **Generate Reports** - Create test result reports
-7. **Upload Artifacts** - Save JAR files for deployment
+### **Quick Setup**
+```bash
+# Clone the repository
+git clone https://github.com/yifeng2019uwb/healthcare-ai-microservices
+cd healthcare-ai-microservices
 
-## 🎯 **Benefits**
+# Setup development environment
+./scripts/setup-dev.sh
 
-✅ **Automated Testing** - Every commit is tested
-✅ **Fast Feedback** - Know immediately if code breaks
-✅ **Quality Assurance** - Prevent broken code from merging
-✅ **Build Verification** - Ensure code compiles successfully
-✅ **Artifact Generation** - Ready-to-deploy JAR files
+# Test project structure
+./scripts/test-ci.sh
+```
 
-## 🔄 **Usage**
+### **Database Setup**
+```bash
+# Copy configuration template
+cp healthcare-infra/examples/terraform.tfvars.example healthcare-infra/config/terraform.tfvars
 
-### **Automatic Triggers**
-- Push to `main` or `develop` branches
-- Create or update Pull Requests
+# Edit with your Neon database credentials
+# Then create database tables
+cd healthcare-infra/terraform
+terraform init
+terraform apply
+```
 
-### **Manual Triggers**
-- Go to Actions tab in GitHub
-- Select "Build and Test" workflow
-- Click "Run workflow"
+## 💻 **Usage**
 
-### **View Results**
-- Check Actions tab for build status
-- Download artifacts from successful builds
-- View test reports and coverage
+### **Development Workflow**
+```bash
+# Test locally before pushing
+./scripts/test-ci.sh
 
----
+# If tests pass, commit and push
+git add .
+git commit -m "Your changes"
+git push
+```
 
-*This CI/CD pipeline focuses on build and test automation to ensure code quality and reliability.*
+### **System Architecture**
+```
+┌─────────────────┐    ┌─────────────────┐
+│   Patient Web   │    │  Provider Web   │
+│    (React)      │    │   (React)       │
+└─────────┬───────┘    └─────────┬───────┘
+          │                      │
+          └──────────────────────┘
+                                 │
+                    ┌────────────▼────────────┐
+                    │   Spring Cloud Gateway │
+                    │        (Port 8080)     │
+                    └────────────┬───────────┘
+                                 │
+                    ┌────────────▼────────────┐
+                    │      Auth Service       │
+                    │        (Port 8001)      │
+                    │   JWT Validation        │
+                    └────────────┬───────────┘
+                                 │
+         ┌───────────────────────┼────────────────────────┐
+         │                       │                        │
+    ┌────▼────┐   ┌──────────┐   ┌────▼────┐    ┌──────────┐
+    │ Patient │   │Provider  │   │Appointment│    │   AI     │
+    │Service  │   │Service   │   │ Service   │    │ Service  │
+    │ 8002    │   │ 8003     │   │ 8004      │    │ 8005     │
+    └────┬────┘   └────┬─────┘   └────┬────┘    └────┬─────┘
+         │             │              │               │
+         └─────────────┼──────────────┼───────────────┘
+                       │              │
+              ┌────────▼──────────────▼────────┐
+              │      Shared Data Layer         │
+              │     (Database Access)          │
+              └──────────────┬─────────────────┘
+                             │
+         ┌───────────────────┼───────────────────┐
+         │                   │                   │
+    ┌────▼────┐   ┌─────────▼────────┐   ┌──────▼────┐
+    │ Neon DB │   │   S3             │   │   Shared  │
+    │(PostgreSQL)│   │(File Storage)   │   │   Data    │
+    │            │   │                 │   │   Layer   │
+    └───────────┘   └─────────────────┘   └───────────┘
+```
+
+### **Service Architecture**
+| Service          | Port | Responsibility                     |
+| ---------------- | ---- | ---------------------------------- |
+| API Gateway      | 8080 | Routes requests to all services    |
+| Auth Service     | 8001 | JWT validation                     |
+| Patient Service  | 8002 | Patient profiles, medical history  |
+| Provider Service | 8003 | Provider profiles, medical records |
+| Appointment      | 8004 | Scheduling & availability          |
+| AI Service       | 8005 | Analytics & insights               |
+
+## 🎯 **Technology Stack**
+
+**Backend**: Spring Boot 3.2+, Java 17
+**Database**: Neon PostgreSQL
+**File Storage**: AWS S3
+**Frontend**: React 18+ with TypeScript
+**Authentication**: Supabase Auth + JWT
+**Deployment**: Railway
+**CI/CD**: GitHub Actions
+
+## 🏥 **Planned Features**
+
+- **Authentication Service** (JWT validation)
+- **Patient Service** (profiles, medical history)
+- **Provider Service** (provider data, medical records)
+- **Appointment Service** (scheduling, availability)
+- **AI Service** (analytics, clinical insights)
+- **API Gateway** (single entry point, request routing)
+
+## 🚧 **Current Status**
+
+- ✅ Initial project design
+- 🔄 Infrastructure setup (Terraform + DB)
+- ⏳ API Gateway skeleton
+- ⏳ Auth Service MVP
+- ⏳ Core healthcare services
+- ⏳ AI service integration
+- ⏳ Frontend portals
+
+## 🧪 **Testing**
+
+### **Local Testing**
+```bash
+# Test project structure
+./scripts/test-ci.sh
+
+# Run specific service tests
+cd services/patient
+mvn test
+
+# Run all tests
+cd services
+mvn test
+```
+
+### **CI/CD Pipeline**
+- **Automatic**: Runs on every push and pull request
+- **Validation**: Checks project structure and builds
+- **Reports**: Test results and build artifacts
+- **Status**: View in GitHub Actions tab
+
+## 📚 **Documentation**
+
+### **Design Documents**
+- **[System Design](docs/system-design.md)** - Complete architecture overview
+- **[Authentication Design](docs/authentication-design.md)** - JWT and security strategy
+- **[Database Design](docs/database-design.md)** - Schema and data modeling
+- **[Gateway Service Design](docs/gateway-service-design.md)** - API Gateway routing and configuration
+- **[Patient Service Design](docs/patient-service-design.md)** - Patient management APIs
+- **[Provider Service Design](docs/provider-service-design.md)** - Provider and medical records APIs
+- **[Appointment Service Design](docs/appointment-service-design.md)** - Scheduling and availability APIs
+- **[AI Service Design](docs/ai-service-design.md)** - Healthcare analytics and insights
+- **[Service Design Template](docs/service-design-template.md)** - Standard format for service designs
+
+### **Implementation**
+- **[Backlog](BACKLOG.md)** - Task planning and roadmap
+- **[Daily Work Log](DAILY_WORK_LOG.md)** - Progress tracking
+- **[Project Setup](docs/project-setup.md)** - Detailed setup instructions
+
+### **Infrastructure**
+- **[Infrastructure Design](healthcare-infra/README.md)** - Database and deployment setup
+- **[Terraform Config](healthcare-infra/terraform/)** - Database table definitions
