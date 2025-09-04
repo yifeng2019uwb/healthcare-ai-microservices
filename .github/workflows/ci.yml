@@ -108,10 +108,10 @@ jobs:
         echo "🔨 Building shared module..."
         ./dev.sh build
 
-        echo "🧪 Running shared module tests..."
-        ./dev.sh test
+        echo "🧪 Running shared module tests with coverage..."
+        ./dev.sh coverage
 
-        echo "✅ Shared module tests passed!"
+        echo "✅ Shared module tests completed!"
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
@@ -119,3 +119,60 @@ jobs:
       with:
         name: test-results
         path: services/shared/target/surefire-reports/
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-report
+        path: services/shared/target/site/jacoco/
+
+    - name: Comment coverage on PR
+      uses: actions/github-script@v7
+      if: github.event_name == 'pull_request' && always()
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+
+          try {
+            // Read coverage data from HTML report
+            const coveragePath = 'services/shared/target/site/jacoco/index.html';
+            if (fs.existsSync(coveragePath)) {
+              const htmlContent = fs.readFileSync(coveragePath, 'utf8');
+
+              // Extract total coverage
+              const totalMatch = htmlContent.match(/Total.*ctr2">(\d+)%<\/td>/);
+              const totalCoverage = totalMatch ? totalMatch[1] : 'N/A';
+
+              // Extract package coverage
+              const entityMatch = htmlContent.match(/com\.healthcare\.entity.*ctr2">(\d+)%<\/td>/);
+              const enumMatch = htmlContent.match(/com\.healthcare\.enums.*ctr2">(\d+)%<\/td>/);
+              const exceptionMatch = htmlContent.match(/com\.healthcare\.exception.*ctr2">(\d+)%<\/td>/);
+
+              const entityCoverage = entityMatch ? entityMatch[1] : 'N/A';
+              const enumCoverage = enumMatch ? enumMatch[1] : 'N/A';
+              const exceptionCoverage = exceptionMatch ? exceptionMatch[1] : 'N/A';
+
+              const comment = `## 📊 Code Coverage Report
+
+              | Package | Coverage |
+              |---------|----------|
+              | **Total** | **${totalCoverage}%** |
+              | 🏥 Entity | ${entityCoverage}% |
+              | 📋 Enum | ${enumCoverage}% |
+              | ⚠️ Exception | ${exceptionCoverage}% |
+
+              📁 [Detailed Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+              `;
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
+          } catch (error) {
+            console.log('Could not generate coverage comment:', error.message);
+          }

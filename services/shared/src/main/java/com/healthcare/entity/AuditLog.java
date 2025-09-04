@@ -18,10 +18,13 @@ import java.util.UUID;
 @Table(name = "audit_logs")
 public class AuditLog extends BaseEntity {
 
+    /**
+     * Foreign key linking to user_profiles.id
+     * Immutable after creation - cannot be changed
+     */
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -54,8 +57,9 @@ public class AuditLog extends BaseEntity {
     // Constructors
     public AuditLog() {}
 
-    public AuditLog(User user, ActionType actionType, ResourceType resourceType, UUID resourceId, Outcome outcome) {
-        this.user = user;
+    // Constructor for service layer (with user ID only)
+    public AuditLog(UUID userId, ActionType actionType, ResourceType resourceType, UUID resourceId, Outcome outcome) {
+        this.userId = userId;
         this.actionType = actionType;
         this.resourceType = resourceType;
         this.resourceId = resourceId;
@@ -63,69 +67,45 @@ public class AuditLog extends BaseEntity {
     }
 
     // Getters and Setters
-    public User getUser() {
-        return user;
-    }
 
-    public void setUser(User user) {
-        this.user = user;
+    public UUID getUserId() {
+        return userId;
     }
 
     public ActionType getActionType() {
         return actionType;
     }
 
-    public void setActionType(ActionType actionType) {
-        this.actionType = actionType;
-    }
 
     public ResourceType getResourceType() {
         return resourceType;
     }
 
-    public void setResourceType(ResourceType resourceType) {
-        this.resourceType = resourceType;
-    }
 
     public UUID getResourceId() {
         return resourceId;
     }
 
-    public void setResourceId(UUID resourceId) {
-        this.resourceId = resourceId;
-    }
 
     public Outcome getOutcome() {
         return outcome;
     }
 
-    public void setOutcome(Outcome outcome) {
-        this.outcome = outcome;
-    }
 
     public String getDetails() {
         return details;
     }
 
-    public void setDetails(String details) {
-        this.details = details;
-    }
 
     public InetAddress getSourceIp() {
         return sourceIp;
     }
 
-    public void setSourceIp(InetAddress sourceIp) {
-        this.sourceIp = sourceIp;
-    }
 
     public String getUserAgent() {
         return userAgent;
     }
 
-    public void setUserAgent(String userAgent) {
-        this.userAgent = userAgent;
-    }
 
     // ==================== VALIDATION METHODS ====================
 

@@ -19,14 +19,22 @@ import java.util.UUID;
 @Table(name = "appointments")
 public class Appointment extends BaseEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id")
-    private Patient patient;
+    /**
+     * Foreign key linking to patient_profiles.id
+     * Nullable - appointment can be created without patient (available slot)
+     * Immutable after creation - cannot be changed
+     */
+    @Column(name = "patient_id")
+    private UUID patientId;
 
+    /**
+     * Foreign key linking to provider_profiles.id
+     * Required - every appointment must have a provider
+     * Immutable after creation - cannot be changed
+     */
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "provider_id", nullable = false)
-    private Provider provider;
+    @Column(name = "provider_id", nullable = false)
+    private UUID providerId;
 
     @NotNull
     @Future(message = "Appointment must be scheduled in the future")
@@ -56,36 +64,30 @@ public class Appointment extends BaseEntity {
     // Constructors
     public Appointment() {}
 
-    public Appointment(Provider provider, OffsetDateTime scheduledAt, AppointmentType appointmentType) {
-        this.provider = provider;
+    // Constructor for provider slot creation (no patient yet)
+    public Appointment(UUID providerId, OffsetDateTime scheduledAt, AppointmentType appointmentType) {
+        this.providerId = providerId;
         this.scheduledAt = scheduledAt;
         this.appointmentType = appointmentType;
         this.status = AppointmentStatus.AVAILABLE;
     }
 
-    public Appointment(Patient patient, Provider provider, OffsetDateTime scheduledAt, AppointmentType appointmentType) {
-        this.patient = patient;
-        this.provider = provider;
-        this.scheduledAt = scheduledAt;
-        this.appointmentType = appointmentType;
-        this.status = AppointmentStatus.SCHEDULED;
-    }
-
     // Getters and Setters
-    public Patient getPatient() {
-        return patient;
+
+    public UUID getPatientId() {
+        return patientId;
     }
 
-    public void setPatient(Patient patient) {
-        this.patient = patient;
+    public void setPatientId(UUID patientId) {
+        this.patientId = patientId;
     }
 
-    public Provider getProvider() {
-        return provider;
+    public UUID getProviderId() {
+        return providerId;
     }
 
-    public void setProvider(Provider provider) {
-        this.provider = provider;
+    public void setProviderId(UUID providerId) {
+        this.providerId = providerId;
     }
 
     public OffsetDateTime getScheduledAt() {

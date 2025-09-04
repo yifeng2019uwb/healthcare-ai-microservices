@@ -16,10 +16,13 @@ import java.util.UUID;
 @Table(name = "provider_profiles")
 public class Provider extends BaseEntity {
 
+    /**
+     * Foreign key linking to user_profiles.id
+     * Immutable after creation - cannot be changed
+     */
     @NotNull
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
     @Size(max = 50)
     @Column(name = "license_numbers")
@@ -52,18 +55,16 @@ public class Provider extends BaseEntity {
     // Constructors
     public Provider() {}
 
-    public Provider(User user, String npiNumber) {
-        this.user = user;
+    // Constructor for service layer (with user ID only)
+    public Provider(UUID userId, String npiNumber) {
+        this.userId = userId;
         this.npiNumber = npiNumber;
     }
 
     // Getters and Setters
-    public User getUser() {
-        return user;
-    }
 
-    public void setUser(User user) {
-        this.user = user;
+    public UUID getUserId() {
+        return userId;
     }
 
     public String getLicenseNumbers() {

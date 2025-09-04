@@ -17,10 +17,13 @@ import java.util.UUID;
 @Table(name = "medical_records")
 public class MedicalRecord extends BaseEntity {
 
+    /**
+     * Foreign key linking to appointments.id
+     * Immutable after creation - cannot be changed
+     */
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "appointment_id", nullable = false)
-    private Appointment appointment;
+    @Column(name = "appointment_id", nullable = false)
+    private UUID appointmentId;
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -44,27 +47,18 @@ public class MedicalRecord extends BaseEntity {
     // Constructors
     public MedicalRecord() {}
 
-    public MedicalRecord(Appointment appointment, MedicalRecordType recordType, String content) {
-        this.appointment = appointment;
+    // Constructor for service layer (with appointment ID only)
+    public MedicalRecord(UUID appointmentId, MedicalRecordType recordType, String content) {
+        this.appointmentId = appointmentId;
         this.recordType = recordType;
         this.content = content;
-        this.isPatientVisible = false;
-    }
-
-    public MedicalRecord(Appointment appointment, MedicalRecordType recordType, String content, Boolean isPatientVisible) {
-        this.appointment = appointment;
-        this.recordType = recordType;
-        this.content = content;
-        this.isPatientVisible = isPatientVisible;
+        this.isPatientVisible = false; // Default value
     }
 
     // Getters and Setters
-    public Appointment getAppointment() {
-        return appointment;
-    }
 
-    public void setAppointment(Appointment appointment) {
-        this.appointment = appointment;
+    public UUID getAppointmentId() {
+        return appointmentId;
     }
 
     public MedicalRecordType getRecordType() {

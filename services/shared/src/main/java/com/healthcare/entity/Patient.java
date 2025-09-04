@@ -19,10 +19,13 @@ import jakarta.validation.constraints.Size;
 @Table(name = "patient_profiles")
 public class Patient extends BaseEntity {
 
+    /**
+     * Foreign key linking to user_profiles.id
+     * Immutable after creation - cannot be changed
+     */
     @NotNull
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
     @NotBlank
     @Size(max = 50)
@@ -68,27 +71,20 @@ public class Patient extends BaseEntity {
     // Constructors
     public Patient() {}
 
-    public Patient(User user, String patientNumber) {
-        this.user = user;
+    // Constructor for service layer (with user ID only)
+    public Patient(UUID userId, String patientNumber) {
+        this.userId = userId;
         this.patientNumber = patientNumber;
     }
 
     // Getters and Setters
 
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
+    public UUID getUserId() {
+        return userId;
     }
 
     public String getPatientNumber() {
         return patientNumber;
-    }
-
-    public void setPatientNumber(String patientNumber) {
-        this.patientNumber = patientNumber;
     }
 
     public String getMedicalHistory() {
