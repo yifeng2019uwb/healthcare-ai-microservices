@@ -77,7 +77,7 @@ resource "postgresql_table" "provider_profiles" {
 
   column {
     name     = "updated_by"
-    type     = "VARCHAR(255)"
+    type     = "VARCHAR(100)"
     null_able = true
   }
 
@@ -121,13 +121,4 @@ resource "postgresql_index" "provider_profiles_specialty" {
   table    = postgresql_table.provider_profiles.name
   schema   = postgresql_schema.public.name
   columns  = ["specialty"]
-}
-
-# Create index on updated_by
-resource "postgresql_index" "provider_profiles_updated_by" {
-  provider = postgresql.neon
-  name     = "idx_provider_profiles_updated_by"
-  table    = postgresql_table.provider_profiles.name
-  schema   = postgresql_schema.public.name
-  columns  = ["updated_by"]
 }

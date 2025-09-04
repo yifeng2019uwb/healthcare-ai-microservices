@@ -95,7 +95,7 @@ resource "postgresql_table" "patient_profiles" {
 
   column {
     name     = "updated_by"
-    type     = "VARCHAR(255)"
+    type     = "VARCHAR(100)"
     null_able = true
   }
 
@@ -130,13 +130,4 @@ resource "postgresql_index" "patient_profiles_patient_number_unique" {
   schema   = postgresql_schema.public.name
   columns  = ["patient_number"]
   unique   = true
-}
-
-# Create index on updated_by
-resource "postgresql_index" "patient_profiles_updated_by" {
-  provider = postgresql.neon
-  name     = "idx_patient_profiles_updated_by"
-  table    = postgresql_table.patient_profiles.name
-  schema   = postgresql_schema.public.name
-  columns  = ["updated_by"]
 }

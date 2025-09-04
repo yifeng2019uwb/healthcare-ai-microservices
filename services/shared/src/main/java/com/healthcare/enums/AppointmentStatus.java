@@ -4,6 +4,7 @@ package com.healthcare.enums;
  * Appointment status values
  */
 public enum AppointmentStatus {
+    AVAILABLE("AVAILABLE", "Appointment slot available"),
     SCHEDULED("SCHEDULED", "Appointment scheduled"),
     CONFIRMED("CONFIRMED", "Appointment confirmed"),
     IN_PROGRESS("IN_PROGRESS", "Appointment in progress"),

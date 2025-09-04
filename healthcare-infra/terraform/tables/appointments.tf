@@ -95,7 +95,7 @@ resource "postgresql_table" "appointments" {
 
   column {
     name     = "updated_by"
-    type     = "VARCHAR(255)"
+    type     = "VARCHAR(100)"
     null_able = true
   }
 
@@ -118,6 +118,11 @@ resource "postgresql_table" "appointments" {
       column = "id"
     }
   }
+
+  check {
+    name = "check_scheduled_after_created"
+    expression = "scheduled_at > created_at + INTERVAL '1 day'"
+  }
 }
 
 # For provider calendar & conflict checks
@@ -139,13 +144,4 @@ resource "postgresql_index" "appointments_patient_schedule" {
 
   # Note: DESC ordering is handled at query level for better performance
   # The index supports both ASC and DESC queries efficiently
-}
-
-# Create index on updated_by
-resource "postgresql_index" "appointments_updated_by" {
-  provider = postgresql.neon
-  name     = "idx_appointments_updated_by"
-  table    = postgresql_table.appointments.name
-  schema   = postgresql_schema.public.name
-  columns  = ["updated_by"]
 }

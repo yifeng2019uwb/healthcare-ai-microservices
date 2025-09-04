@@ -51,9 +51,10 @@ resource "postgresql_table" "user_profiles" {
   }
 
   column {
-    name     = "auth_id"
+    name     = "external_auth_id"
     type     = "VARCHAR(255)"
     null_able = false
+    comment  = "External authentication provider ID (Auth0, Cognito, etc). Future: rename to auth_id if internal auth is added"
   }
 
   column {
@@ -157,7 +158,7 @@ resource "postgresql_table" "user_profiles" {
 
   column {
     name     = "updated_by"
-    type     = "VARCHAR(255)"
+    type     = "VARCHAR(100)"
     null_able = true
   }
 
@@ -167,12 +168,12 @@ resource "postgresql_table" "user_profiles" {
 }
 
 # Create indexes
-resource "postgresql_index" "user_profiles_auth_id_unique" {
+resource "postgresql_index" "user_profiles_external_auth_id_unique" {
   provider = postgresql.neon
-  name     = "idx_user_profiles_auth_id_unique"
+  name     = "idx_user_profiles_external_auth_id_unique"
   table    = postgresql_table.user_profiles.name
   schema   = postgresql_schema.public.name
-  columns  = ["auth_id"]
+  columns  = ["external_auth_id"]
   unique   = true
 }
 
@@ -199,12 +200,4 @@ resource "postgresql_index" "user_profiles_name_dob" {
   table    = postgresql_table.user_profiles.name
   schema   = postgresql_schema.public.name
   columns  = ["last_name", "first_name", "date_of_birth"]
-}
-
-resource "postgresql_index" "user_profiles_updated_by" {
-  provider = postgresql.neon
-  name     = "idx_user_profiles_updated_by"
-  table    = postgresql_table.user_profiles.name
-  schema   = postgresql_schema.public.name
-  columns  = ["updated_by"]
 }

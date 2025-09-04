@@ -1,14 +1,19 @@
 package com.healthcare.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+
+import java.util.UUID;
 
 /**
  * Provider entity representing healthcare provider information
+ * Maps to provider_profiles table
  */
 @Entity
-@Table(name = "providers")
+@Table(name = "provider_profiles")
 public class Provider extends BaseEntity {
 
     @NotNull
@@ -16,42 +21,40 @@ public class Provider extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
+    @Size(max = 50)
+    @Column(name = "license_numbers")
+    private String licenseNumbers;
+
+    @NotBlank
+    @Size(max = 10)
+    @Pattern(regexp = "^[0-9]{10}$", message = "NPI number must be exactly 10 digits")
+    @Column(name = "npi_number", nullable = false, unique = true)
+    private String npiNumber;
+
     @Size(max = 100)
     @Column(name = "specialty")
     private String specialty;
 
-    @Size(max = 20)
-    @Column(name = "license_number")
-    private String licenseNumber;
+    @Column(name = "qualifications", columnDefinition = "TEXT")
+    private String qualifications;
 
-    @Size(max = 100)
-    @Column(name = "qualification")
-    private String qualification;
-
-    @Size(max = 2000)
-    @Column(name = "bio")
+    @Column(name = "bio", columnDefinition = "TEXT")
     private String bio;
 
-    @Column(name = "years_of_experience")
-    private Integer yearsOfExperience;
-
-    @Size(max = 500)
-    @Column(name = "office_address")
-    private String officeAddress;
-
     @Size(max = 20)
+    @Pattern(regexp = "^\\+?[1-9]\\d{1,14}$", message = "Office phone must be a valid international format")
     @Column(name = "office_phone")
     private String officePhone;
 
-    @Column(name = "is_available", nullable = false)
-    private Boolean isAvailable = true;
+    @Column(name = "custom_data", columnDefinition = "JSONB")
+    private String customData;
 
     // Constructors
     public Provider() {}
 
-    public Provider(User user) {
+    public Provider(User user, String npiNumber) {
         this.user = user;
-        this.isAvailable = true;
+        this.npiNumber = npiNumber;
     }
 
     // Getters and Setters
@@ -63,6 +66,22 @@ public class Provider extends BaseEntity {
         this.user = user;
     }
 
+    public String getLicenseNumbers() {
+        return licenseNumbers;
+    }
+
+    public void setLicenseNumbers(String licenseNumbers) {
+        this.licenseNumbers = licenseNumbers;
+    }
+
+    public String getNpiNumber() {
+        return npiNumber;
+    }
+
+    public void setNpiNumber(String npiNumber) {
+        this.npiNumber = npiNumber;
+    }
+
     public String getSpecialty() {
         return specialty;
     }
@@ -71,20 +90,12 @@ public class Provider extends BaseEntity {
         this.specialty = specialty;
     }
 
-    public String getLicenseNumber() {
-        return licenseNumber;
+    public String getQualifications() {
+        return qualifications;
     }
 
-    public void setLicenseNumber(String licenseNumber) {
-        this.licenseNumber = licenseNumber;
-    }
-
-    public String getQualification() {
-        return qualification;
-    }
-
-    public void setQualification(String qualification) {
-        this.qualification = qualification;
+    public void setQualifications(String qualifications) {
+        this.qualifications = qualifications;
     }
 
     public String getBio() {
@@ -95,22 +106,6 @@ public class Provider extends BaseEntity {
         this.bio = bio;
     }
 
-    public Integer getYearsOfExperience() {
-        return yearsOfExperience;
-    }
-
-    public void setYearsOfExperience(Integer yearsOfExperience) {
-        this.yearsOfExperience = yearsOfExperience;
-    }
-
-    public String getOfficeAddress() {
-        return officeAddress;
-    }
-
-    public void setOfficeAddress(String officeAddress) {
-        this.officeAddress = officeAddress;
-    }
-
     public String getOfficePhone() {
         return officePhone;
     }
@@ -119,11 +114,79 @@ public class Provider extends BaseEntity {
         this.officePhone = officePhone;
     }
 
-    public Boolean getIsAvailable() {
-        return isAvailable;
+    public String getCustomData() {
+        return customData;
     }
 
-    public void setIsAvailable(Boolean isAvailable) {
-        this.isAvailable = isAvailable;
+    public void setCustomData(String customData) {
+        this.customData = customData;
+    }
+
+    // ==================== VALIDATION METHODS ====================
+
+    /**
+     * Validates that the provider has a valid NPI number.
+     *
+     * @return true if NPI number is valid, false otherwise
+     */
+    public boolean hasValidNpiNumber() {
+        if (npiNumber == null) {
+            return false;
+        }
+        return npiNumber.matches("^[0-9]{10}$");
+    }
+
+    /**
+     * Validates that the provider has license information.
+     *
+     * @return true if license numbers are present, false otherwise
+     */
+    public boolean hasLicenseInfo() {
+        return licenseNumbers != null && !licenseNumbers.trim().isEmpty();
+    }
+
+    /**
+     * Validates that the provider has specialty information.
+     *
+     * @return true if specialty is present, false otherwise
+     */
+    public boolean hasSpecialty() {
+        return specialty != null && !specialty.trim().isEmpty();
+    }
+
+    /**
+     * Validates that the provider has qualifications.
+     *
+     * @return true if qualifications are present, false otherwise
+     */
+    public boolean hasQualifications() {
+        return qualifications != null && !qualifications.trim().isEmpty();
+    }
+
+    /**
+     * Validates that the provider has office phone information.
+     *
+     * @return true if office phone is present, false otherwise
+     */
+    public boolean hasOfficePhone() {
+        return officePhone != null && !officePhone.trim().isEmpty();
+    }
+
+    /**
+     * Validates that the provider is ready to accept appointments.
+     *
+     * @return true if provider is ready for appointments, false otherwise
+     */
+    public boolean isReadyForAppointments() {
+        return user != null && user.isActive() && hasValidNpiNumber() && hasSpecialty();
+    }
+
+    /**
+     * Validates that the provider has complete professional information.
+     *
+     * @return true if provider has complete info, false otherwise
+     */
+    public boolean hasCompleteProfessionalInfo() {
+        return hasValidNpiNumber() && hasSpecialty() && hasQualifications();
     }
 }

@@ -716,7 +716,30 @@ if (userRole == "PROVIDER") {
 
 ## 🔍 **Implementation Notes**
 
-### **1. Appointment Booking Flow**
+### **1. Appointment Validation Rules (Base Cases)**
+
+#### **Provider Slot Creation Rules**
+- **Minimum Advance Notice**: Providers must create appointment slots at least 1 day in advance
+- **Database Constraint**: `scheduled_at > created_at + INTERVAL '1 day'`
+- **Business Logic**: Ensures adequate preparation time for appointments
+
+#### **Patient Booking Rules**
+- **Booking Window**: Patients can book appointments 15-30 minutes before scheduled time
+- **Maximum Advance**: Patients can book up to 30 days in advance
+- **Real-time Validation**: Check availability at booking time
+
+#### **Cancellation Rules**
+- **Patient Cancellation**: Must cancel at least 24-48 hours before appointment
+- **Provider Cancellation**: Can cancel up to 30 minutes before appointment
+- **Emergency Override**: Special handling for urgent medical situations
+
+#### **Validation Methods (Entity Level)**
+- **Provider Slot Creation**: Validate 1 day advance notice
+- **Patient Booking Window**: Validate 15-30 minute + 30 day window
+- **Patient Cancellation**: Validate 24+ hour notice
+- **Provider Cancellation**: Validate 30+ minute notice
+
+### **2. Appointment Booking Flow**
 **Current Implementation**: Real-time booking with immediate confirmation
 - **Direct Booking**: Patients can book available slots immediately
 - **Conflict Prevention**: Database constraints prevent double-booking

@@ -124,7 +124,7 @@ Support Systems (1 table)
 | Column Name      | Data Type | Constraints         | Index           | Description |
 |------------------|-----------|---------------------|-----------------|-------------|-
 | id               | UUID         | PK, NOT NULL     | PRIMARY KEY     | Primary key identifier |
-| auth_id          | VARCHAR(255) | NOT NULL         | UNIQUE INDEX | External auth provider ID (Supabase, Auth0, etc.) |
+| external_auth_id | VARCHAR(255) | NOT NULL         | UNIQUE INDEX | External auth provider ID (Supabase, Auth0, etc.). Future: rename to auth_id if internal auth is added |
 | first_name       | VARCHAR(100) | NOT NULL         | COMPOSITE INDEX | User's first name |
 | last_name        | VARCHAR(100) | NOT NULL         | COMPOSITE INDEX | User's last name |
 | email            | VARCHAR(255) | UNIQUE, NOT NULL | UNIQUE INDEX    | User's email address |
@@ -141,7 +141,7 @@ Support Systems (1 table)
 | custom_data      | JSONB        | -                | -               | Flexible data storage |
 | created_at       | TIMESTAMPTZ  | NOT NULL         | -               | Record creation timestamp (timezone-aware) |
 | updated_at       | TIMESTAMPTZ  | NOT NULL         | -               | Record update timestamp (timezone-aware) |
-| updated_by       | VARCHAR(255) | -                | INDEX           | External user ID who last updated this record |-
+| updated_by       | VARCHAR(100) | -                | -               | External user ID who last updated this record |-
 
 #### **Composite Index Definition:**
 ```sql
@@ -163,7 +163,7 @@ updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 - ✅ **Future-Proof**: Ready for international expansion
 
 #### **Key Design Decisions:**
-- **External Auth Integration**: `auth_id` links to external auth provider
+- **External Auth Integration**: `external_auth_id` links to external auth provider
 - **Common Profile Fields**: All users share basic identity information
 - **Structured Address**: Separate columns for better querying and indexing
 - **Role-Agnostic Design**: No patient-specific fields (emergency contacts moved to patient_profiles)
@@ -181,6 +181,7 @@ updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 | patient_number         | VARCHAR(50)  | UNIQUE, NOT NULL | UNIQUE INDEX | Unique patient identifier |
 | medical_history        | JSONB        | -            | -     | Patient's medical history |
 | allergies              | JSONB        | -            | -     | Patient's allergies and reactions |
+| current_medications    | TEXT         | -            | -     | Current medications list |
 | emergency_contact_name | VARCHAR(100) | -            | -     | Emergency contact name |
 | emergency_contact_phone| VARCHAR(20)  | -            | -     | Emergency contact phone |
 | insurance_provider     | VARCHAR(100) | -            | -     | Insurance company name |
@@ -189,7 +190,7 @@ updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 | custom_data            | JSONB        | -            | -     | Flexible data storage |
 | created_at             | TIMESTAMPTZ  | NOT NULL     | -     | Record creation timestamp (timezone-aware) |
 | updated_at             | TIMESTAMPTZ  | NOT NULL     | -     | Record update timestamp (timezone-aware) |
-| updated_by             | VARCHAR(255) | -            | INDEX | External user ID who last updated this record |
+| updated_by             | VARCHAR(100) | -            | -     | External user ID who last updated this record |
 
 #### **Foreign Key Constraint:**
 ```sql
@@ -221,7 +222,7 @@ FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
 | custom_data      | JSONB        | -            | -               | Flexible data storage |
 | created_at       | TIMESTAMPTZ  | NOT NULL     | -               | Record creation timestamp (timezone-aware) |
 | updated_at       | TIMESTAMPTZ  | NOT NULL     | -               | Record update timestamp (timezone-aware) |
-| updated_by       | VARCHAR(255) | -            | INDEX           | External user ID who last updated this record |
+| updated_by       | VARCHAR(255) | -            | -               | External user ID who last updated this record |
 
 #### **Foreign Key Constraint:**
 ```sql
@@ -253,7 +254,7 @@ FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
 | custom_data      | JSONB        | -            | -               | Flexible data storage |
 | created_at       | TIMESTAMPTZ  | NOT NULL     | -               | Record creation timestamp (timezone-aware) |
 | updated_at       | TIMESTAMPTZ  | NOT NULL     | -               | Record update timestamp (timezone-aware) |
-| updated_by       | VARCHAR(255) | -            | INDEX           | External user ID who last updated this record |
+| updated_by       | VARCHAR(255) | -            | -               | External user ID who last updated this record |
 
 #### **Foreign Key Constraints:**
 ```sql
@@ -308,6 +309,15 @@ WHERE status NOT IN ('CANCELLED', 'NO_SHOW');
 -- Check: scheduled_at + appointment_type_duration doesn't overlap with existing appointments
 ```
 
+#### **Provider Slot Creation Constraint:**
+```sql
+-- Ensure providers create appointment slots at least 1 day in advance
+-- This prevents same-day slot creation and ensures adequate preparation time
+ALTER TABLE appointments
+ADD CONSTRAINT check_scheduled_after_created
+CHECK (scheduled_at > created_at + INTERVAL '1 day');
+```
+
 #### **Key Design Decisions:**
 - **Appointment Types**: ENUM with predefined durations (15, 30, 45, 60 minutes)
 - **Appointment Slots**: Providers create available slots (status = 'AVAILABLE', patient_id = null)
@@ -330,7 +340,7 @@ WHERE status NOT IN ('CANCELLED', 'NO_SHOW');
 | custom_data | JSONB      | -        | - | Flexible data storage |
 | created_at | TIMESTAMPTZ | NOT NULL | - | Record creation timestamp (timezone-aware) |
 | updated_at | TIMESTAMPTZ | NOT NULL | - | Record update timestamp (timezone-aware) |
-| updated_by | VARCHAR(255) | -      | INDEX | External user ID who last updated this record |
+| updated_by | VARCHAR(100) | -      | -     | External user ID who last updated this record |
 
 #### **Foreign Key Definitions:**
 ```sql

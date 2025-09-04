@@ -157,13 +157,43 @@ medical_records_complete (active + archive + deleted)
 
 ## 🔧 **Implementation Considerations**
 
+### **Cascade Relationship Configuration**
+
+#### **Foreign Key Strategy: No Cascade Deletes**
+Our foreign key constraints are intentionally configured **without cascade behavior** to support our soft delete approach:
+
+```sql
+-- Example: Patient profiles reference user profiles (NO CASCADE)
+ALTER TABLE patient_profiles
+ADD CONSTRAINT fk_patient_user_id
+FOREIGN KEY (user_id) REFERENCES user_profiles(id);
+
+-- Example: Medical records reference appointments (NO CASCADE)
+ALTER TABLE medical_records
+ADD CONSTRAINT fk_medical_record_appointment_id
+FOREIGN KEY (appointment_id) REFERENCES appointments(id);
+```
+
+#### **Why No Cascade is Appropriate**
+- **Soft Delete Strategy**: We freeze data instead of deleting it
+- **Referential Integrity**: Maintains data relationships without automatic deletions
+- **Audit Compliance**: Preserves complete audit trail for healthcare compliance
+- **Data Recovery**: Allows for data recovery and historical analysis
+- **Legal Hold**: Supports legal hold requirements without data loss
+
+#### **Data Lifecycle Impact**
+- **Active Data**: Foreign keys maintain referential integrity
+- **Archived Data**: Relationships preserved in archive tables
+- **Deleted Data**: Soft-deleted records maintain referential integrity
+- **Compliance**: Complete data lineage maintained for audit purposes
+
 ### **Current Table Modifications**
 Add archive fields to current tables for future use:
 ```sql
 -- Add to appointments, medical_records, audit_logs
 is_archived BOOLEAN DEFAULT FALSE
 archived_at TIMESTAMP WITH TIME ZONE
-archived_by VARCHAR(255)
+archived_by VARCHAR(100)
 ```
 
 ### **Future Implementation Phases**

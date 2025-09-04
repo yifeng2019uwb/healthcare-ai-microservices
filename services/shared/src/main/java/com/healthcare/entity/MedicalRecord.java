@@ -6,10 +6,12 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 /**
  * Medical record entity representing patient medical records
+ * Maps to medical_records table
  */
 @Entity
 @Table(name = "medical_records")
@@ -17,16 +19,7 @@ public class MedicalRecord extends BaseEntity {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id", nullable = false)
-    private Patient patient;
-
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "provider_id", nullable = false)
-    private Provider provider;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "appointment_id")
+    @JoinColumn(name = "appointment_id", nullable = false)
     private Appointment appointment;
 
     @NotNull
@@ -35,65 +28,37 @@ public class MedicalRecord extends BaseEntity {
     private MedicalRecordType recordType;
 
     @NotBlank
-    @Size(max = 200)
-    @Column(name = "title", nullable = false)
-    private String title;
+    @Size(min = 10, max = 10000, message = "Medical record content must be between 10 and 10000 characters")
+    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
+    private String content;
 
-    @Size(max = 2000)
-    @Column(name = "description")
-    private String description;
+    @Column(name = "is_patient_visible", nullable = false)
+    private Boolean isPatientVisible = false;
 
-    @Column(name = "record_date", nullable = false)
-    private LocalDateTime recordDate;
+    @Column(name = "release_date", columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime releaseDate;
 
-    @Size(max = 2000)
-    @Column(name = "diagnosis")
-    private String diagnosis;
-
-    @Size(max = 2000)
-    @Column(name = "treatment")
-    private String treatment;
-
-    @Size(max = 2000)
-    @Column(name = "medications")
-    private String medications;
-
-    @Size(max = 2000)
-    @Column(name = "vital_signs")
-    private String vitalSigns;
-
-    @Size(max = 2000)
-    @Column(name = "file_urls")
-    private String fileUrls; // JSON string of file URLs
+    @Column(name = "custom_data", columnDefinition = "JSONB")
+    private String customData;
 
     // Constructors
     public MedicalRecord() {}
 
-    public MedicalRecord(Patient patient, Provider provider, MedicalRecordType recordType, String title) {
-        this.patient = patient;
-        this.provider = provider;
+    public MedicalRecord(Appointment appointment, MedicalRecordType recordType, String content) {
+        this.appointment = appointment;
         this.recordType = recordType;
-        this.title = title;
-        this.recordDate = LocalDateTime.now();
+        this.content = content;
+        this.isPatientVisible = false;
+    }
+
+    public MedicalRecord(Appointment appointment, MedicalRecordType recordType, String content, Boolean isPatientVisible) {
+        this.appointment = appointment;
+        this.recordType = recordType;
+        this.content = content;
+        this.isPatientVisible = isPatientVisible;
     }
 
     // Getters and Setters
-    public Patient getPatient() {
-        return patient;
-    }
-
-    public void setPatient(Patient patient) {
-        this.patient = patient;
-    }
-
-    public Provider getProvider() {
-        return provider;
-    }
-
-    public void setProvider(Provider provider) {
-        this.provider = provider;
-    }
-
     public Appointment getAppointment() {
         return appointment;
     }
@@ -110,67 +75,109 @@ public class MedicalRecord extends BaseEntity {
         this.recordType = recordType;
     }
 
-    public String getTitle() {
-        return title;
+    public String getContent() {
+        return content;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setContent(String content) {
+        this.content = content;
     }
 
-    public String getDescription() {
-        return description;
+    public Boolean getIsPatientVisible() {
+        return isPatientVisible;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setIsPatientVisible(Boolean isPatientVisible) {
+        this.isPatientVisible = isPatientVisible;
     }
 
-    public LocalDateTime getRecordDate() {
-        return recordDate;
+    public OffsetDateTime getReleaseDate() {
+        return releaseDate;
     }
 
-    public void setRecordDate(LocalDateTime recordDate) {
-        this.recordDate = recordDate;
+    public void setReleaseDate(OffsetDateTime releaseDate) {
+        this.releaseDate = releaseDate;
     }
 
-    public String getDiagnosis() {
-        return diagnosis;
+    public String getCustomData() {
+        return customData;
     }
 
-    public void setDiagnosis(String diagnosis) {
-        this.diagnosis = diagnosis;
+    public void setCustomData(String customData) {
+        this.customData = customData;
     }
 
-    public String getTreatment() {
-        return treatment;
+    // ==================== VALIDATION METHODS ====================
+
+    /**
+     * Validates that the medical record has valid content.
+     *
+     * @return true if content is valid, false otherwise
+     */
+    public boolean hasValidContent() {
+        return content != null && content.trim().length() >= 10 && content.trim().length() <= 10000;
     }
 
-    public void setTreatment(String treatment) {
-        this.treatment = treatment;
+    /**
+     * Validates that the medical record is visible to patients.
+     *
+     * @return true if record is patient visible, false otherwise
+     */
+    public boolean isVisibleToPatient() {
+        return isPatientVisible != null && isPatientVisible;
     }
 
-    public String getMedications() {
-        return medications;
+    /**
+     * Validates that the medical record has been released to the patient.
+     *
+     * @return true if record has been released, false otherwise
+     */
+    public boolean hasBeenReleased() {
+        return releaseDate != null && releaseDate.isBefore(OffsetDateTime.now());
     }
 
-    public void setMedications(String medications) {
-        this.medications = medications;
+    /**
+     * Validates that the medical record can be released to the patient.
+     *
+     * @return true if record can be released, false otherwise
+     */
+    public boolean canBeReleased() {
+        return isVisibleToPatient() && !hasBeenReleased();
     }
 
-    public String getVitalSigns() {
-        return vitalSigns;
+    /**
+     * Validates that the medical record has an associated appointment.
+     *
+     * @return true if appointment is present, false otherwise
+     */
+    public boolean hasAppointment() {
+        return appointment != null;
     }
 
-    public void setVitalSigns(String vitalSigns) {
-        this.vitalSigns = vitalSigns;
+    /**
+     * Validates that the medical record has a valid record type.
+     *
+     * @return true if record type is valid, false otherwise
+     */
+    public boolean hasValidRecordType() {
+        return recordType != null;
     }
 
-    public String getFileUrls() {
-        return fileUrls;
+    /**
+     * Validates that the medical record is complete and ready for storage.
+     *
+     * @return true if record is complete, false otherwise
+     */
+    public boolean isComplete() {
+        return hasValidContent() && hasAppointment() && hasValidRecordType();
     }
 
-    public void setFileUrls(String fileUrls) {
-        this.fileUrls = fileUrls;
+    /**
+     * Validates that the medical record can be updated.
+     *
+     * @return true if record can be updated, false otherwise
+     */
+    public boolean canBeUpdated() {
+        return isComplete() && !hasBeenReleased();
     }
 }

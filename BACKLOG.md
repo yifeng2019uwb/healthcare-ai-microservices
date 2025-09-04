@@ -97,7 +97,7 @@
 ## 🏗️ **EPIC 1: Foundation & Infrastructure**
 
 ### **Goal**: Basic project structure and infrastructure working
-### **Status**: Not Started
+### **Status**: 🚧 IN PROGRESS
 ### **Dependencies**: None
 
 **High-Level Tasks** (details to be added after design docs):
@@ -106,16 +106,37 @@
 - [ ] Basic deployment configuration
 
 **Design Docs Needed**:
-- [ ] Shared module design
-- [ ] Database schema design
-- [ ] Infrastructure design
+- [✅] Shared module design (COMPLETED)
+- [✅] Database schema design (COMPLETED)
+- [✅] Infrastructure design (COMPLETED)
+
+**Detailed Tasks** (from Implementation Plan Phase 1):
+- [📋] **SHARED-001: Complete Entity Cleanup** - Remove duplicate ID fields from Patient, Provider, Appointment, MedicalRecord, AuditLog entities
+  - **Reference**: [Implementation Plan Phase 1.1](../docs/IMPLEMENTATION_PLAN.md#phase-1-core-entity-structure)
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: None
+
+- [📋] **SHARED-002: Deploy Database Schema** - Deploy all table definitions via Terraform and verify creation
+  - **Reference**: [Implementation Plan Phase 1.2](../docs/IMPLEMENTATION_PLAN.md#phase-1-core-entity-structure)
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: Entity cleanup complete
+
+- [📋] **SHARED-003: Implement Repository Layer** - Create BaseRepository interface and entity repositories
+  - **Reference**: [Implementation Plan Phase 1.3](../docs/IMPLEMENTATION_PLAN.md#phase-1-core-entity-structure)
+  - **Priority**: 🟡 MEDIUM
+  - **Dependencies**: Database schema deployed
+
+- [📋] **SHARED-004: Implement Service Layer** - Create BaseService class and entity services
+  - **Reference**: [Implementation Plan Phase 1.4](../docs/IMPLEMENTATION_PLAN.md#phase-1-core-entity-structure)
+  - **Priority**: 🟡 MEDIUM
+  - **Dependencies**: Repository layer complete
 
 ---
 
 ## 🔐 **EPIC 2: Authentication & Gateway**
 
 ### **Goal**: Working authentication system with API gateway
-### **Status**: Not Started
+### **Status**: 📋 TO DO
 ### **Dependencies**: Foundation complete
 
 **High-Level Tasks** (details to be added after design docs):
@@ -124,16 +145,37 @@
 - [ ] Authentication integration
 
 **Design Docs Needed**:
-- [🚧] Auth Service design (already exists) (IN PROGRESS)
-- [ ] Gateway design
-- [ ] Security design
+- [✅] Auth Service design (COMPLETED)
+- [✅] Gateway design (COMPLETED)
+- [✅] Security design (COMPLETED)
+
+**Detailed Tasks** (from Implementation Plan Phase 2):
+- [📋] **AUTH-001: Implement JWT Context Service** - Create JwtContextService for extracting user info from JWT tokens
+  - **Reference**: [Implementation Plan Phase 2.1](../docs/IMPLEMENTATION_PLAN.md#phase-2-authentication-foundation)
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: Foundation complete
+
+- [📋] **AUTH-002: Configure Spring Security** - Set up Spring Security with JWT validation
+  - **Reference**: [Implementation Plan Phase 2.2](../docs/IMPLEMENTATION_PLAN.md#phase-2-authentication-foundation)
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: JWT Context Service complete
+
+- [📋] **AUTH-003: Implement User Management** - Create user registration, login, and profile management
+  - **Reference**: [Implementation Plan Phase 2.3](../docs/IMPLEMENTATION_PLAN.md#phase-2-authentication-foundation)
+  - **Priority**: 🟡 MEDIUM
+  - **Dependencies**: Spring Security configured
+
+- [📋] **AUTH-004: Enhance Audit Listener** - Connect AuditListener to JWT context for automatic updatedBy population
+  - **Reference**: [Implementation Plan Phase 3.1](../docs/IMPLEMENTATION_PLAN.md#phase-3-audit-trail-implementation)
+  - **Priority**: 🟡 MEDIUM
+  - **Dependencies**: JWT Context Service complete
 
 ---
 
 ## 👥 **EPIC 3: Patient Service**
 
 ### **Goal**: Complete patient management system
-### **Status**: Not Started
+### **Status**: 📋 TO DO
 ### **Dependencies**: Authentication working
 
 **High-Level Tasks** (details to be added after design docs):
@@ -143,14 +185,35 @@
 - [ ] Patient portal integration
 
 **Design Docs Needed**:
-- [🚧] Patient Service design (PATIENT-001) (IN PROGRESS)
+- [✅] Patient Service design (COMPLETED)
+
+**Detailed Tasks** (from Implementation Plan Phase 4):
+- [📋] **PATIENT-001: Implement Patient CRUD** - Create, read, update, delete patient profiles
+  - **Reference**: [Implementation Plan Phase 4.3](../docs/IMPLEMENTATION_PLAN.md#phase-4-business-logic-implementation)
+  - **Priority**: 🟡 MEDIUM
+  - **Dependencies**: Authentication working
+
+- [📋] **PATIENT-002: Patient Profile Management** - Complete patient information management
+  - **Reference**: [Implementation Plan Phase 4.3](../docs/IMPLEMENTATION_PLAN.md#phase-4-business-logic-implementation)
+  - **Priority**: 🟡 MEDIUM
+  - **Dependencies**: Patient CRUD complete
+
+- [📋] **PATIENT-003: Medical History Management** - Track patient medical history and allergies
+  - **Reference**: [Implementation Plan Phase 4.3](../docs/IMPLEMENTATION_PLAN.md#phase-4-business-logic-implementation)
+  - **Priority**: 🟡 MEDIUM
+  - **Dependencies**: Patient Profile Management complete
+
+- [📋] **PATIENT-004: Insurance Information** - Handle patient insurance details
+  - **Reference**: [Implementation Plan Phase 4.3](../docs/IMPLEMENTATION_PLAN.md#phase-4-business-logic-implementation)
+  - **Priority**: 🟢 LOW
+  - **Dependencies**: Patient Profile Management complete
 
 ---
 
 ## 👥 **EPIC 4: Provider Service**
 
 ### **Goal**: Complete provider management system
-### **Status**: Not Started
+### **Status**: 📋 TO DO
 ### **Dependencies**: Authentication working
 
 **High-Level Tasks** (details to be added after design docs):
@@ -160,14 +223,35 @@
 - [ ] Provider portal integration
 
 **Design Docs Needed**:
-- [🚧] Provider Service design (PROVIDER-001) (IN PROGRESS)
+- [✅] Provider Service design (COMPLETED)
+
+**Detailed Tasks** (from Implementation Plan Phase 4):
+- [📋] **PROVIDER-001: Implement Provider CRUD** - Create, read, update, delete provider profiles
+  - **Reference**: [Implementation Plan Phase 4.3](../docs/IMPLEMENTATION_PLAN.md#phase-4-business-logic-implementation)
+  - **Priority**: 🟡 MEDIUM
+  - **Dependencies**: Authentication working
+
+- [📋] **PROVIDER-002: Provider Profile Management** - Complete provider information management
+  - **Reference**: [Implementation Plan Phase 4.3](../docs/IMPLEMENTATION_PLAN.md#phase-4-business-logic-implementation)
+  - **Priority**: 🟡 MEDIUM
+  - **Dependencies**: Provider CRUD complete
+
+- [📋] **PROVIDER-003: Medical Records Management** - Create and manage medical records
+  - **Reference**: [Implementation Plan Phase 4.2](../docs/IMPLEMENTATION_PLAN.md#phase-4-business-logic-implementation)
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: Provider Profile Management complete
+
+- [📋] **PROVIDER-004: Record Access Control** - Implement role-based record access
+  - **Reference**: [Implementation Plan Phase 4.2](../docs/IMPLEMENTATION_PLAN.md#phase-4-business-logic-implementation)
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: Medical Records Management complete
 
 ---
 
 ## 👥 **EPIC 5: Appointment Service**
 
 ### **Goal**: Complete appointment scheduling system
-### **Status**: Not Started
+### **Status**: 📋 TO DO
 ### **Dependencies**: Patient & Provider services working
 
 **High-Level Tasks** (details to be added after design docs):
@@ -177,7 +261,33 @@
 - [ ] Notification system
 
 **Design Docs Needed**:
-- [🚧] Appointment Service design (APPOINTMENT-001) (IN PROGRESS)
+- [✅] Appointment Service design (COMPLETED)
+
+**Detailed Tasks** (from Implementation Plan Phase 4):
+- [📋] **APPOINTMENT-001: Implement Appointment CRUD** - Create, read, update, delete appointments
+  - **Reference**: [Implementation Plan Phase 4.1](../docs/IMPLEMENTATION_PLAN.md#phase-4-business-logic-implementation)
+  - **Priority**: 🟡 MEDIUM
+  - **Dependencies**: Patient & Provider services working
+
+- [📋] **APPOINTMENT-002: Appointment Booking System** - Patient booking system
+  - **Reference**: [Implementation Plan Phase 4.1](../docs/IMPLEMENTATION_PLAN.md#phase-4-business-logic-implementation)
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: Appointment CRUD complete
+
+- [📋] **APPOINTMENT-003: Provider Availability Management** - Manage provider schedules
+  - **Reference**: [Implementation Plan Phase 4.1](../docs/IMPLEMENTATION_PLAN.md#phase-4-business-logic-implementation)
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: Appointment CRUD complete
+
+- [📋] **APPOINTMENT-004: Appointment Updates** - Modify and cancel appointments
+  - **Reference**: [Implementation Plan Phase 4.1](../docs/IMPLEMENTATION_PLAN.md#phase-4-business-logic-implementation)
+  - **Priority**: 🟡 MEDIUM
+  - **Dependencies**: Appointment Booking System complete
+
+- [📋] **APPOINTMENT-005: Notification System** - Appointment reminders
+  - **Reference**: [Implementation Plan Phase 4.1](../docs/IMPLEMENTATION_PLAN.md#phase-4-business-logic-implementation)
+  - **Priority**: 🟢 LOW
+  - **Dependencies**: Appointment Updates complete
 
 ---
 
@@ -202,7 +312,36 @@
 
 ---
 
-## 🎨 **EPIC 5: Frontend Applications**
+## 🧪 **EPIC 6: Testing and Quality Assurance**
+
+### **Goal**: Comprehensive testing and quality assurance
+### **Status**: 📋 TO DO
+### **Dependencies**: All core services working
+
+**Detailed Tasks** (from Implementation Plan Phase 5):
+- [📋] **TEST-001: Comprehensive Testing** - Complete test coverage for all services
+  - **Reference**: [Implementation Plan Phase 5.1](../docs/IMPLEMENTATION_PLAN.md#phase-5-testing-and-quality-assurance)
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: All core services complete
+
+- [📋] **TEST-002: Security Testing** - Test authentication and authorization
+  - **Reference**: [Implementation Plan Phase 5.2](../docs/IMPLEMENTATION_PLAN.md#phase-5-testing-and-quality-assurance)
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: Authentication complete
+
+- [📋] **TEST-003: Compliance Validation** - Validate HIPAA compliance
+  - **Reference**: [Implementation Plan Phase 5.3](../docs/IMPLEMENTATION_PLAN.md#phase-5-testing-and-quality-assurance)
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: All services complete
+
+- [📋] **TEST-004: Performance Testing** - Load and stress testing
+  - **Reference**: [Implementation Plan Phase 5.1](../docs/IMPLEMENTATION_PLAN.md#phase-5-testing-and-quality-assurance)
+  - **Priority**: 🟡 MEDIUM
+  - **Dependencies**: All services complete
+
+---
+
+## 🎨 **EPIC 7: Frontend Applications**
 
 ### **Goal**: Complete user interfaces
 ### **Status**: Not Started
@@ -340,12 +479,13 @@
 ## 📊 **Current Focus**
 
 ### **Next Priority Tasks** (Ready for Implementation!)
-1. ✅ **INFRA-001: Terraform Infrastructure Design** (COMPLETED - foundational)
-2. ✅ **INFRA-002: Simple Deployment Design** (COMPLETED - basic deployment patterns)
-3. ✅ **Service API Design Template** (COMPLETED - best practices and standards)
-4. ✅ **Service API Designs** (COMPLETED - Patient → Provider → Appointment → AI)
-5. ✅ **Database Design** (COMPLETED - based on API requirements)
-6. 🚀 **BEGIN PHASE 1 IMPLEMENTATION** - Gateway + Auth + Patient Service
+1. ✅ **Design Documents** (COMPLETED - all service designs complete)
+2. ✅ **Database Design** (COMPLETED - based on API requirements)
+3. ✅ **Infrastructure Design** (COMPLETED - Terraform setup complete)
+4. 🚧 **SHARED-001: Complete Entity Cleanup** (IN PROGRESS - remove duplicate ID fields)
+5. 📋 **SHARED-002: Deploy Database Schema** (TO DO - deploy via Terraform)
+6. 📋 **SHARED-003: Implement Repository Layer** (TO DO - CRUD operations)
+7. 📋 **SHARED-004: Implement Service Layer** (TO DO - business logic)
 
 ### **Why This Order Makes Sense**
 - **Infrastructure First**: Need to know where and how to deploy services
