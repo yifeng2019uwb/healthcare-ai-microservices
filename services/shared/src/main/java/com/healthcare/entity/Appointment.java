@@ -87,6 +87,9 @@ public class Appointment extends BaseEntity {
     }
 
     public void setProviderId(UUID providerId) {
+        if (providerId == null) {
+            throw new ValidationException("Provider ID cannot be null");
+        }
         this.providerId = providerId;
     }
 
@@ -95,6 +98,16 @@ public class Appointment extends BaseEntity {
     }
 
     public void setScheduledAt(OffsetDateTime scheduledAt) {
+        if (scheduledAt == null) {
+            throw new ValidationException("Scheduled time cannot be null");
+        }
+
+        // Validate that appointment is scheduled at least 1 day in advance
+        OffsetDateTime oneDayFromNow = OffsetDateTime.now().plusDays(1);
+        if (scheduledAt.isBefore(oneDayFromNow)) {
+            throw new ValidationException("Appointment must be scheduled at least 1 day in advance");
+        }
+
         this.scheduledAt = scheduledAt;
     }
 
@@ -103,6 +116,23 @@ public class Appointment extends BaseEntity {
     }
 
     public void setCheckinTime(OffsetDateTime checkinTime) {
+        // Checkin time can be null (patient hasn't checked in yet)
+        if (checkinTime == null) {
+            this.checkinTime = null;
+            return;
+        }
+
+        // If scheduledAt is set, validate checkin time is within reasonable range
+        if (scheduledAt != null) {
+            // Checkin should be within 2 hours before or after scheduled time
+            OffsetDateTime twoHoursBefore = scheduledAt.minusHours(2);
+            OffsetDateTime twoHoursAfter = scheduledAt.plusHours(2);
+
+            if (checkinTime.isBefore(twoHoursBefore) || checkinTime.isAfter(twoHoursAfter)) {
+                throw new ValidationException("Check-in time must be within 2 hours of scheduled appointment time");
+            }
+        }
+
         this.checkinTime = checkinTime;
     }
 
@@ -111,6 +141,9 @@ public class Appointment extends BaseEntity {
     }
 
     public void setStatus(AppointmentStatus status) {
+        if (status == null) {
+            throw new ValidationException("Appointment status cannot be null");
+        }
         this.status = status;
     }
 
@@ -119,6 +152,9 @@ public class Appointment extends BaseEntity {
     }
 
     public void setAppointmentType(AppointmentType appointmentType) {
+        if (appointmentType == null) {
+            throw new ValidationException("Appointment type cannot be null");
+        }
         this.appointmentType = appointmentType;
     }
 
@@ -152,32 +188,6 @@ public class Appointment extends BaseEntity {
         return scheduledAt.isAfter(OffsetDateTime.now());
     }
 
-    /**
-     * Validates that the appointment has valid time data.
-     *
-     * @return true if appointment has valid time data, false otherwise
-     */
-    public boolean hasValidTimeData() {
-        return scheduledAt != null && scheduledAt.isAfter(OffsetDateTime.now().minusYears(1));
-    }
-
-    /**
-     * Validates that the appointment is completed.
-     *
-     * @return true if appointment is completed, false otherwise
-     */
-    public boolean isCompleted() {
-        return status == AppointmentStatus.COMPLETED;
-    }
-
-    /**
-     * Validates that the appointment is cancelled.
-     *
-     * @return true if appointment is cancelled, false otherwise
-     */
-    public boolean isCancelled() {
-        return status == AppointmentStatus.CANCELLED;
-    }
 
     /**
      * Validates that the appointment has a patient assigned.
@@ -185,25 +195,18 @@ public class Appointment extends BaseEntity {
      * @return true if patient is assigned, false otherwise
      */
     public boolean hasPatient() {
-        return patient != null;
+        return patientId != null;
     }
 
-    /**
-     * Validates that the appointment has a provider assigned.
-     *
-     * @return true if provider is assigned, false otherwise
-     */
-    public boolean hasProvider() {
-        return provider != null;
-    }
 
     /**
      * Validates that the appointment is ready for medical record creation.
+     * Allows both IN_PROGRESS and COMPLETED statuses.
      *
      * @return true if appointment is ready for medical records, false otherwise
      */
     public boolean isReadyForMedicalRecords() {
-        return isCompleted() && hasPatient() && hasProvider();
+        return (status == AppointmentStatus.IN_PROGRESS || status == AppointmentStatus.COMPLETED) && hasPatient();
     }
 
     /**
@@ -231,40 +234,5 @@ public class Appointment extends BaseEntity {
                status == AppointmentStatus.COMPLETED || status == AppointmentStatus.CANCELLED;
     }
 
-    /**
-     * Validates that the appointment is in a valid state for database operations.
-     *
-     * @return true if appointment is in valid state, false otherwise
-     */
-    public boolean isInValidState() {
-        return scheduledAt != null && status != null;
-    }
-
-    /**
-     * Validates that the scheduled time is at least 1 day after creation time.
-     *
-     * @return true if scheduled time is valid, false otherwise
-     */
-    public boolean hasValidScheduledTime() {
-        if (getCreatedAt() == null || scheduledAt == null) {
-            return false;
-        }
-        return scheduledAt.isAfter(getCreatedAt().plusDays(1));
-    }
-
-    /**
-     * Pre-persist validation to ensure appointment scheduling rules are met.
-     * This method is called automatically by JPA before saving the entity.
-     *
-     * @throws ValidationException if appointment scheduling constraints are violated
-     */
-    @PrePersist
-    private void validateScheduledTime() {
-        if (scheduledAt != null && getCreatedAt() != null) {
-            if (!hasValidScheduledTime()) {
-                throw new ValidationException("Appointment must be scheduled at least 1 day in advance");
-            }
-        }
-    }
 
 }
