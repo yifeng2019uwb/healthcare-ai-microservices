@@ -226,6 +226,231 @@ class UserEntityTest {
     }
 
     @Test
+    void testUserComprehensiveCoverage() {
+        // Test data variables
+        String testExternalAuthId = "ext-auth-comprehensive";
+        String testFirstName = "Comprehensive";
+        String testLastName = "Test";
+        String testEmail = "comprehensive@example.com";
+        String testPhone = "+1234567890";
+        LocalDate testDateOfBirth = LocalDate.of(1985, 6, 15);
+        Gender testGender = Gender.FEMALE;
+        UserRole testRole = UserRole.PROVIDER;
+
+        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
+                           testPhone, testDateOfBirth, testGender, testRole);
+
+        // Test all getters
+        assertThat(user.getExternalAuthId()).isEqualTo(testExternalAuthId);
+        assertThat(user.getFirstName()).isEqualTo(testFirstName);
+        assertThat(user.getLastName()).isEqualTo(testLastName);
+        assertThat(user.getEmail()).isEqualTo(testEmail);
+        assertThat(user.getPhone()).isEqualTo(testPhone);
+        assertThat(user.getDateOfBirth()).isEqualTo(testDateOfBirth);
+        assertThat(user.getGender()).isEqualTo(testGender);
+        assertThat(user.getRole()).isEqualTo(testRole);
+        assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE);
+
+        // Test all setters
+        user.setFirstName("Updated First");
+        user.setLastName("Updated Last");
+        user.setEmail("updated@gmail.com");
+        user.setPhone("+9876543210");
+        user.setDateOfBirth(LocalDate.of(1990, 1, 1));
+        user.setGender(Gender.MALE);
+        user.setStatus(UserStatus.INACTIVE);
+
+        assertThat(user.getFirstName()).isEqualTo("Updated First");
+        assertThat(user.getLastName()).isEqualTo("Updated Last");
+        assertThat(user.getEmail()).isEqualTo("updated@gmail.com");
+        assertThat(user.getPhone()).isEqualTo("+9876543210");
+        assertThat(user.getDateOfBirth()).isEqualTo(LocalDate.of(1990, 1, 1));
+        assertThat(user.getGender()).isEqualTo(Gender.MALE);
+        assertThat(user.getStatus()).isEqualTo(UserStatus.INACTIVE);
+
+        // Test validation methods with updated values
+        assertThat(user.hasValidHealthcareEmail()).isTrue();
+        assertThat(user.hasValidPhoneNumber()).isTrue();
+        assertThat(user.isAdult()).isTrue();
+        assertThat(user.hasCompleteAddress()).isFalse(); // Address not set
+        assertThat(user.isActive()).isFalse(); // Status is INACTIVE
+
+        // Test null values
+        user.setFirstName(null);
+        user.setLastName(null);
+        user.setEmail(null);
+        user.setPhone(null);
+        user.setDateOfBirth(null);
+        user.setGender(null);
+
+        assertThat(user.hasValidHealthcareEmail()).isFalse();
+        assertThat(user.hasValidPhoneNumber()).isFalse();
+        assertThat(user.hasCompleteAddress()).isFalse();
+
+        // Test empty strings
+        user.setFirstName("");
+        user.setLastName("");
+        user.setEmail("");
+        user.setPhone("");
+
+        assertThat(user.hasValidHealthcareEmail()).isFalse();
+        assertThat(user.hasValidPhoneNumber()).isFalse();
+
+        // Test all UserStatus values
+        for (UserStatus status : UserStatus.values()) {
+            user.setStatus(status);
+            assertThat(user.getStatus()).isEqualTo(status);
+            assertThat(user.isActive()).isEqualTo(status == UserStatus.ACTIVE);
+        }
+
+        // Test all Gender values
+        for (Gender gender : Gender.values()) {
+            user.setGender(gender);
+            assertThat(user.getGender()).isEqualTo(gender);
+            assertThat(user.getGender().getCode()).isEqualTo(gender.getCode());
+            assertThat(user.getGender().getDescription()).isEqualTo(gender.getDescription());
+        }
+
+        // Test all UserRole values
+        for (UserRole role : UserRole.values()) {
+            user.setRole(role);
+            assertThat(user.getRole()).isEqualTo(role);
+            assertThat(user.getRole().getCode()).isEqualTo(role.getCode());
+            assertThat(user.getRole().getDescription()).isEqualTo(role.getDescription());
+        }
+    }
+
+    @Test
+    void testUserAgeCalculation() {
+        // Test data variables
+        String testExternalAuthId = "ext-auth-age";
+        String testFirstName = "Age";
+        String testLastName = "Test";
+        String testEmail = "age@example.com";
+        String testPhone = "+1234567890";
+        Gender testGender = Gender.MALE;
+        UserRole testRole = UserRole.PATIENT;
+
+        // Test different ages
+        LocalDate today = LocalDate.now();
+
+        // Test 18 years old (exactly adult)
+        LocalDate adultBirthDate = today.minusYears(18);
+        User adultUser = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
+                                testPhone, adultBirthDate, testGender, testRole);
+        assertThat(adultUser.isAdult()).isTrue();
+
+        // Test 17 years old (not adult)
+        LocalDate minorBirthDate = today.minusYears(17).plusDays(1);
+        User minorUser = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
+                                testPhone, minorBirthDate, testGender, testRole);
+        assertThat(minorUser.isAdult()).isFalse();
+
+        // Test 65 years old (senior)
+        LocalDate seniorBirthDate = today.minusYears(65);
+        User seniorUser = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
+                                 testPhone, seniorBirthDate, testGender, testRole);
+        assertThat(seniorUser.isAdult()).isTrue();
+
+        // Test future birth date (invalid)
+        LocalDate futureBirthDate = today.plusYears(1);
+        User futureUser = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
+                                 testPhone, futureBirthDate, testGender, testRole);
+        assertThat(futureUser.isAdult()).isFalse();
+    }
+
+    @Test
+    void testUserEmailValidation() {
+        // Test data variables
+        String testExternalAuthId = "ext-auth-email";
+        String testFirstName = "Email";
+        String testLastName = "Test";
+        String testPhone = "+1234567890";
+        LocalDate testDateOfBirth = LocalDate.of(1990, 1, 1);
+        Gender testGender = Gender.MALE;
+        UserRole testRole = UserRole.PATIENT;
+
+        User user = new User(testExternalAuthId, testFirstName, testLastName, "test@example.com",
+                           testPhone, testDateOfBirth, testGender, testRole);
+
+        // Test valid emails (only specific healthcare domains are accepted)
+        String[] validEmails = {
+            "user@gmail.com",
+            "user.name@outlook.com",
+            "user+tag@yahoo.com",
+            "user123@healthcare.gov",
+            "doctor@hospital.org"
+        };
+
+        for (String email : validEmails) {
+            user.setEmail(email);
+            assertThat(user.hasValidHealthcareEmail()).isTrue();
+        }
+
+        // Test invalid emails
+        String[] invalidEmails = {
+            "invalid-email",
+            "@example.com",
+            "user@",
+            "user@.com",
+            "user..name@example.com",
+            "user@example.com", // Not a healthcare domain
+            "user@company.org", // Not a healthcare domain
+            "",
+            null
+        };
+
+        for (String email : invalidEmails) {
+            user.setEmail(email);
+            assertThat(user.hasValidHealthcareEmail()).isFalse();
+        }
+    }
+
+    @Test
+    void testUserPhoneValidation() {
+        // Test data variables
+        String testExternalAuthId = "ext-auth-phone";
+        String testFirstName = "Phone";
+        String testLastName = "Test";
+        String testEmail = "phone@example.com";
+        LocalDate testDateOfBirth = LocalDate.of(1990, 1, 1);
+        Gender testGender = Gender.MALE;
+        UserRole testRole = UserRole.PATIENT;
+
+        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
+                           "+1234567890", testDateOfBirth, testGender, testRole);
+
+        // Test valid phones (10-15 digits after cleaning)
+        String[] validPhones = {
+            "1234567890", // 10 digits
+            "+1234567890", // 11 digits
+            "+1-234-567-8900", // 11 digits after cleaning
+            "+1 (234) 567-8900", // 11 digits after cleaning
+            "+44 20 7946 0958", // 12 digits after cleaning
+            "+33 1 42 86 83 26" // 12 digits after cleaning
+        };
+
+        for (String phone : validPhones) {
+            user.setPhone(phone);
+            assertThat(user.hasValidPhoneNumber()).isTrue();
+        }
+
+        // Test invalid phones
+        String[] invalidPhones = {
+            "+123", // Too short (4 digits)
+            "+1234567890123456", // Too long (16 digits)
+            "invalid-phone", // No digits
+            "",
+            null
+        };
+
+        for (String phone : invalidPhones) {
+            user.setPhone(phone);
+            assertThat(user.hasValidPhoneNumber()).isFalse();
+        }
+    }
+
+    @Test
     void testUserValidationEdgeCases() {
         // Test data variables
         String testExternalAuthId = "ext-auth-validation";

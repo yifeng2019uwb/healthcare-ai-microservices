@@ -1,5 +1,7 @@
 package com.healthcare.entity;
 
+import com.healthcare.constants.DatabaseConstants;
+import com.healthcare.exception.ValidationException;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
@@ -42,7 +44,7 @@ public abstract class BaseEntity {
      */
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", updatable = false, nullable = false)
+    @Column(name = DatabaseConstants.COL_ID, updatable = false, nullable = false)
     private UUID id;
 
     /**
@@ -51,7 +53,7 @@ public abstract class BaseEntity {
      * This field is read-only and cannot be modified after creation.
      */
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")
+    @Column(name = DatabaseConstants.COL_CREATED_AT, nullable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime createdAt;
 
     /**
@@ -60,15 +62,16 @@ public abstract class BaseEntity {
      * This field is read-only and is updated on every save operation.
      */
     @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
+    @Column(name = DatabaseConstants.COL_UPDATED_AT, nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime updatedAt;
 
     /**
      * Identifier of the user who last updated this entity.
      * Automatically populated from JWT context via AuditListener on entity
      * creation and updates. Falls back to "system" if JWT context is unavailable.
+     * This field is required for audit compliance in healthcare systems.
      */
-    @Column(name = "updated_by", length = 100)
+    @Column(name = DatabaseConstants.COL_UPDATED_BY, length = 100, nullable = false)
     private String updatedBy;
 
     /**
@@ -125,9 +128,28 @@ public abstract class BaseEntity {
      * user's ID extracted from the JWT token context.
      *
      * @param updatedBy the user identifier, typically from JWT claims
+     * @throws ValidationException if updatedBy is null or exceeds length limit
      */
     public void setUpdatedBy(String updatedBy) {
+        if (updatedBy == null) {
+            throw new ValidationException("Updated by cannot be null");
+        }
+        if (updatedBy.length() > 100) {
+            throw new ValidationException("Updated by cannot exceed 100 characters");
+        }
         this.updatedBy = updatedBy;
+    }
+
+    // ==================== ENTITY METHODS ====================
+
+    /**
+     * Checks if this entity is active.
+     * Default implementation returns true. Override in subclasses that have status fields.
+     *
+     * @return true if entity is active, false otherwise
+     */
+    public boolean isActive() {
+        return true;
     }
 
     // ==================== AUDIT LISTENER ====================

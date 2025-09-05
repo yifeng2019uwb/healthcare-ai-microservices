@@ -1,5 +1,8 @@
 package com.healthcare.entity;
 
+import com.healthcare.constants.DatabaseConstants;
+import com.healthcare.constants.ValidationPatterns;
+import com.healthcare.exception.ValidationException;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -13,7 +16,7 @@ import java.util.UUID;
  * Maps to provider_profiles table
  */
 @Entity
-@Table(name = "provider_profiles")
+@Table(name = DatabaseConstants.TABLE_PROVIDERS)
 public class Provider extends BaseEntity {
 
     /**
@@ -21,35 +24,35 @@ public class Provider extends BaseEntity {
      * Immutable after creation - cannot be changed
      */
     @NotNull
-    @Column(name = "user_id", nullable = false)
+    @Column(name = DatabaseConstants.COL_USER_ID, nullable = false)
     private UUID userId;
 
     @Size(max = 50)
-    @Column(name = "license_numbers")
+    @Column(name = DatabaseConstants.COL_LICENSE_NUMBERS)
     private String licenseNumbers;
 
     @NotBlank
     @Size(max = 10)
-    @Pattern(regexp = "^[0-9]{10}$", message = "NPI number must be exactly 10 digits")
-    @Column(name = "npi_number", nullable = false, unique = true)
+    @Pattern(regexp = ValidationPatterns.NPI, message = "NPI number must be exactly 10 digits")
+    @Column(name = DatabaseConstants.COL_NPI_NUMBER, nullable = false, unique = true)
     private String npiNumber;
 
     @Size(max = 100)
-    @Column(name = "specialty")
+    @Column(name = DatabaseConstants.COL_SPECIALTY)
     private String specialty;
 
-    @Column(name = "qualifications", columnDefinition = "TEXT")
+    @Column(name = DatabaseConstants.COL_QUALIFICATIONS, columnDefinition = "TEXT")
     private String qualifications;
 
-    @Column(name = "bio", columnDefinition = "TEXT")
+    @Column(name = DatabaseConstants.COL_BIO, columnDefinition = "TEXT")
     private String bio;
 
     @Size(max = 20)
-    @Pattern(regexp = "^\\+?[1-9]\\d{1,14}$", message = "Office phone must be a valid international format")
-    @Column(name = "office_phone")
+    @Pattern(regexp = ValidationPatterns.PHONE, message = "Office phone must be a valid international format")
+    @Column(name = DatabaseConstants.COL_OFFICE_PHONE)
     private String officePhone;
 
-    @Column(name = "custom_data", columnDefinition = "JSONB")
+    @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
     private String customData;
 
     // Constructors
@@ -80,6 +83,15 @@ public class Provider extends BaseEntity {
     }
 
     public void setNpiNumber(String npiNumber) {
+        if (npiNumber == null || npiNumber.trim().isEmpty()) {
+            throw new ValidationException("NPI number cannot be null or empty");
+        }
+        if (npiNumber.length() > 10) {
+            throw new ValidationException("NPI number cannot exceed 10 characters");
+        }
+        if (!npiNumber.matches(ValidationPatterns.NPI)) {
+            throw new ValidationException("NPI number must be exactly 10 digits");
+        }
         this.npiNumber = npiNumber;
     }
 
@@ -112,6 +124,14 @@ public class Provider extends BaseEntity {
     }
 
     public void setOfficePhone(String officePhone) {
+        if (officePhone != null && !officePhone.trim().isEmpty()) {
+            if (officePhone.length() > 20) {
+                throw new ValidationException("Office phone cannot exceed 20 characters");
+            }
+            if (!officePhone.matches(ValidationPatterns.PHONE)) {
+                throw new ValidationException("Office phone must be a valid international format");
+            }
+        }
         this.officePhone = officePhone;
     }
 
@@ -125,69 +145,4 @@ public class Provider extends BaseEntity {
 
     // ==================== VALIDATION METHODS ====================
 
-    /**
-     * Validates that the provider has a valid NPI number.
-     *
-     * @return true if NPI number is valid, false otherwise
-     */
-    public boolean hasValidNpiNumber() {
-        if (npiNumber == null) {
-            return false;
-        }
-        return npiNumber.matches("^[0-9]{10}$");
-    }
-
-    /**
-     * Validates that the provider has license information.
-     *
-     * @return true if license numbers are present, false otherwise
-     */
-    public boolean hasLicenseInfo() {
-        return licenseNumbers != null && !licenseNumbers.trim().isEmpty();
-    }
-
-    /**
-     * Validates that the provider has specialty information.
-     *
-     * @return true if specialty is present, false otherwise
-     */
-    public boolean hasSpecialty() {
-        return specialty != null && !specialty.trim().isEmpty();
-    }
-
-    /**
-     * Validates that the provider has qualifications.
-     *
-     * @return true if qualifications are present, false otherwise
-     */
-    public boolean hasQualifications() {
-        return qualifications != null && !qualifications.trim().isEmpty();
-    }
-
-    /**
-     * Validates that the provider has office phone information.
-     *
-     * @return true if office phone is present, false otherwise
-     */
-    public boolean hasOfficePhone() {
-        return officePhone != null && !officePhone.trim().isEmpty();
-    }
-
-    /**
-     * Validates that the provider is ready to accept appointments.
-     *
-     * @return true if provider is ready for appointments, false otherwise
-     */
-    public boolean isReadyForAppointments() {
-        return user != null && user.isActive() && hasValidNpiNumber() && hasSpecialty();
-    }
-
-    /**
-     * Validates that the provider has complete professional information.
-     *
-     * @return true if provider has complete info, false otherwise
-     */
-    public boolean hasCompleteProfessionalInfo() {
-        return hasValidNpiNumber() && hasSpecialty() && hasQualifications();
-    }
 }

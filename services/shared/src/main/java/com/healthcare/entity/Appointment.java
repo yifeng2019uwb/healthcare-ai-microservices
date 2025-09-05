@@ -1,5 +1,6 @@
 package com.healthcare.entity;
 
+import com.healthcare.constants.DatabaseConstants;
 import com.healthcare.enums.AppointmentStatus;
 import com.healthcare.enums.AppointmentType;
 import com.healthcare.exception.ValidationException;
@@ -16,7 +17,7 @@ import java.util.UUID;
  * Maps to appointments table
  */
 @Entity
-@Table(name = "appointments")
+@Table(name = DatabaseConstants.TABLE_APPOINTMENTS)
 public class Appointment extends BaseEntity {
 
     /**
@@ -24,7 +25,7 @@ public class Appointment extends BaseEntity {
      * Nullable - appointment can be created without patient (available slot)
      * Immutable after creation - cannot be changed
      */
-    @Column(name = "patient_id")
+    @Column(name = DatabaseConstants.COL_PATIENT_ID)
     private UUID patientId;
 
     /**
@@ -33,32 +34,32 @@ public class Appointment extends BaseEntity {
      * Immutable after creation - cannot be changed
      */
     @NotNull
-    @Column(name = "provider_id", nullable = false)
+    @Column(name = DatabaseConstants.COL_PROVIDER_ID, nullable = false)
     private UUID providerId;
 
     @NotNull
     @Future(message = "Appointment must be scheduled in the future")
-    @Column(name = "scheduled_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
+    @Column(name = DatabaseConstants.COL_SCHEDULED_AT, nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime scheduledAt;
 
-    @Column(name = "checkin_time", columnDefinition = "TIMESTAMPTZ")
+    @Column(name = DatabaseConstants.COL_CHECKIN_TIME, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime checkinTime;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(name = DatabaseConstants.COL_APPOINTMENT_STATUS, nullable = false)
     private AppointmentStatus status = AppointmentStatus.AVAILABLE;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "appointment_type", nullable = false)
+    @Column(name = DatabaseConstants.COL_APPOINTMENT_TYPE, nullable = false)
     private AppointmentType appointmentType;
 
     @Size(max = 1000, message = "Appointment notes must not exceed 1000 characters")
-    @Column(name = "notes", columnDefinition = "TEXT")
+    @Column(name = DatabaseConstants.COL_NOTES, columnDefinition = "TEXT")
     private String notes;
 
-    @Column(name = "custom_data", columnDefinition = "JSONB")
+    @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
     private String customData;
 
     // Constructors

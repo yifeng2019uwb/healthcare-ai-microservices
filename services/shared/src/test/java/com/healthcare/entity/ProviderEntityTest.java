@@ -5,6 +5,7 @@ import com.healthcare.enums.UserRole;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,14 +17,7 @@ class ProviderEntityTest {
     @Test
     void testProviderEntity() {
         // Test data variables
-        String testExternalAuthId = "ext-auth-789";
-        String testFirstName = "Dr. Bob";
-        String testLastName = "Johnson";
-        String testEmail = "dr.bob@example.com";
-        String testPhone = "+1234567890";
-        LocalDate testDateOfBirth = LocalDate.of(1980, 3, 20);
-        Gender testGender = Gender.MALE;
-        UserRole testRole = UserRole.PROVIDER;
+        UUID testUserId = UUID.randomUUID();
         String testNpiNumber = "1234567890";
         String testSpecialty = "Cardiology";
         String testLicenseNumbers = "MD123456";
@@ -32,18 +26,14 @@ class ProviderEntityTest {
         String testOfficePhone = "+15555678901";
         String testCustomData = "{\"rating\": 4.8}";
 
-        // Create user first
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
-
         // Create provider
-        Provider provider = new Provider(user, testNpiNumber);
+        Provider provider = new Provider(testUserId, testNpiNumber);
         provider.setSpecialty(testSpecialty);
         provider.setLicenseNumbers(testLicenseNumbers);
         provider.setQualifications(testQualifications);
 
         // Test basic properties
-        assertThat(provider.getUser()).isEqualTo(user);
+        assertThat(provider.getUserId()).isEqualTo(testUserId);
         assertThat(provider.getNpiNumber()).isEqualTo(testNpiNumber);
         assertThat(provider.getSpecialty()).isEqualTo(testSpecialty);
         assertThat(provider.getLicenseNumbers()).isEqualTo(testLicenseNumbers);
@@ -62,24 +52,14 @@ class ProviderEntityTest {
     @Test
     void testProviderValidationMethods() {
         // Test data variables
-        String testExternalAuthId = "ext-auth-provider";
-        String testFirstName = "Dr. Test";
-        String testLastName = "Provider";
-        String testEmail = "test@example.com";
-        String testPhone = "+1234567890";
-        LocalDate testDateOfBirth = LocalDate.of(1980, 3, 20);
-        Gender testGender = Gender.MALE;
-        UserRole testRole = UserRole.PROVIDER;
+        UUID testUserId = UUID.randomUUID();
         String testNpiNumber = "9876543210";
         String testSpecialty = "Internal Medicine";
         String testLicenseNumbers = "MD987654";
         String testQualifications = "MD, Board Certified";
         String testOfficePhone = "+15551234567";
 
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
-
-        Provider provider = new Provider(user, testNpiNumber);
+        Provider provider = new Provider(testUserId, testNpiNumber);
 
         // Test validation methods
         assertThat(provider.hasValidNpiNumber()).isTrue();

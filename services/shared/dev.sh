@@ -67,11 +67,29 @@ case "${1:-build}" in
         $MAVEN_CMD test
         echo "✅ Tests completed"
         ;;
+    "test-class")
+        if [ -z "$2" ]; then
+            echo "❌ Please specify a test class name"
+            echo "Usage: $0 test-class <ClassName>"
+            echo "Example: $0 test-class AuditLogEntityTest"
+            exit 1
+        fi
+        echo "🧪 Running test class: $2"
+        $MAVEN_CMD test -Dtest="$2"
+        echo "✅ Test class completed"
+        ;;
+    "coverage")
+        echo "📊 Running tests with coverage..."
+        $MAVEN_CMD clean test jacoco:report
+        echo "✅ Coverage report generated in target/site/jacoco/index.html"
+        ;;
     *)
-        echo "Usage: $0 [clean|build|test]"
-        echo "  clean  - Clean previous builds"
-        echo "  build  - Compile the project (default)"
-        echo "  test   - Run all tests"
+        echo "Usage: $0 [clean|build|test|test-class|coverage]"
+        echo "  clean       - Clean previous builds"
+        echo "  build       - Compile the project (default)"
+        echo "  test        - Run all tests"
+        echo "  test-class  - Run specific test class (e.g., test-class AuditLogEntityTest)"
+        echo "  coverage    - Run tests with coverage report"
         exit 1
         ;;
 esac

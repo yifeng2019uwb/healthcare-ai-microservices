@@ -21,73 +21,36 @@ class AuditLogEntityTest {
     @Test
     void testAuditLogEntity() {
         // Test data variables
-        String testExternalAuthId = "ext-auth-audit";
-        String testFirstName = "Audit";
-        String testLastName = "User";
-        String testEmail = "audit@example.com";
-        String testPhone = "+1234567890";
-        LocalDate testDateOfBirth = LocalDate.of(1990, 1, 1);
-        Gender testGender = Gender.OTHER;
-        UserRole testRole = UserRole.PATIENT;
-
+        UUID testUserId = UUID.randomUUID();
         UUID testResourceId = UUID.randomUUID();
         ActionType testActionType = ActionType.CREATE;
         ResourceType testResourceType = ResourceType.PATIENT_PROFILE;
         Outcome testInitialOutcome = Outcome.SUCCESS;
         Outcome testUpdatedOutcome = Outcome.FAILURE;
-        String testInitialDetails = "{\"action\": \"Patient record created\"}";
-        String testUpdatedDetails = "{\"action\": \"Patient record updated\"}";
-        String testUserAgent = "Mozilla/5.0";
 
-        // Create a user first
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
-
-        AuditLog auditLog = new AuditLog(user, testActionType, testResourceType, testResourceId, testInitialOutcome);
-        auditLog.setDetails(testInitialDetails);
-        auditLog.setUserAgent(testUserAgent);
+        AuditLog auditLog = new AuditLog(testUserId, testActionType, testResourceType, testResourceId, testInitialOutcome);
 
         // Test basic properties
-        assertThat(auditLog.getUser()).isEqualTo(user);
+        assertThat(auditLog.getUserId()).isEqualTo(testUserId);
         assertThat(auditLog.getActionType()).isEqualTo(testActionType);
         assertThat(auditLog.getResourceType()).isEqualTo(testResourceType);
         assertThat(auditLog.getResourceId()).isEqualTo(testResourceId);
         assertThat(auditLog.getOutcome()).isEqualTo(testInitialOutcome);
-        assertThat(auditLog.getDetails()).isEqualTo(testInitialDetails);
-        assertThat(auditLog.getUserAgent()).isEqualTo(testUserAgent);
 
-        // Test additional setters
-        auditLog.setDetails(testUpdatedDetails);
-        auditLog.setOutcome(testUpdatedOutcome);
-
-        assertThat(auditLog.getDetails()).isEqualTo(testUpdatedDetails);
-        assertThat(auditLog.getOutcome()).isEqualTo(testUpdatedOutcome);
+        // Test that audit log is immutable - no setters available
+        // AuditLog is immutable once created, so we can't change details or outcome
     }
 
     @Test
     void testAuditLogValidationMethods() {
         // Test data variables
-        String testExternalAuthId = "ext-auth-audit2";
-        String testFirstName = "Audit";
-        String testLastName = "User2";
-        String testEmail = "audit2@example.com";
-        String testPhone = "+1234567890";
-        LocalDate testDateOfBirth = LocalDate.of(1990, 1, 1);
-        Gender testGender = Gender.OTHER;
-        UserRole testRole = UserRole.PATIENT;
-
+        UUID testUserId = UUID.randomUUID();
         UUID testResourceId = UUID.randomUUID();
         ActionType testActionType = ActionType.UPDATE;
         ResourceType testResourceType = ResourceType.APPOINTMENT;
         Outcome testInitialOutcome = Outcome.SUCCESS;
-        Outcome testUpdatedOutcome = Outcome.FAILURE;
-        String testUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
-        String testSourceIp = "192.168.1.1";
 
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
-
-        AuditLog auditLog = new AuditLog(user, testActionType, testResourceType, testResourceId, testInitialOutcome);
+        AuditLog auditLog = new AuditLog(testUserId, testActionType, testResourceType, testResourceId, testInitialOutcome);
 
         // Test validation methods
         assertThat(auditLog.hasUser()).isTrue();
@@ -120,26 +83,15 @@ class AuditLogEntityTest {
     @Test
     void testAuditLogActionTypes() {
         // Test data variables
-        String testExternalAuthId = "ext-auth-audit3";
-        String testFirstName = "Audit";
-        String testLastName = "User3";
-        String testEmail = "audit3@example.com";
-        String testPhone = "+1234567890";
-        LocalDate testDateOfBirth = LocalDate.of(1990, 1, 1);
-        Gender testGender = Gender.OTHER;
-        UserRole testRole = UserRole.PATIENT;
-
+        UUID testUserId = UUID.randomUUID();
         UUID testResourceId = UUID.randomUUID();
         Outcome testOutcome = Outcome.SUCCESS;
 
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
-
         // Test different action types
-        AuditLog createLog = new AuditLog(user, ActionType.CREATE, ResourceType.PATIENT_PROFILE, testResourceId, testOutcome);
-        AuditLog readLog = new AuditLog(user, ActionType.READ, ResourceType.APPOINTMENT, testResourceId, testOutcome);
-        AuditLog updateLog = new AuditLog(user, ActionType.UPDATE, ResourceType.MEDICAL_RECORD, testResourceId, testOutcome);
-        AuditLog deleteLog = new AuditLog(user, ActionType.DELETE, ResourceType.USER_PROFILE, testResourceId, testOutcome);
+        AuditLog createLog = new AuditLog(testUserId, ActionType.CREATE, ResourceType.PATIENT_PROFILE, testResourceId, testOutcome);
+        AuditLog readLog = new AuditLog(testUserId, ActionType.READ, ResourceType.APPOINTMENT, testResourceId, testOutcome);
+        AuditLog updateLog = new AuditLog(testUserId, ActionType.UPDATE, ResourceType.MEDICAL_RECORD, testResourceId, testOutcome);
+        AuditLog deleteLog = new AuditLog(testUserId, ActionType.DELETE, ResourceType.USER_PROFILE, testResourceId, testOutcome);
 
         assertThat(createLog.getActionType()).isEqualTo(ActionType.CREATE);
         assertThat(readLog.getActionType()).isEqualTo(ActionType.READ);
@@ -150,28 +102,17 @@ class AuditLogEntityTest {
     @Test
     void testAuditLogResourceTypes() {
         // Test data variables
-        String testExternalAuthId = "ext-auth-audit4";
-        String testFirstName = "Audit";
-        String testLastName = "User4";
-        String testEmail = "audit4@example.com";
-        String testPhone = "+1234567890";
-        LocalDate testDateOfBirth = LocalDate.of(1990, 1, 1);
-        Gender testGender = Gender.OTHER;
-        UserRole testRole = UserRole.PATIENT;
-
+        UUID testUserId = UUID.randomUUID();
         UUID testResourceId = UUID.randomUUID();
         ActionType testActionType = ActionType.CREATE;
         Outcome testOutcome = Outcome.SUCCESS;
 
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
-
         // Test different resource types
-        AuditLog userLog = new AuditLog(user, testActionType, ResourceType.USER_PROFILE, testResourceId, testOutcome);
-        AuditLog patientLog = new AuditLog(user, testActionType, ResourceType.PATIENT_PROFILE, testResourceId, testOutcome);
-        AuditLog providerLog = new AuditLog(user, testActionType, ResourceType.PROVIDER_PROFILE, testResourceId, testOutcome);
-        AuditLog appointmentLog = new AuditLog(user, testActionType, ResourceType.APPOINTMENT, testResourceId, testOutcome);
-        AuditLog medicalRecordLog = new AuditLog(user, testActionType, ResourceType.MEDICAL_RECORD, testResourceId, testOutcome);
+        AuditLog userLog = new AuditLog(testUserId, testActionType, ResourceType.USER_PROFILE, testResourceId, testOutcome);
+        AuditLog patientLog = new AuditLog(testUserId, testActionType, ResourceType.PATIENT_PROFILE, testResourceId, testOutcome);
+        AuditLog providerLog = new AuditLog(testUserId, testActionType, ResourceType.PROVIDER_PROFILE, testResourceId, testOutcome);
+        AuditLog appointmentLog = new AuditLog(testUserId, testActionType, ResourceType.APPOINTMENT, testResourceId, testOutcome);
+        AuditLog medicalRecordLog = new AuditLog(testUserId, testActionType, ResourceType.MEDICAL_RECORD, testResourceId, testOutcome);
 
         assertThat(userLog.getResourceType()).isEqualTo(ResourceType.USER_PROFILE);
         assertThat(patientLog.getResourceType()).isEqualTo(ResourceType.PATIENT_PROFILE);

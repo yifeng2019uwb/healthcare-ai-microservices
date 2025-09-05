@@ -1,8 +1,11 @@
 package com.healthcare.entity;
 
+import com.healthcare.constants.DatabaseConstants;
+import com.healthcare.constants.ValidationPatterns;
 import com.healthcare.enums.Gender;
 import com.healthcare.enums.UserRole;
 import com.healthcare.enums.UserStatus;
+import com.healthcare.exception.ValidationException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -22,78 +25,79 @@ import java.time.LocalDate;
  * Maps to user_profiles table
  */
 @Entity
-@Table(name = "user_profiles")
+@Table(name = DatabaseConstants.TABLE_USER_PROFILES)
 public class User extends BaseEntity {
+
 
     @NotBlank
     @Size(max = 255)
-    @Column(name = "external_auth_id", nullable = false, unique = true)
-    private String externalAuthId; // External authentication provider ID - rename to authId when internal auth is added
+    @Column(name = DatabaseConstants.COL_EXTERNAL_AUTH_ID, nullable = false, unique = true)
+    private String externalAuthId; // External authentication provider ID - IMMUTABLE after creation
 
     @NotBlank
     @Size(max = 100)
-    @Column(name = "first_name", nullable = false)
+    @Column(name = DatabaseConstants.COL_FIRST_NAME, nullable = false)
     private String firstName;
 
     @NotBlank
     @Size(max = 100)
-    @Column(name = "last_name", nullable = false)
+    @Column(name = DatabaseConstants.COL_LAST_NAME, nullable = false)
     private String lastName;
 
     @NotBlank
     @Email
     @Size(max = 255)
-    @Column(name = "email", nullable = false, unique = true)
+    @Column(name = DatabaseConstants.COL_EMAIL, nullable = false, unique = true)
     private String email;
 
     @NotBlank
     @Size(max = 20)
-    @Pattern(regexp = "^\\+?[1-9]\\d{1,14}$", message = "Phone number must be a valid international format")
-    @Column(name = "phone", nullable = false)
+    @Pattern(regexp = ValidationPatterns.PHONE, message = "Phone number must be a valid international format")
+    @Column(name = DatabaseConstants.COL_PHONE, nullable = false)
     private String phone;
 
     @NotNull
     @Past(message = "Date of birth must be in the past")
-    @Column(name = "date_of_birth", nullable = false)
+    @Column(name = DatabaseConstants.COL_DATE_OF_BIRTH, nullable = false)
     private LocalDate dateOfBirth;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "gender", nullable = false)
+    @Column(name = DatabaseConstants.COL_GENDER, nullable = false)
     private Gender gender;
 
     @Size(max = 255)
-    @Column(name = "street_address")
+    @Column(name = DatabaseConstants.COL_STREET_ADDRESS)
     private String streetAddress;
 
     @Size(max = 100)
-    @Column(name = "city")
+    @Column(name = DatabaseConstants.COL_CITY)
     private String city;
 
     @Size(max = 50)
-    @Column(name = "state")
+    @Column(name = DatabaseConstants.COL_STATE)
     private String state;
 
     @Size(max = 20)
-    @Pattern(regexp = "^[A-Za-z0-9\\s-]{3,20}$", message = "Postal code must be 3-20 characters with letters, numbers, spaces, or hyphens")
-    @Column(name = "postal_code")
+    @Pattern(regexp = ValidationPatterns.POSTAL_CODE, message = "Postal code must be 3-20 characters with letters, numbers, spaces, or hyphens")
+    @Column(name = DatabaseConstants.COL_POSTAL_CODE)
     private String postalCode;
 
     @Size(max = 50)
-    @Column(name = "country")
+    @Column(name = DatabaseConstants.COL_COUNTRY)
     private String country;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
-    private UserRole role;
+    @Column(name = DatabaseConstants.COL_ROLE, nullable = false)
+    private UserRole role; // IMMUTABLE after creation
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(name = DatabaseConstants.COL_USER_STATUS, nullable = false)
     private UserStatus status = UserStatus.ACTIVE;
 
-    @Column(name = "custom_data", columnDefinition = "JSONB")
+    @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
     private String customData;
 
     // ==================== CONSTRUCTORS ====================
@@ -177,31 +181,67 @@ public class User extends BaseEntity {
 
     // ==================== SETTERS ====================
 
-    public void setExternalAuthId(String externalAuthId) {
-        this.externalAuthId = externalAuthId;
-    }
 
     public void setFirstName(String firstName) {
+        if (firstName == null || firstName.trim().isEmpty()) {
+            throw new ValidationException("First name cannot be null or empty");
+        }
+        if (firstName.length() > 100) {
+            throw new ValidationException("First name cannot exceed 100 characters");
+        }
         this.firstName = firstName;
     }
 
     public void setLastName(String lastName) {
+        if (lastName == null || lastName.trim().isEmpty()) {
+            throw new ValidationException("Last name cannot be null or empty");
+        }
+        if (lastName.length() > 100) {
+            throw new ValidationException("Last name cannot exceed 100 characters");
+        }
         this.lastName = lastName;
     }
 
     public void setEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new ValidationException("Email cannot be null or empty");
+        }
+        if (email.length() > 255) {
+            throw new ValidationException("Email cannot exceed 255 characters");
+        }
+        if (!email.matches(ValidationPatterns.EMAIL)) {
+            throw new ValidationException("Email format is invalid");
+        }
         this.email = email;
     }
 
     public void setPhone(String phone) {
+        if (phone == null || phone.trim().isEmpty()) {
+            throw new ValidationException("Phone cannot be null or empty");
+        }
+        if (phone.length() > 20) {
+            throw new ValidationException("Phone cannot exceed 20 characters");
+        }
+        if (!phone.matches(ValidationPatterns.PHONE)) {
+            throw new ValidationException("Phone number format is invalid");
+        }
         this.phone = phone;
     }
 
     public void setDateOfBirth(LocalDate dateOfBirth) {
+        if (dateOfBirth == null) {
+            throw new ValidationException("Date of birth cannot be null");
+        }
+        if (dateOfBirth.isAfter(LocalDate.now())) {
+            throw new ValidationException("Date of birth cannot be in the future");
+        }
         this.dateOfBirth = dateOfBirth;
     }
 
     public void setGender(Gender gender) {
+        if (gender == null) {
+            throw new ValidationException("Gender cannot be null");
+        }
         this.gender = gender;
     }
 
@@ -218,6 +258,14 @@ public class User extends BaseEntity {
     }
 
     public void setPostalCode(String postalCode) {
+        if (postalCode != null && !postalCode.trim().isEmpty()) {
+            if (postalCode.length() > 20) {
+                throw new ValidationException("Postal code cannot exceed 20 characters");
+            }
+            if (!postalCode.matches(ValidationPatterns.POSTAL_CODE)) {
+                throw new ValidationException("Postal code format is invalid");
+            }
+        }
         this.postalCode = postalCode;
     }
 
@@ -225,11 +273,10 @@ public class User extends BaseEntity {
         this.country = country;
     }
 
-    public void setRole(UserRole role) {
-        this.role = role;
-    }
-
     public void setStatus(UserStatus status) {
+        if (status == null) {
+            throw new ValidationException("Status cannot be null");
+        }
         this.status = status;
     }
 
@@ -270,38 +317,6 @@ public class User extends BaseEntity {
                country != null && !country.trim().isEmpty();
     }
 
-    /**
-     * Validates that the user's email domain is valid for healthcare.
-     *
-     * @return true if email domain is valid, false otherwise
-     */
-    public boolean hasValidHealthcareEmail() {
-        if (email == null) {
-            return false;
-        }
-        String[] validDomains = {"gmail.com", "outlook.com", "yahoo.com", "healthcare.gov", "hospital.org"};
-        String domain = email.substring(email.lastIndexOf("@") + 1).toLowerCase();
-        for (String validDomain : validDomains) {
-            if (domain.equals(validDomain)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Validates that the user's phone number is in a valid format.
-     *
-     * @return true if phone number is valid, false otherwise
-     */
-    public boolean hasValidPhoneNumber() {
-        if (phone == null) {
-            return false;
-        }
-        // Remove all non-digit characters except +
-        String cleanPhone = phone.replaceAll("[^\\d+]", "");
-        return cleanPhone.length() >= 10 && cleanPhone.length() <= 15;
-    }
 
     /**
      * Validates that the user's status allows for active operations.
@@ -318,7 +333,7 @@ public class User extends BaseEntity {
      * @return true if user can be updated, false otherwise
      */
     public boolean canBeUpdated() {
-        return isActive() && !isDeleted();
+        return isActive();
     }
 
     /**

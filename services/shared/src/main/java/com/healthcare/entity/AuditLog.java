@@ -1,5 +1,6 @@
 package com.healthcare.entity;
 
+import com.healthcare.constants.DatabaseConstants;
 import com.healthcare.enums.ActionType;
 import com.healthcare.enums.Outcome;
 import com.healthcare.enums.ResourceType;
@@ -15,7 +16,7 @@ import java.util.UUID;
  * Maps to audit_logs table
  */
 @Entity
-@Table(name = "audit_logs")
+@Table(name = DatabaseConstants.TABLE_AUDIT_LOGS)
 public class AuditLog extends BaseEntity {
 
     /**
@@ -23,35 +24,35 @@ public class AuditLog extends BaseEntity {
      * Immutable after creation - cannot be changed
      */
     @NotNull
-    @Column(name = "user_id", nullable = false)
+    @Column(name = DatabaseConstants.COL_USER_ID, nullable = false)
     private UUID userId;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "action_type", nullable = false)
+    @Column(name = DatabaseConstants.COL_ACTION_TYPE, nullable = false)
     private ActionType actionType;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "resource_type", nullable = false)
+    @Column(name = DatabaseConstants.COL_RESOURCE_TYPE, nullable = false)
     private ResourceType resourceType;
 
-    @Column(name = "resource_id")
+    @Column(name = DatabaseConstants.COL_RESOURCE_ID)
     private UUID resourceId;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "outcome", nullable = false)
+    @Column(name = DatabaseConstants.COL_OUTCOME, nullable = false)
     private Outcome outcome;
 
-    @Column(name = "details", columnDefinition = "JSONB")
+    @Column(name = DatabaseConstants.COL_DETAILS, columnDefinition = "JSONB")
     private String details;
 
-    @Column(name = "source_ip", columnDefinition = "INET")
+    @Column(name = DatabaseConstants.COL_SOURCE_IP, columnDefinition = "INET")
     private InetAddress sourceIp;
 
     @Size(max = 500)
-    @Column(name = "user_agent", columnDefinition = "TEXT")
+    @Column(name = DatabaseConstants.COL_USER_AGENT, columnDefinition = "TEXT")
     private String userAgent;
 
     // Constructors
@@ -107,95 +108,4 @@ public class AuditLog extends BaseEntity {
     }
 
 
-    // ==================== VALIDATION METHODS ====================
-
-    /**
-     * Validates that the audit log has a valid user.
-     *
-     * @return true if user is present, false otherwise
-     */
-    public boolean hasUser() {
-        return user != null;
-    }
-
-    /**
-     * Validates that the audit log has a valid action type.
-     *
-     * @return true if action type is present, false otherwise
-     */
-    public boolean hasActionType() {
-        return actionType != null;
-    }
-
-    /**
-     * Validates that the audit log has a valid resource type.
-     *
-     * @return true if resource type is present, false otherwise
-     */
-    public boolean hasResourceType() {
-        return resourceType != null;
-    }
-
-    /**
-     * Validates that the audit log has a valid outcome.
-     *
-     * @return true if outcome is present, false otherwise
-     */
-    public boolean hasOutcome() {
-        return outcome != null;
-    }
-
-    /**
-     * Validates that the audit log has a valid resource ID.
-     *
-     * @return true if resource ID is present, false otherwise
-     */
-    public boolean hasResourceId() {
-        return resourceId != null;
-    }
-
-    /**
-     * Validates that the audit log has source IP information.
-     *
-     * @return true if source IP is present, false otherwise
-     */
-    public boolean hasSourceIp() {
-        return sourceIp != null;
-    }
-
-    /**
-     * Validates that the audit log has user agent information.
-     *
-     * @return true if user agent is present, false otherwise
-     */
-    public boolean hasUserAgent() {
-        return userAgent != null && !userAgent.trim().isEmpty();
-    }
-
-    /**
-     * Validates that the audit log is complete and ready for storage.
-     *
-     * @return true if audit log is complete, false otherwise
-     */
-    public boolean isComplete() {
-        return hasUser() && hasActionType() && hasResourceType() && hasOutcome();
-    }
-
-    /**
-     * Validates that the audit log represents a successful operation.
-     *
-     * @return true if operation was successful, false otherwise
-     */
-    public boolean isSuccessful() {
-        return hasOutcome() && outcome == Outcome.SUCCESS;
-    }
-
-    /**
-     * Validates that the audit log represents a failed operation.
-     *
-     * @return true if operation failed, false otherwise
-     */
-    public boolean isFailed() {
-        return hasOutcome() && outcome == Outcome.FAILURE;
-    }
 }

@@ -5,6 +5,7 @@ import com.healthcare.enums.UserRole;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,30 +17,19 @@ class PatientEntityTest {
     @Test
     void testPatientEntity() {
         // Test data variables
-        String testExternalAuthId = "ext-auth-456";
-        String testFirstName = "Jane";
-        String testLastName = "Smith";
-        String testEmail = "jane.smith@example.com";
-        String testPhone = "+1234567890";
-        LocalDate testDateOfBirth = LocalDate.of(1990, 5, 15);
-        Gender testGender = Gender.FEMALE;
-        UserRole testRole = UserRole.PATIENT;
+        UUID testUserId = UUID.randomUUID();
         String testPatientNumber = "PAT-12345678";
         String testMedicalHistory = "No significant medical history";
         String testAllergies = "Peanuts";
         String testEmergencyContactName = "John Smith";
         String testEmergencyContactPhone = "+15551234567";
 
-        // Create user first
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
-
         // Create patient
-        Patient patient = new Patient(user, testPatientNumber);
+        Patient patient = new Patient(testUserId, testPatientNumber);
         patient.setMedicalHistory(testMedicalHistory);
 
         // Test basic properties
-        assertThat(patient.getUser()).isEqualTo(user);
+        assertThat(patient.getUserId()).isEqualTo(testUserId);
         assertThat(patient.getPatientNumber()).isEqualTo(testPatientNumber);
         assertThat(patient.getMedicalHistory()).isEqualTo(testMedicalHistory);
 
@@ -73,10 +63,9 @@ class PatientEntityTest {
         String testAllergies = "Peanuts, Shellfish";
         String testCurrentMedications = "Lisinopril 10mg daily";
 
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        UUID testUserId = UUID.randomUUID();
 
-        Patient patient = new Patient(user, testPatientNumber);
+        Patient patient = new Patient(testUserId, testPatientNumber);
 
         // Test validation methods
         assertThat(patient.hasValidPatientNumber()).isTrue();

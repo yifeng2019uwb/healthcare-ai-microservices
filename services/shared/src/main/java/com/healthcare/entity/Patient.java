@@ -1,22 +1,23 @@
 package com.healthcare.entity;
 
+import com.healthcare.constants.DatabaseConstants;
+import com.healthcare.constants.ValidationPatterns;
+import com.healthcare.exception.ValidationException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.util.UUID;
 
 /**
  * Patient entity representing patient-specific information
  * Maps to patient_profiles table
  */
 @Entity
-@Table(name = "patient_profiles")
+@Table(name = DatabaseConstants.TABLE_PATIENTS)
 public class Patient extends BaseEntity {
 
     /**
@@ -24,48 +25,48 @@ public class Patient extends BaseEntity {
      * Immutable after creation - cannot be changed
      */
     @NotNull
-    @Column(name = "user_id", nullable = false)
+    @Column(name = DatabaseConstants.COL_USER_ID, nullable = false)
     private UUID userId;
 
     @NotBlank
     @Size(max = 50)
-    @Pattern(regexp = "^PAT-[0-9]{8}$", message = "Patient number must be in format PAT-XXXXXXXX")
-    @Column(name = "patient_number", nullable = false, unique = true)
+    @Pattern(regexp = ValidationPatterns.PATIENT_NUMBER, message = "Patient number must be in format PAT-XXXXXXXX")
+    @Column(name = DatabaseConstants.COL_PATIENT_NUMBER, nullable = false, unique = true)
     private String patientNumber;
 
-    @Column(name = "medical_history", columnDefinition = "JSONB")
-    private String medicalHistory; // TODO: Consider using JSON converters for proper JSON handling
+    @Column(name = DatabaseConstants.COL_MEDICAL_HISTORY, columnDefinition = "JSONB")
+    private String medicalHistory;
 
-    @Column(name = "allergies", columnDefinition = "JSONB")
-    private String allergies; // TODO: Consider using JSON converters for proper JSON handling
+    @Column(name = DatabaseConstants.COL_ALLERGIES, columnDefinition = "JSONB")
+    private String allergies;
 
     @Size(max = 2000)
-    @Column(name = "current_medications")
+    @Column(name = DatabaseConstants.COL_CURRENT_MEDICATIONS)
     private String currentMedications;
 
     @Size(max = 100)
-    @Column(name = "insurance_provider")
+    @Column(name = DatabaseConstants.COL_INSURANCE_PROVIDER)
     private String insuranceProvider;
 
     @Size(max = 50)
-    @Pattern(regexp = "^[A-Z0-9]{8,20}$", message = "Insurance policy number must be 8-20 alphanumeric characters")
-    @Column(name = "insurance_policy_number")
+    @Pattern(regexp = ValidationPatterns.INSURANCE_POLICY, message = "Insurance policy number must be 8-20 alphanumeric characters")
+    @Column(name = DatabaseConstants.COL_INSURANCE_POLICY_NUMBER)
     private String insurancePolicyNumber;
 
     @Size(max = 100)
-    @Column(name = "emergency_contact_name")
+    @Column(name = DatabaseConstants.COL_EMERGENCY_CONTACT_NAME)
     private String emergencyContactName;
 
     @Size(max = 20)
-    @Pattern(regexp = "^\\+?[1-9]\\d{1,14}$", message = "Emergency contact phone must be a valid international format")
-    @Column(name = "emergency_contact_phone")
+    @Pattern(regexp = ValidationPatterns.PHONE, message = "Emergency contact phone must be a valid international format")
+    @Column(name = DatabaseConstants.COL_EMERGENCY_CONTACT_PHONE)
     private String emergencyContactPhone;
 
     @Size(max = 100)
-    @Column(name = "primary_care_physician")
+    @Column(name = DatabaseConstants.COL_PRIMARY_CARE_PHYSICIAN)
     private String primaryCarePhysician;
 
-    @Column(name = "custom_data", columnDefinition = "JSONB")
+    @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
     private String customData;
 
     // Constructors
@@ -124,6 +125,14 @@ public class Patient extends BaseEntity {
     }
 
     public void setInsurancePolicyNumber(String insurancePolicyNumber) {
+        if (insurancePolicyNumber != null && !insurancePolicyNumber.trim().isEmpty()) {
+            if (insurancePolicyNumber.length() > 50) {
+                throw new ValidationException("Insurance policy number cannot exceed 50 characters");
+            }
+            if (!insurancePolicyNumber.matches(ValidationPatterns.INSURANCE_POLICY)) {
+                throw new ValidationException("Insurance policy number must be 8-20 alphanumeric characters");
+            }
+        }
         this.insurancePolicyNumber = insurancePolicyNumber;
     }
 
@@ -140,6 +149,14 @@ public class Patient extends BaseEntity {
     }
 
     public void setEmergencyContactPhone(String emergencyContactPhone) {
+        if (emergencyContactPhone != null && !emergencyContactPhone.trim().isEmpty()) {
+            if (emergencyContactPhone.length() > 20) {
+                throw new ValidationException("Emergency contact phone cannot exceed 20 characters");
+            }
+            if (!emergencyContactPhone.matches(ValidationPatterns.PHONE)) {
+                throw new ValidationException("Emergency contact phone must be a valid international format");
+            }
+        }
         this.emergencyContactPhone = emergencyContactPhone;
     }
 
@@ -159,12 +176,13 @@ public class Patient extends BaseEntity {
         this.customData = customData;
     }
 
-    // ==================== VALIDATION METHODS ====================
+    // ==================== ENTITY METHODS ====================
 
     /**
-     * Validates that the patient has complete emergency contact information.
+     * Checks if the patient has complete emergency contact information.
+     * This is important for healthcare safety and may be required in the future.
      *
-     * @return true if emergency contact is complete, false otherwise
+     * @return true if both emergency contact name and phone are present, false otherwise
      */
     public boolean hasCompleteEmergencyContact() {
         return emergencyContactName != null && !emergencyContactName.trim().isEmpty() &&
@@ -172,69 +190,15 @@ public class Patient extends BaseEntity {
     }
 
     /**
-     * Validates that the patient has insurance information.
+     * Checks if the patient has complete insurance information.
+     * This is important for providers to know for billing and treatment purposes.
      *
-     * @return true if insurance information is present, false otherwise
+     * @return true if both insurance provider and policy number are present, false otherwise
      */
-    public boolean hasInsuranceInfo() {
+    public boolean hasCompleteInsuranceInfo() {
         return insuranceProvider != null && !insuranceProvider.trim().isEmpty() &&
                insurancePolicyNumber != null && !insurancePolicyNumber.trim().isEmpty();
     }
 
-    /**
-     * Validates that the patient number is in the correct format.
-     *
-     * @return true if patient number format is valid, false otherwise
-     */
-    public boolean hasValidPatientNumber() {
-        if (patientNumber == null) {
-            return false;
-        }
-        return patientNumber.matches("^PAT-[0-9]{8}$");
-    }
 
-    /**
-     * Validates that the patient has medical history information.
-     *
-     * @return true if medical history is present, false otherwise
-     */
-    public boolean hasMedicalHistory() {
-        return medicalHistory != null && !medicalHistory.trim().isEmpty();
-    }
-
-    /**
-     * Validates that the patient has allergy information.
-     *
-     * @return true if allergy information is present, false otherwise
-     */
-    public boolean hasAllergyInfo() {
-        return allergies != null && !allergies.trim().isEmpty();
-    }
-
-    /**
-     * Validates that the patient has current medication information.
-     *
-     * @return true if current medications are present, false otherwise
-     */
-    public boolean hasCurrentMedications() {
-        return currentMedications != null && !currentMedications.trim().isEmpty();
-    }
-
-    /**
-     * Validates that the patient has a primary care physician.
-     *
-     * @return true if primary care physician is present, false otherwise
-     */
-    public boolean hasPrimaryCarePhysician() {
-        return primaryCarePhysician != null && !primaryCarePhysician.trim().isEmpty();
-    }
-
-    /**
-     * Validates that the patient is ready for appointment booking.
-     *
-     * @return true if patient is ready for appointments, false otherwise
-     */
-    public boolean isReadyForAppointments() {
-        return user != null && user.isActive() && hasValidPatientNumber();
-    }
 }
