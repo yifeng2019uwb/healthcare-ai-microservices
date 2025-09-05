@@ -54,7 +54,7 @@ public abstract class BaseEntity {
      * This field is read-only and cannot be modified after creation.
      */
     @CreationTimestamp
-    @Column(name = DatabaseConstants.COL_CREATED_AT, nullable = false, updatable = false, columnDefinition = "TIMESTAMPTZ")
+    @Column(name = DatabaseConstants.COL_CREATED_AT, nullable = false, updatable = false, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TIMESTAMPTZ)
     private OffsetDateTime createdAt;
 
     /**
@@ -63,7 +63,7 @@ public abstract class BaseEntity {
      * This field is read-only and is updated on every save operation.
      */
     @UpdateTimestamp
-    @Column(name = DatabaseConstants.COL_UPDATED_AT, nullable = false, columnDefinition = "TIMESTAMPTZ")
+    @Column(name = DatabaseConstants.COL_UPDATED_AT, nullable = false, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TIMESTAMPTZ)
     private OffsetDateTime updatedAt;
 
     /**

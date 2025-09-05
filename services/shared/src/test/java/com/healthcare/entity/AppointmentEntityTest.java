@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit tests for Appointment entity
@@ -366,5 +367,70 @@ class AppointmentEntityTest {
 
         // Note: We can't test with past times due to validation in setScheduledAt
         // The hasExpired method checks if scheduledAt is in the past and status is AVAILABLE or SCHEDULED
+    }
+
+    @Test
+    void testGetPatient() {
+        UUID testProviderId = UUID.randomUUID();
+        OffsetDateTime testScheduledAt = OffsetDateTime.now().plusDays(1);
+        Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+
+        // Initially should be null
+        assertThat(appointment.getPatient()).isNull();
+
+        // Create a patient and set it (using reflection since there's no setter)
+        Patient patient = new Patient();
+        try {
+            java.lang.reflect.Field patientField = Appointment.class.getDeclaredField("patient");
+            patientField.setAccessible(true);
+            patientField.set(appointment, patient);
+        } catch (Exception e) {
+            fail("Failed to set patient field via reflection: " + e.getMessage());
+        }
+
+        // Now should return the patient
+        assertThat(appointment.getPatient()).isEqualTo(patient);
+    }
+
+    @Test
+    void testGetProvider() {
+        UUID testProviderId = UUID.randomUUID();
+        OffsetDateTime testScheduledAt = OffsetDateTime.now().plusDays(1);
+        Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+
+        // Initially should be null
+        assertThat(appointment.getProvider()).isNull();
+
+        // Create a provider and set it (using reflection since there's no setter)
+        Provider provider = new Provider();
+        try {
+            java.lang.reflect.Field providerField = Appointment.class.getDeclaredField("provider");
+            providerField.setAccessible(true);
+            providerField.set(appointment, provider);
+        } catch (Exception e) {
+            fail("Failed to set provider field via reflection: " + e.getMessage());
+        }
+
+        // Now should return the provider
+        assertThat(appointment.getProvider()).isEqualTo(provider);
+    }
+
+    @Test
+    void testGetMedicalRecords() {
+        UUID testProviderId = UUID.randomUUID();
+        OffsetDateTime testScheduledAt = OffsetDateTime.now().plusDays(1);
+        Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+
+        // Initially should return empty list (not null)
+        assertThat(appointment.getMedicalRecords()).isNotNull();
+        assertThat(appointment.getMedicalRecords()).isEmpty();
+
+        // Create a medical record and add it to the list
+        MedicalRecord medicalRecord = new MedicalRecord();
+        appointment.getMedicalRecords().add(medicalRecord);
+
+        // Now should contain the medical record
+        assertThat(appointment.getMedicalRecords()).hasSize(1);
+        assertThat(appointment.getMedicalRecords()).contains(medicalRecord);
     }
 }

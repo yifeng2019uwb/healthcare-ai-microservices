@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit tests for Provider entity
@@ -257,5 +258,47 @@ class ProviderEntityTest {
 
         // Note: JsonNode creation and validation should be handled at service layer
         // Entity only accepts pre-validated JsonNode objects
+    }
+
+    @Test
+    void testGetUser() {
+        UUID testUserId = UUID.randomUUID();
+        String testNpiNumber = "1234567890";
+        Provider provider = new Provider(testUserId, testNpiNumber);
+
+        // Initially should be null
+        assertThat(provider.getUser()).isNull();
+
+        // Create a user and set it (using reflection since there's no setter)
+        User user = new User();
+        try {
+            java.lang.reflect.Field userField = Provider.class.getDeclaredField("user");
+            userField.setAccessible(true);
+            userField.set(provider, user);
+        } catch (Exception e) {
+            fail("Failed to set user field via reflection: " + e.getMessage());
+        }
+
+        // Now should return the user
+        assertThat(provider.getUser()).isEqualTo(user);
+    }
+
+    @Test
+    void testGetAppointments() {
+        UUID testUserId = UUID.randomUUID();
+        String testNpiNumber = "1234567890";
+        Provider provider = new Provider(testUserId, testNpiNumber);
+
+        // Initially should return empty list (not null)
+        assertThat(provider.getAppointments()).isNotNull();
+        assertThat(provider.getAppointments()).isEmpty();
+
+        // Create an appointment and add it to the list
+        Appointment appointment = new Appointment();
+        provider.getAppointments().add(appointment);
+
+        // Now should contain the appointment
+        assertThat(provider.getAppointments()).hasSize(1);
+        assertThat(provider.getAppointments()).contains(appointment);
     }
 }

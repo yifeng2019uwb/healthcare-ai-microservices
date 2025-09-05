@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit tests for User entity
@@ -556,5 +557,49 @@ class UserEntityTest {
         user.setFirstName(newFirstName);
         user.setLastName(newLastName);
         assertThat(user.getFullName()).isEqualTo(newFirstName + " " + newLastName);
+    }
+
+    @Test
+    void testGetPatient() {
+        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
+                           testPhone, testDateOfBirth, testGender, testRole);
+
+        // Initially should be null
+        assertThat(user.getPatient()).isNull();
+
+        // Create a patient and set it (using reflection since there's no setter)
+        Patient patient = new Patient();
+        try {
+            java.lang.reflect.Field patientField = User.class.getDeclaredField("patient");
+            patientField.setAccessible(true);
+            patientField.set(user, patient);
+        } catch (Exception e) {
+            fail("Failed to set patient field via reflection: " + e.getMessage());
+        }
+
+        // Now should return the patient
+        assertThat(user.getPatient()).isEqualTo(patient);
+    }
+
+    @Test
+    void testGetProvider() {
+        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
+                           testPhone, testDateOfBirth, testGender, testRole);
+
+        // Initially should be null
+        assertThat(user.getProvider()).isNull();
+
+        // Create a provider and set it (using reflection since there's no setter)
+        Provider provider = new Provider();
+        try {
+            java.lang.reflect.Field providerField = User.class.getDeclaredField("provider");
+            providerField.setAccessible(true);
+            providerField.set(user, provider);
+        } catch (Exception e) {
+            fail("Failed to set provider field via reflection: " + e.getMessage());
+        }
+
+        // Now should return the provider
+        assertThat(user.getProvider()).isEqualTo(provider);
     }
 }

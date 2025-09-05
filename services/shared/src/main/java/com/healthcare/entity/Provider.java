@@ -48,17 +48,17 @@ public class Provider extends BaseEntity {
     @Column(name = DatabaseConstants.COL_SPECIALTY)
     private String specialty;
 
-    @Column(name = DatabaseConstants.COL_QUALIFICATIONS, columnDefinition = "TEXT")
+    @Column(name = DatabaseConstants.COL_QUALIFICATIONS, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TEXT)
     private String qualifications;
 
-    @Column(name = DatabaseConstants.COL_BIO, columnDefinition = "TEXT")
+    @Column(name = DatabaseConstants.COL_BIO, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TEXT)
     private String bio;
 
     @Size(max = 20)
     @Column(name = DatabaseConstants.COL_OFFICE_PHONE)
     private String officePhone;
 
-    @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
+    @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private JsonNode customData;
 
     // ==================== JPA RELATIONSHIPS ====================
@@ -75,7 +75,7 @@ public class Provider extends BaseEntity {
      * One-to-many relationship with Appointments
      * A provider can have multiple appointments
      */
-    @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private java.util.List<Appointment> appointments = new java.util.ArrayList<>();
 
     // Constructors

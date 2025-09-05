@@ -7,8 +7,8 @@ public final class DatabaseConstants {
 
     // Table Names
     public static final String TABLE_USER_PROFILES = "user_profiles";
-    public static final String TABLE_PATIENTS = "patients";
-    public static final String TABLE_PROVIDERS = "providers";
+    public static final String TABLE_PATIENTS = "patient_profiles";
+    public static final String TABLE_PROVIDERS = "provider_profiles";
     public static final String TABLE_APPOINTMENTS = "appointments";
     public static final String TABLE_MEDICAL_RECORDS = "medical_records";
     public static final String TABLE_AUDIT_LOGS = "audit_logs";
@@ -110,6 +110,28 @@ public final class DatabaseConstants {
     public static final String INDEX_AUDIT_LOGS_USER_ACTIVITY = "idx_audit_logs_user_activity";
     public static final String INDEX_AUDIT_LOGS_RESOURCE_ACTIVITY = "idx_audit_logs_resource_activity";
     public static final String INDEX_AUDIT_LOGS_SECURITY_MONITORING = "idx_audit_logs_security_monitoring";
+
+    // ==================== FOREIGN KEY CONSTRAINTS ====================
+    // Note: These match PostgreSQL auto-generated foreign key names from Terraform
+
+    // Patient foreign keys
+    public static final String FK_PATIENT_USER = "patient_profiles_user_id_fkey";
+
+    // Provider foreign keys
+    public static final String FK_PROVIDER_USER = "provider_profiles_user_id_fkey";
+
+    // Appointment foreign keys
+    public static final String FK_APPOINTMENT_PATIENT = "appointments_patient_id_fkey";
+    public static final String FK_APPOINTMENT_PROVIDER = "appointments_provider_id_fkey";
+
+    // Medical Record foreign keys
+    public static final String FK_MEDICAL_RECORD_APPOINTMENT = "medical_records_appointment_id_fkey";
+
+    // ==================== COLUMN DEFINITIONS ====================
+    public static final String COLUMN_DEFINITION_JSONB = "JSONB";
+    public static final String COLUMN_DEFINITION_TIMESTAMPTZ = "TIMESTAMPTZ";
+    public static final String COLUMN_DEFINITION_TEXT = "TEXT";
+    public static final String COLUMN_DEFINITION_INET = "INET";
 
     private DatabaseConstants() {
         // Utility class

@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit tests for MedicalRecord entity
@@ -217,5 +218,29 @@ class MedicalRecordEntityTest {
         OffsetDateTime pastDate = OffsetDateTime.now().minusDays(1);
         record.setReleaseDate(pastDate);
         assertThat(record.getReleaseDate()).isEqualTo(pastDate);
+    }
+
+    @Test
+    void testGetAppointment() {
+        UUID testAppointmentId = UUID.randomUUID();
+        MedicalRecordType testRecordType = MedicalRecordType.DIAGNOSIS;
+        String testContent = "Test content for appointment test";
+        MedicalRecord record = new MedicalRecord(testAppointmentId, testRecordType, testContent);
+
+        // Initially should be null
+        assertThat(record.getAppointment()).isNull();
+
+        // Create an appointment and set it (using reflection since there's no setter)
+        Appointment appointment = new Appointment();
+        try {
+            java.lang.reflect.Field appointmentField = MedicalRecord.class.getDeclaredField("appointment");
+            appointmentField.setAccessible(true);
+            appointmentField.set(record, appointment);
+        } catch (Exception e) {
+            fail("Failed to set appointment field via reflection: " + e.getMessage());
+        }
+
+        // Now should return the appointment
+        assertThat(record.getAppointment()).isEqualTo(appointment);
     }
 }

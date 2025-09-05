@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit tests for Patient entity
@@ -381,5 +382,47 @@ class PatientEntityTest {
         patient.setInsuranceProvider(null);
         patient.setInsurancePolicyNumber("BC1234567890");
         assertThat(patient.hasCompleteInsuranceInfo()).isFalse();
+    }
+
+    @Test
+    void testGetUser() {
+        UUID testUserId = UUID.randomUUID();
+        String testPatientNumber = "PAT-12345678";
+        Patient patient = new Patient(testUserId, testPatientNumber);
+
+        // Initially should be null
+        assertThat(patient.getUser()).isNull();
+
+        // Create a user and set it (using reflection since there's no setter)
+        User user = new User();
+        try {
+            java.lang.reflect.Field userField = Patient.class.getDeclaredField("user");
+            userField.setAccessible(true);
+            userField.set(patient, user);
+        } catch (Exception e) {
+            fail("Failed to set user field via reflection: " + e.getMessage());
+        }
+
+        // Now should return the user
+        assertThat(patient.getUser()).isEqualTo(user);
+    }
+
+    @Test
+    void testGetAppointments() {
+        UUID testUserId = UUID.randomUUID();
+        String testPatientNumber = "PAT-12345678";
+        Patient patient = new Patient(testUserId, testPatientNumber);
+
+        // Initially should return empty list (not null)
+        assertThat(patient.getAppointments()).isNotNull();
+        assertThat(patient.getAppointments()).isEmpty();
+
+        // Create an appointment and add it to the list
+        Appointment appointment = new Appointment();
+        patient.getAppointments().add(appointment);
+
+        // Now should contain the appointment
+        assertThat(patient.getAppointments()).hasSize(1);
+        assertThat(patient.getAppointments()).contains(appointment);
     }
 }

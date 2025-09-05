@@ -40,16 +40,16 @@ public class MedicalRecord extends BaseEntity {
 
     @NotBlank
     @Size(min = 10, max = 10000, message = "Medical record content must be between 10 and 10000 characters")
-    @Column(name = DatabaseConstants.COL_CONTENT, nullable = false, columnDefinition = "TEXT")
+    @Column(name = DatabaseConstants.COL_CONTENT, nullable = false, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TEXT)
     private String content;
 
     @Column(name = DatabaseConstants.COL_IS_PATIENT_VISIBLE, nullable = false)
     private Boolean isPatientVisible = false;
 
-    @Column(name = DatabaseConstants.COL_RELEASE_DATE, columnDefinition = "TIMESTAMPTZ")
+    @Column(name = DatabaseConstants.COL_RELEASE_DATE, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TIMESTAMPTZ)
     private OffsetDateTime releaseDate;
 
-    @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
+    @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private JsonNode customData;
 
     // ==================== JPA RELATIONSHIPS ====================

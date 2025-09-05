@@ -45,10 +45,10 @@ public class Appointment extends BaseEntity {
 
     @NotNull
     @Future(message = "Appointment must be scheduled in the future")
-    @Column(name = DatabaseConstants.COL_SCHEDULED_AT, nullable = false, columnDefinition = "TIMESTAMPTZ")
+    @Column(name = DatabaseConstants.COL_SCHEDULED_AT, nullable = false, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TIMESTAMPTZ)
     private OffsetDateTime scheduledAt;
 
-    @Column(name = DatabaseConstants.COL_CHECKIN_TIME, columnDefinition = "TIMESTAMPTZ")
+    @Column(name = DatabaseConstants.COL_CHECKIN_TIME, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TIMESTAMPTZ)
     private OffsetDateTime checkinTime;
 
     @NotNull
@@ -62,10 +62,10 @@ public class Appointment extends BaseEntity {
     private AppointmentType appointmentType;
 
     @Size(max = 1000, message = "Appointment notes must not exceed 1000 characters")
-    @Column(name = DatabaseConstants.COL_NOTES, columnDefinition = "TEXT")
+    @Column(name = DatabaseConstants.COL_NOTES, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TEXT)
     private String notes;
 
-    @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
+    @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private JsonNode customData;
 
     // ==================== JPA RELATIONSHIPS ====================
@@ -90,7 +90,7 @@ public class Appointment extends BaseEntity {
      * One-to-many relationship with MedicalRecords
      * An appointment can have multiple medical records
      */
-    @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private java.util.List<MedicalRecord> medicalRecords = new java.util.ArrayList<>();
 
     // Constructors

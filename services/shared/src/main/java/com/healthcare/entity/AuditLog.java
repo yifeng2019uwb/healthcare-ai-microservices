@@ -53,13 +53,13 @@ public class AuditLog extends BaseEntity {
     @Column(name = DatabaseConstants.COL_OUTCOME, nullable = false)
     private Outcome outcome;
 
-    @Column(name = DatabaseConstants.COL_DETAILS, columnDefinition = "JSONB")
+    @Column(name = DatabaseConstants.COL_DETAILS, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private JsonNode details;
 
-    @Column(name = DatabaseConstants.COL_SOURCE_IP, columnDefinition = "INET")
+    @Column(name = DatabaseConstants.COL_SOURCE_IP, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_INET)
     private InetAddress sourceIp;
 
-    @Column(name = DatabaseConstants.COL_USER_AGENT, columnDefinition = "TEXT")
+    @Column(name = DatabaseConstants.COL_USER_AGENT, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TEXT)
     private String userAgent;
 
     // Constructors

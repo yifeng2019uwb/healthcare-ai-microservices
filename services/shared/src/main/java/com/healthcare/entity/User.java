@@ -104,7 +104,7 @@ public class User extends BaseEntity {
     @Column(name = DatabaseConstants.COL_USER_STATUS, nullable = false)
     private UserStatus status = UserStatus.ACTIVE;
 
-    @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
+    @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private JsonNode customData;
 
     // ==================== JPA RELATIONSHIPS ====================
@@ -113,14 +113,14 @@ public class User extends BaseEntity {
      * One-to-one relationship with Patient profile
      * Only populated when user role is PATIENT
      */
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private Patient patient;
 
     /**
      * One-to-one relationship with Provider profile
      * Only populated when user role is PROVIDER
      */
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private Provider provider;
 
     // ==================== CONSTRUCTORS ====================

@@ -38,10 +38,10 @@ public class Patient extends BaseEntity {
     @Column(name = DatabaseConstants.COL_PATIENT_NUMBER, nullable = false, unique = true)
     private String patientNumber;
 
-    @Column(name = DatabaseConstants.COL_MEDICAL_HISTORY, columnDefinition = "JSONB")
+    @Column(name = DatabaseConstants.COL_MEDICAL_HISTORY, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private String medicalHistory;
 
-    @Column(name = DatabaseConstants.COL_ALLERGIES, columnDefinition = "JSONB")
+    @Column(name = DatabaseConstants.COL_ALLERGIES, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private String allergies;
 
     @Size(max = 2000)
@@ -68,7 +68,7 @@ public class Patient extends BaseEntity {
     @Column(name = DatabaseConstants.COL_PRIMARY_CARE_PHYSICIAN)
     private String primaryCarePhysician;
 
-    @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
+    @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private JsonNode customData;
 
     // ==================== JPA RELATIONSHIPS ====================
@@ -85,7 +85,7 @@ public class Patient extends BaseEntity {
      * One-to-many relationship with Appointments
      * A patient can have multiple appointments
      */
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private java.util.List<Appointment> appointments = new java.util.ArrayList<>();
 
     // Constructors
