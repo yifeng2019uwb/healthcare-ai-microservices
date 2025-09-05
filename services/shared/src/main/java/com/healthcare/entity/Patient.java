@@ -11,6 +11,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Patient entity representing patient-specific information
@@ -49,7 +50,6 @@ public class Patient extends BaseEntity {
     private String insuranceProvider;
 
     @Size(max = 50)
-    @Pattern(regexp = ValidationPatterns.INSURANCE_POLICY, message = "Insurance policy number must be 8-20 alphanumeric characters")
     @Column(name = DatabaseConstants.COL_INSURANCE_POLICY_NUMBER)
     private String insurancePolicyNumber;
 
@@ -58,7 +58,6 @@ public class Patient extends BaseEntity {
     private String emergencyContactName;
 
     @Size(max = 20)
-    @Pattern(regexp = ValidationPatterns.PHONE, message = "Emergency contact phone must be a valid international format")
     @Column(name = DatabaseConstants.COL_EMERGENCY_CONTACT_PHONE)
     private String emergencyContactPhone;
 
@@ -67,7 +66,7 @@ public class Patient extends BaseEntity {
     private String primaryCarePhysician;
 
     @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
-    private String customData;
+    private JsonNode customData;
 
     // Constructors
     public Patient() {}
@@ -93,6 +92,12 @@ public class Patient extends BaseEntity {
     }
 
     public void setMedicalHistory(String medicalHistory) {
+        if (medicalHistory != null) {
+            medicalHistory = medicalHistory.trim();
+            if (medicalHistory.isBlank()) {
+                medicalHistory = null;  // Normalize to NULL
+            }
+        }
         this.medicalHistory = medicalHistory;
     }
 
@@ -101,6 +106,12 @@ public class Patient extends BaseEntity {
     }
 
     public void setAllergies(String allergies) {
+        if (allergies != null) {
+            allergies = allergies.trim();
+            if (allergies.isBlank()) {
+                allergies = null;  // Normalize to NULL
+            }
+        }
         this.allergies = allergies;
     }
 
@@ -109,6 +120,14 @@ public class Patient extends BaseEntity {
     }
 
     public void setCurrentMedications(String currentMedications) {
+        if (currentMedications != null) {
+            currentMedications = currentMedications.trim();
+            if (currentMedications.isBlank()) {
+                currentMedications = null;  // Normalize to NULL
+            } else if (currentMedications.length() > 2000) {
+                throw new ValidationException("Current medications cannot exceed 2000 characters");
+            }
+        }
         this.currentMedications = currentMedications;
     }
 
@@ -117,6 +136,14 @@ public class Patient extends BaseEntity {
     }
 
     public void setInsuranceProvider(String insuranceProvider) {
+        if (insuranceProvider != null) {
+            insuranceProvider = insuranceProvider.trim();
+            if (insuranceProvider.isBlank()) {
+                insuranceProvider = null;  // Normalize to NULL
+            } else if (insuranceProvider.length() > 100) {
+                throw new ValidationException("Insurance provider cannot exceed 100 characters");
+            }
+        }
         this.insuranceProvider = insuranceProvider;
     }
 
@@ -125,11 +152,13 @@ public class Patient extends BaseEntity {
     }
 
     public void setInsurancePolicyNumber(String insurancePolicyNumber) {
-        if (insurancePolicyNumber != null && !insurancePolicyNumber.trim().isEmpty()) {
-            if (insurancePolicyNumber.length() > 50) {
+        if (insurancePolicyNumber != null) {
+            insurancePolicyNumber = insurancePolicyNumber.trim();
+            if (insurancePolicyNumber.isBlank()) {
+                insurancePolicyNumber = null;  // Normalize to NULL
+            } else if (insurancePolicyNumber.length() > 50) {
                 throw new ValidationException("Insurance policy number cannot exceed 50 characters");
-            }
-            if (!insurancePolicyNumber.matches(ValidationPatterns.INSURANCE_POLICY)) {
+            } else if (!insurancePolicyNumber.matches(ValidationPatterns.INSURANCE_POLICY)) {
                 throw new ValidationException("Insurance policy number must be 8-20 alphanumeric characters");
             }
         }
@@ -141,6 +170,14 @@ public class Patient extends BaseEntity {
     }
 
     public void setEmergencyContactName(String emergencyContactName) {
+        if (emergencyContactName != null) {
+            emergencyContactName = emergencyContactName.trim();
+            if (emergencyContactName.isBlank()) {
+                emergencyContactName = null;  // Normalize to NULL
+            } else if (emergencyContactName.length() > 100) {
+                throw new ValidationException("Emergency contact name cannot exceed 100 characters");
+            }
+        }
         this.emergencyContactName = emergencyContactName;
     }
 
@@ -149,11 +186,13 @@ public class Patient extends BaseEntity {
     }
 
     public void setEmergencyContactPhone(String emergencyContactPhone) {
-        if (emergencyContactPhone != null && !emergencyContactPhone.trim().isEmpty()) {
-            if (emergencyContactPhone.length() > 20) {
+        if (emergencyContactPhone != null) {
+            emergencyContactPhone = emergencyContactPhone.trim();
+            if (emergencyContactPhone.isBlank()) {
+                emergencyContactPhone = null;  // Normalize to NULL
+            } else if (emergencyContactPhone.length() > 20) {
                 throw new ValidationException("Emergency contact phone cannot exceed 20 characters");
-            }
-            if (!emergencyContactPhone.matches(ValidationPatterns.PHONE)) {
+            } else if (!emergencyContactPhone.matches(ValidationPatterns.PHONE)) {
                 throw new ValidationException("Emergency contact phone must be a valid international format");
             }
         }
@@ -165,14 +204,22 @@ public class Patient extends BaseEntity {
     }
 
     public void setPrimaryCarePhysician(String primaryCarePhysician) {
+        if (primaryCarePhysician != null) {
+            primaryCarePhysician = primaryCarePhysician.trim();
+            if (primaryCarePhysician.isBlank()) {
+                primaryCarePhysician = null;  // Normalize to NULL
+            } else if (primaryCarePhysician.length() > 100) {
+                throw new ValidationException("Primary care physician cannot exceed 100 characters");
+            }
+        }
         this.primaryCarePhysician = primaryCarePhysician;
     }
 
-    public String getCustomData() {
+    public JsonNode getCustomData() {
         return customData;
     }
 
-    public void setCustomData(String customData) {
+    public void setCustomData(JsonNode customData) {
         this.customData = customData;
     }
 
@@ -185,8 +232,7 @@ public class Patient extends BaseEntity {
      * @return true if both emergency contact name and phone are present, false otherwise
      */
     public boolean hasCompleteEmergencyContact() {
-        return emergencyContactName != null && !emergencyContactName.trim().isEmpty() &&
-               emergencyContactPhone != null && !emergencyContactPhone.trim().isEmpty();
+        return emergencyContactName != null && emergencyContactPhone != null;
     }
 
     /**
@@ -196,8 +242,7 @@ public class Patient extends BaseEntity {
      * @return true if both insurance provider and policy number are present, false otherwise
      */
     public boolean hasCompleteInsuranceInfo() {
-        return insuranceProvider != null && !insuranceProvider.trim().isEmpty() &&
-               insurancePolicyNumber != null && !insurancePolicyNumber.trim().isEmpty();
+        return insuranceProvider != null && insurancePolicyNumber != null;
     }
 
 
