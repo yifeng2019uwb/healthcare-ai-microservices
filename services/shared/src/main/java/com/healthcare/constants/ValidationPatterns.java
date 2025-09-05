@@ -85,9 +85,13 @@ public final class ValidationPatterns {
 
     /**
      * Patient number pattern.
-     * Alphanumeric identifier with specific format
+     * Flexible format supporting various healthcare systems:
+     * - 6-12 digit numbers: "123456", "1234567890"
+     * - Prefix + numbers: "P123456", "PAT-123456"
+     * - Alphanumeric with dashes: "PAT-2024-001234"
+     * - Facility codes: "HOSP001-123456"
      */
-    public static final String PATIENT_NUMBER = "^[A-Z]{2}\\d{8}$";
+    public static final String PATIENT_NUMBER = "^[A-Za-z0-9-]{4,20}$";
 
     /**
      * External authentication ID pattern.
@@ -99,15 +103,23 @@ public final class ValidationPatterns {
 
     /**
      * Medical record number pattern.
-     * Format: MR followed by 8 digits
+     * Flexible format supporting various medical record systems:
+     * - Standard: "MR12345678", "MR-12345678"
+     * - Year-based: "MR2024001234", "MR-2024-001234"
+     * - Facility codes: "MR-HOSP-123456", "MR001-123456"
+     * - Alphanumeric: "MR-ABC-123456"
      */
-    public static final String MEDICAL_RECORD_NUMBER = "^MR\\d{8}$";
+    public static final String MEDICAL_RECORD_NUMBER = "^MR[A-Za-z0-9-]{4,20}$";
 
     /**
      * Insurance policy number pattern.
-     * Alphanumeric with specific format
+     * Flexible format supporting various insurance providers:
+     * - Medicare: "1AB2-C3D4-E5F6" (11 chars with dashes)
+     * - Medicaid: "1234567890" (8-12 digits)
+     * - Private: "POL123456789", "INS-ABC-123456"
+     * - International: "POL-INT-1234567890"
      */
-    public static final String INSURANCE_POLICY = "^[A-Z]{2}\\d{10}$";
+    public static final String INSURANCE_POLICY = "^[A-Za-z0-9-]{6,25}$";
 
     // ==================== NAME PATTERNS ====================
 

@@ -169,7 +169,7 @@ public class Patient extends BaseEntity {
             "Insurance policy number",
             50,
             ValidationPatterns.INSURANCE_POLICY,
-            "Insurance policy number must be 8-20 alphanumeric characters"
+            "Insurance policy number must be 6-25 alphanumeric characters"
         );
     }
 

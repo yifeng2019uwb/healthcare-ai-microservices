@@ -227,10 +227,10 @@ class PatientEntityTest {
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Insurance policy number cannot exceed 50 characters");
 
-        // Test setter validation - invalid format
-        assertThatThrownBy(() -> patient.setInsurancePolicyNumber("INVALID123"))
+        // Test setter validation - invalid format (too short)
+        assertThatThrownBy(() -> patient.setInsurancePolicyNumber("12345"))
                 .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("Insurance policy number must be 8-20 alphanumeric characters");
+                .hasMessageContaining("Insurance policy number must be 6-25 alphanumeric characters");
     }
 
     @Test
