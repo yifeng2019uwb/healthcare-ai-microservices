@@ -7,12 +7,8 @@ import com.healthcare.enums.UserRole;
 import com.healthcare.enums.UserStatus;
 import com.healthcare.exception.ValidationException;
 import com.healthcare.utils.ValidationUtils;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.*;
 import jakarta.persistence.Index;
-import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -111,6 +107,22 @@ public class User extends BaseEntity {
     @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
     private JsonNode customData;
 
+    // ==================== JPA RELATIONSHIPS ====================
+
+    /**
+     * One-to-one relationship with Patient profile
+     * Only populated when user role is PATIENT
+     */
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Patient patient;
+
+    /**
+     * One-to-one relationship with Provider profile
+     * Only populated when user role is PROVIDER
+     */
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Provider provider;
+
     // ==================== CONSTRUCTORS ====================
 
     public User() {}
@@ -190,6 +202,14 @@ public class User extends BaseEntity {
 
     public JsonNode getCustomData() {
         return customData;
+    }
+
+    public Patient getPatient() {
+        return patient;
+    }
+
+    public Provider getProvider() {
+        return provider;
     }
 
     // ==================== SETTERS ====================

@@ -4,10 +4,7 @@ import com.healthcare.constants.DatabaseConstants;
 import com.healthcare.constants.ValidationPatterns;
 import com.healthcare.exception.ValidationException;
 import com.healthcare.utils.ValidationUtils;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -74,6 +71,23 @@ public class Patient extends BaseEntity {
     @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
     private JsonNode customData;
 
+    // ==================== JPA RELATIONSHIPS ====================
+
+    /**
+     * Many-to-one relationship with User
+     * Each patient belongs to exactly one user
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = DatabaseConstants.COL_USER_ID, nullable = false, insertable = false, updatable = false)
+    private User user;
+
+    /**
+     * One-to-many relationship with Appointments
+     * A patient can have multiple appointments
+     */
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<Appointment> appointments = new java.util.ArrayList<>();
+
     // Constructors
     public Patient() {}
 
@@ -101,7 +115,7 @@ public class Patient extends BaseEntity {
         this.medicalHistory = ValidationUtils.validateAndNormalizeString(
             medicalHistory,
             "Medical history",
-            (Integer) null,
+            null,
             null,
             null
         );
@@ -115,7 +129,7 @@ public class Patient extends BaseEntity {
         this.allergies = ValidationUtils.validateAndNormalizeString(
             allergies,
             "Allergies",
-            (Integer) null,
+            null,
             null,
             null
         );
@@ -203,6 +217,14 @@ public class Patient extends BaseEntity {
 
     public void setCustomData(JsonNode customData) {
         this.customData = customData;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public java.util.List<Appointment> getAppointments() {
+        return appointments;
     }
 
     // ==================== ENTITY METHODS ====================

@@ -52,6 +52,16 @@ public class MedicalRecord extends BaseEntity {
     @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
     private JsonNode customData;
 
+    // ==================== JPA RELATIONSHIPS ====================
+
+    /**
+     * Many-to-one relationship with Appointment
+     * Each medical record belongs to exactly one appointment
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = DatabaseConstants.COL_APPOINTMENT_ID, nullable = false, insertable = false, updatable = false)
+    private Appointment appointment;
+
     // Constructors
     public MedicalRecord() {}
 
@@ -115,6 +125,10 @@ public class MedicalRecord extends BaseEntity {
 
     public void setCustomData(JsonNode customData) {
         this.customData = customData;
+    }
+
+    public Appointment getAppointment() {
+        return appointment;
     }
 
     // ==================== VALIDATION METHODS ====================

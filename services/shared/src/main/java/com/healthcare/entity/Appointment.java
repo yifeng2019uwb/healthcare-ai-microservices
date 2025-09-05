@@ -68,6 +68,31 @@ public class Appointment extends BaseEntity {
     @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
     private JsonNode customData;
 
+    // ==================== JPA RELATIONSHIPS ====================
+
+    /**
+     * Many-to-one relationship with Patient
+     * An appointment can belong to one patient (nullable for available slots)
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = DatabaseConstants.COL_PATIENT_ID, insertable = false, updatable = false)
+    private Patient patient;
+
+    /**
+     * Many-to-one relationship with Provider
+     * An appointment must belong to one provider
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = DatabaseConstants.COL_PROVIDER_ID, nullable = false, insertable = false, updatable = false)
+    private Provider provider;
+
+    /**
+     * One-to-many relationship with MedicalRecords
+     * An appointment can have multiple medical records
+     */
+    @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<MedicalRecord> medicalRecords = new java.util.ArrayList<>();
+
     // Constructors
     public Appointment() {}
 
@@ -183,6 +208,18 @@ public class Appointment extends BaseEntity {
 
     public void setCustomData(JsonNode customData) {
         this.customData = customData;
+    }
+
+    public Patient getPatient() {
+        return patient;
+    }
+
+    public Provider getProvider() {
+        return provider;
+    }
+
+    public java.util.List<MedicalRecord> getMedicalRecords() {
+        return medicalRecords;
     }
 
     // ==================== VALIDATION METHODS ====================

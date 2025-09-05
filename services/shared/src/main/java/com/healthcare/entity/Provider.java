@@ -61,6 +61,23 @@ public class Provider extends BaseEntity {
     @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
     private JsonNode customData;
 
+    // ==================== JPA RELATIONSHIPS ====================
+
+    /**
+     * Many-to-one relationship with User
+     * Each provider belongs to exactly one user
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = DatabaseConstants.COL_USER_ID, nullable = false, insertable = false, updatable = false)
+    private User user;
+
+    /**
+     * One-to-many relationship with Appointments
+     * A provider can have multiple appointments
+     */
+    @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<Appointment> appointments = new java.util.ArrayList<>();
+
     // Constructors
     public Provider() {}
 
@@ -122,7 +139,7 @@ public class Provider extends BaseEntity {
         this.qualifications = ValidationUtils.validateAndNormalizeString(
             qualifications,
             "Qualifications",
-            (Integer) null,
+            null,
             null,
             null
         );
@@ -136,7 +153,7 @@ public class Provider extends BaseEntity {
         this.bio = ValidationUtils.validateAndNormalizeString(
             bio,
             "Bio",
-            (Integer) null,
+            null,
             null,
             null
         );
@@ -162,6 +179,14 @@ public class Provider extends BaseEntity {
 
     public void setCustomData(JsonNode customData) {
         this.customData = customData;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public java.util.List<Appointment> getAppointments() {
+        return appointments;
     }
 
 }
