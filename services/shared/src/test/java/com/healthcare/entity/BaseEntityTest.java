@@ -7,7 +7,10 @@ import org.junit.jupiter.api.AfterEach;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.healthcare.exception.ValidationException;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Unit tests for BaseEntity and AuditListener
@@ -123,9 +126,10 @@ class BaseEntityTest {
         assertThat(testEntity.getUpdatedBy()).isNotNull();
         assertThat(testEntity.getUpdatedBy()).isEqualTo("system");
 
-        // Reset to null and test preUpdate
-        testEntity.setUpdatedBy(null);
-        assertThat(testEntity.getUpdatedBy()).isNull();
+        // Reset to null and test preUpdate - should throw validation exception
+        assertThatThrownBy(() -> testEntity.setUpdatedBy(null))
+            .isInstanceOf(ValidationException.class)
+            .hasMessageContaining("Updated by cannot be null");
 
         auditListener.preUpdate(testEntity);
         assertThat(testEntity.getUpdatedBy()).isNotNull();

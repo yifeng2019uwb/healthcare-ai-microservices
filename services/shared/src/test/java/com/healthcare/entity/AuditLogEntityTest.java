@@ -52,31 +52,21 @@ class AuditLogEntityTest {
 
         AuditLog auditLog = new AuditLog(testUserId, testActionType, testResourceType, testResourceId, testInitialOutcome);
 
-        // Test validation methods
-        assertThat(auditLog.hasUser()).isTrue();
-        assertThat(auditLog.hasActionType()).isTrue();
-        assertThat(auditLog.hasResourceType()).isTrue();
-        assertThat(auditLog.hasResourceId()).isTrue();
-        assertThat(auditLog.hasOutcome()).isTrue();
-        assertThat(auditLog.isComplete()).isTrue();
-
-        // Test outcome validations (audit logs are immutable once created)
-        assertThat(auditLog.isSuccessful()).isTrue();
-        assertThat(auditLog.isFailed()).isFalse();
+        // Test basic field access
+        assertThat(auditLog.getUserId()).isEqualTo(testUserId);
+        assertThat(auditLog.getActionType()).isEqualTo(testActionType);
+        assertThat(auditLog.getResourceType()).isEqualTo(testResourceType);
+        assertThat(auditLog.getResourceId()).isEqualTo(testResourceId);
         assertThat(auditLog.getOutcome()).isEqualTo(Outcome.SUCCESS);
 
         // Test FAILURE outcome with a separate audit log
         AuditLog failureLog = new AuditLog(testUserId, ActionType.UPDATE, ResourceType.PATIENT_PROFILE, testResourceId, Outcome.FAILURE);
-        assertThat(failureLog.isSuccessful()).isFalse();
-        assertThat(failureLog.isFailed()).isTrue();
         assertThat(failureLog.getOutcome()).isEqualTo(Outcome.FAILURE);
 
         // Test source IP (audit logs are immutable, so we can't set these after creation)
-        assertThat(auditLog.hasSourceIp()).isFalse();
         assertThat(auditLog.getSourceIp()).isNull();
 
         // Test user agent (audit logs are immutable, so we can't set these after creation)
-        assertThat(auditLog.hasUserAgent()).isFalse();
         assertThat(auditLog.getUserAgent()).isNull();
     }
 

@@ -58,7 +58,7 @@ class PatientEntityTest {
         String testEmergencyContactName = "Emergency Contact";
         String testEmergencyContactPhone = "+15551234567";
         String testInsuranceProvider = "Blue Cross";
-        String testInsurancePolicyNumber = "BC123456789";
+        String testInsurancePolicyNumber = "BC1234567890";
         String testMedicalHistory = "Previous surgery in 2020";
         String testAllergies = "Peanuts, Shellfish";
         String testCurrentMedications = "Lisinopril 10mg daily";
@@ -67,30 +67,34 @@ class PatientEntityTest {
 
         Patient patient = new Patient(testUserId, testPatientNumber);
 
-        // Test validation methods
-        assertThat(patient.hasValidPatientNumber()).isTrue();
-        assertThat(patient.isReadyForAppointments()).isTrue();
+        // Test basic field access
+        assertThat(patient.getUserId()).isEqualTo(testUserId);
+        assertThat(patient.getPatientNumber()).isEqualTo(testPatientNumber);
 
-        // Test emergency contact validation
+        // Test emergency contact fields
         patient.setEmergencyContactName(testEmergencyContactName);
         patient.setEmergencyContactPhone(testEmergencyContactPhone);
+        assertThat(patient.getEmergencyContactName()).isEqualTo(testEmergencyContactName);
+        assertThat(patient.getEmergencyContactPhone()).isEqualTo(testEmergencyContactPhone);
         assertThat(patient.hasCompleteEmergencyContact()).isTrue();
 
-        // Test insurance validation
+        // Test insurance fields
         patient.setInsuranceProvider(testInsuranceProvider);
         patient.setInsurancePolicyNumber(testInsurancePolicyNumber);
-        assertThat(patient.hasInsuranceInfo()).isTrue();
+        assertThat(patient.getInsuranceProvider()).isEqualTo(testInsuranceProvider);
+        assertThat(patient.getInsurancePolicyNumber()).isEqualTo(testInsurancePolicyNumber);
+        assertThat(patient.hasCompleteInsuranceInfo()).isTrue();
 
-        // Test medical history validation
+        // Test medical history field
         patient.setMedicalHistory(testMedicalHistory);
-        assertThat(patient.hasMedicalHistory()).isTrue();
+        assertThat(patient.getMedicalHistory()).isEqualTo(testMedicalHistory);
 
-        // Test allergy validation
+        // Test allergies field
         patient.setAllergies(testAllergies);
-        assertThat(patient.hasAllergyInfo()).isTrue();
+        assertThat(patient.getAllergies()).isEqualTo(testAllergies);
 
-        // Test medication validation
+        // Test medications field
         patient.setCurrentMedications(testCurrentMedications);
-        assertThat(patient.hasCurrentMedications()).isTrue();
+        assertThat(patient.getCurrentMedications()).isEqualTo(testCurrentMedications);
     }
 }

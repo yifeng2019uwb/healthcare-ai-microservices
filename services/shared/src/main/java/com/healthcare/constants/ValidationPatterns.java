@@ -88,10 +88,13 @@ public final class ValidationPatterns {
     // ==================== NAME PATTERNS ====================
 
     /**
-     * Person name pattern.
-     * Supports international names with letters, spaces, hyphens, and apostrophes
+     * Person name pattern for healthcare industry compliance.
+     * Supports international names with Unicode letters, spaces, hyphens, and apostrophes.
+     * Based on healthcare industry standards and FHIR HumanName requirements.
+     * Allows: letters (including international/Unicode), spaces, hyphens, apostrophes
+     * Minimum 2 characters, maximum 100 characters
      */
-    public static final String PERSON_NAME = "^[A-Za-z\\s'-]{2,100}$";
+    public static final String PERSON_NAME = "^[\\p{L}\\s'-]{2,100}$";
 
     /**
      * Organization name pattern.

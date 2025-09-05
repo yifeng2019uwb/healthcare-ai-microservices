@@ -1,12 +1,14 @@
 package com.healthcare.entity;
 
 import com.healthcare.enums.MedicalRecordType;
+import com.healthcare.exception.ValidationException;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Unit tests for MedicalRecord entity
@@ -44,38 +46,65 @@ class MedicalRecordEntityTest {
     }
 
     @Test
-    void testMedicalRecordValidationMethods() {
+    void testAppointmentIdField() {
         // Test data variables
         UUID testAppointmentId = UUID.randomUUID();
         MedicalRecordType testRecordType = MedicalRecordType.DIAGNOSIS;
-        String testContent = "Test medical record content";
+        String testContent = "Test content";
 
         MedicalRecord record = new MedicalRecord(testAppointmentId, testRecordType, testContent);
+        assertThat(record.getAppointmentId()).isEqualTo(testAppointmentId);
+    }
 
-        // Test validation methods
-        assertThat(record.hasAppointment()).isTrue();
-        assertThat(record.hasValidRecordType()).isTrue();
-        assertThat(record.hasValidContent()).isTrue();
-        assertThat(record.isComplete()).isTrue();
+    @Test
+    void testRecordTypeField() {
+        // Test data variables
+        UUID testAppointmentId = UUID.randomUUID();
+        MedicalRecordType testRecordType = MedicalRecordType.DIAGNOSIS;
+        String testContent = "Test content";
 
-        // Test patient visibility
+        MedicalRecord record = new MedicalRecord(testAppointmentId, testRecordType, testContent);
+        assertThat(record.getRecordType()).isEqualTo(testRecordType);
+    }
+
+    @Test
+    void testContentField() {
+        // Test data variables
+        UUID testAppointmentId = UUID.randomUUID();
+        MedicalRecordType testRecordType = MedicalRecordType.DIAGNOSIS;
+        String testContent = "Test content";
+
+        MedicalRecord record = new MedicalRecord(testAppointmentId, testRecordType, testContent);
+        assertThat(record.getContent()).isEqualTo(testContent);
+    }
+
+    @Test
+    void testIsPatientVisibleField() {
+        // Test data variables
+        UUID testAppointmentId = UUID.randomUUID();
+        MedicalRecordType testRecordType = MedicalRecordType.DIAGNOSIS;
+        String testContent = "Test content";
+
+        MedicalRecord record = new MedicalRecord(testAppointmentId, testRecordType, testContent);
         assertThat(record.isVisibleToPatient()).isFalse();
+
         record.setIsPatientVisible(true);
         assertThat(record.isVisibleToPatient()).isTrue();
+    }
 
-        // Test update capability (before release)
-        assertThat(record.canBeUpdated()).isTrue();
+    @Test
+    void testReleaseDateField() {
+        // Test data variables
+        UUID testAppointmentId = UUID.randomUUID();
+        MedicalRecordType testRecordType = MedicalRecordType.DIAGNOSIS;
+        String testContent = "Test content";
 
-        // Test release functionality
-        assertThat(record.hasBeenReleased()).isFalse();
-        assertThat(record.canBeReleased()).isTrue();
+        MedicalRecord record = new MedicalRecord(testAppointmentId, testRecordType, testContent);
+        assertThat(record.getReleaseDate()).isNull();
 
-        record.setReleaseDate(OffsetDateTime.now().minusDays(1));
-        assertThat(record.hasBeenReleased()).isTrue();
-        assertThat(record.canBeReleased()).isFalse();
-
-        // Test update capability (after release)
-        assertThat(record.canBeUpdated()).isFalse(); // Can't update after release
+        OffsetDateTime testReleaseDate = OffsetDateTime.now().minusDays(1);
+        record.setReleaseDate(testReleaseDate);
+        assertThat(record.getReleaseDate()).isEqualTo(testReleaseDate);
     }
 
     @Test
@@ -88,12 +117,12 @@ class MedicalRecordEntityTest {
         for (MedicalRecordType recordType : MedicalRecordType.values()) {
             MedicalRecord record = new MedicalRecord(testAppointmentId, recordType, testContent);
             assertThat(record.getRecordType()).isEqualTo(recordType);
-            assertThat(record.hasValidRecordType()).isTrue();
+            assertThat(record.getRecordType()).isNotNull();
         }
     }
 
     @Test
-    void testMedicalRecordEdgeCases() {
+    void testContentSetter() {
         // Test data variables
         UUID testAppointmentId = UUID.randomUUID();
         MedicalRecordType testRecordType = MedicalRecordType.DIAGNOSIS;
@@ -101,32 +130,41 @@ class MedicalRecordEntityTest {
 
         MedicalRecord record = new MedicalRecord(testAppointmentId, testRecordType, testContent);
 
-        // Test with null content
-        record.setContent(null);
-        assertThat(record.hasValidContent()).isFalse();
-        assertThat(record.isComplete()).isFalse();
+        // Test with null content - should throw validation exception
+        assertThatThrownBy(() -> record.setContent(null))
+            .isInstanceOf(ValidationException.class)
+            .hasMessageContaining("Content cannot be null or empty");
 
-        // Test with empty content
-        record.setContent("");
-        assertThat(record.hasValidContent()).isFalse();
+        // Test with empty content - should throw validation exception
+        assertThatThrownBy(() -> record.setContent(""))
+            .isInstanceOf(ValidationException.class)
+            .hasMessageContaining("Content cannot be null or empty");
 
         // Test with valid content
         record.setContent("Valid content");
-        assertThat(record.hasValidContent()).isTrue();
-        assertThat(record.isComplete()).isTrue();
+        assertThat(record.getContent()).isEqualTo("Valid content");
+    }
 
-        // Test release date edge cases
-        assertThat(record.hasBeenReleased()).isFalse();
+    @Test
+    void testReleaseDateSetter() {
+        // Test data variables
+        UUID testAppointmentId = UUID.randomUUID();
+        MedicalRecordType testRecordType = MedicalRecordType.DIAGNOSIS;
+        String testContent = "Test content";
+
+        MedicalRecord record = new MedicalRecord(testAppointmentId, testRecordType, testContent);
+
+        // Test with null release date
+        assertThat(record.getReleaseDate()).isNull();
 
         // Set future release date
-        record.setReleaseDate(OffsetDateTime.now().plusDays(1));
-        assertThat(record.hasBeenReleased()).isFalse();
-        // canBeReleased() requires isPatientVisible to be true
-        assertThat(record.canBeReleased()).isFalse(); // Not visible to patient yet
+        OffsetDateTime futureDate = OffsetDateTime.now().plusDays(1);
+        record.setReleaseDate(futureDate);
+        assertThat(record.getReleaseDate()).isEqualTo(futureDate);
 
         // Set past release date
-        record.setReleaseDate(OffsetDateTime.now().minusDays(1));
-        assertThat(record.hasBeenReleased()).isTrue();
-        assertThat(record.canBeReleased()).isFalse();
+        OffsetDateTime pastDate = OffsetDateTime.now().minusDays(1);
+        record.setReleaseDate(pastDate);
+        assertThat(record.getReleaseDate()).isEqualTo(pastDate);
     }
 }

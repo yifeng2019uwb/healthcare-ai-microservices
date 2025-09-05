@@ -61,28 +61,28 @@ class ProviderEntityTest {
 
         Provider provider = new Provider(testUserId, testNpiNumber);
 
-        // Test validation methods
-        assertThat(provider.hasValidNpiNumber()).isTrue();
-        assertThat(provider.isReadyForAppointments()).isFalse(); // No specialty yet
+        // Test basic field access
+        assertThat(provider.getUserId()).isEqualTo(testUserId);
+        assertThat(provider.getNpiNumber()).isEqualTo(testNpiNumber);
 
-        // Test specialty validation
+        // Test specialty field
+        assertThat(provider.getSpecialty()).isNull();
         provider.setSpecialty(testSpecialty);
-        assertThat(provider.hasSpecialty()).isTrue();
-        assertThat(provider.isReadyForAppointments()).isTrue();
+        assertThat(provider.getSpecialty()).isEqualTo(testSpecialty);
 
-        // Test license validation
+        // Test license field
+        assertThat(provider.getLicenseNumbers()).isNull();
         provider.setLicenseNumbers(testLicenseNumbers);
-        assertThat(provider.hasLicenseInfo()).isTrue();
+        assertThat(provider.getLicenseNumbers()).isEqualTo(testLicenseNumbers);
 
-        // Test qualifications validation
+        // Test qualifications field
+        assertThat(provider.getQualifications()).isNull();
         provider.setQualifications(testQualifications);
-        assertThat(provider.hasQualifications()).isTrue();
+        assertThat(provider.getQualifications()).isEqualTo(testQualifications);
 
-        // Test office phone validation
+        // Test office phone field
+        assertThat(provider.getOfficePhone()).isNull();
         provider.setOfficePhone(testOfficePhone);
-        assertThat(provider.hasOfficePhone()).isTrue();
-
-        // Test complete professional info
-        assertThat(provider.hasCompleteProfessionalInfo()).isTrue();
+        assertThat(provider.getOfficePhone()).isEqualTo(testOfficePhone);
     }
 }

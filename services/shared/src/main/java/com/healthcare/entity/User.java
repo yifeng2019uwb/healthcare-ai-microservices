@@ -19,6 +19,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * User entity representing system user profiles (patients and providers)
@@ -36,11 +37,13 @@ public class User extends BaseEntity {
 
     @NotBlank
     @Size(max = 100)
+    @Pattern(regexp = ValidationPatterns.PERSON_NAME, message = "First name must contain only letters (including international characters), spaces, hyphens, and apostrophes")
     @Column(name = DatabaseConstants.COL_FIRST_NAME, nullable = false)
     private String firstName;
 
     @NotBlank
     @Size(max = 100)
+    @Pattern(regexp = ValidationPatterns.PERSON_NAME, message = "Last name must contain only letters (including international characters), spaces, hyphens, and apostrophes")
     @Column(name = DatabaseConstants.COL_LAST_NAME, nullable = false)
     private String lastName;
 
@@ -98,7 +101,7 @@ public class User extends BaseEntity {
     private UserStatus status = UserStatus.ACTIVE;
 
     @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
-    private String customData;
+    private JsonNode customData;
 
     // ==================== CONSTRUCTORS ====================
 
@@ -107,18 +110,20 @@ public class User extends BaseEntity {
     public User(String externalAuthId, String firstName, String lastName, String email, String phone,
                 LocalDate dateOfBirth, Gender gender, UserRole role) {
         this.externalAuthId = externalAuthId;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.phone = phone;
-        this.dateOfBirth = dateOfBirth;
-        this.gender = gender;
         this.role = role;
         this.status = UserStatus.ACTIVE;
+
+        // Use setters to ensure consistent validation
+        this.setFirstName(firstName);
+        this.setLastName(lastName);
+        this.setEmail(email);
+        this.setPhone(phone);
+        this.setDateOfBirth(dateOfBirth);
+        this.setGender(gender);
+
     }
 
     // ==================== GETTERS ====================
-
     public String getExternalAuthId() {
         return externalAuthId;
     }
@@ -175,19 +180,21 @@ public class User extends BaseEntity {
         return status;
     }
 
-    public String getCustomData() {
+    public JsonNode getCustomData() {
         return customData;
     }
 
     // ==================== SETTERS ====================
-
-
     public void setFirstName(String firstName) {
         if (firstName == null || firstName.trim().isEmpty()) {
             throw new ValidationException("First name cannot be null or empty");
         }
+        firstName = firstName.trim();
         if (firstName.length() > 100) {
             throw new ValidationException("First name cannot exceed 100 characters");
+        }
+        if (!firstName.matches(ValidationPatterns.PERSON_NAME)) {
+            throw new ValidationException("First name format is invalid");
         }
         this.firstName = firstName;
     }
@@ -196,8 +203,12 @@ public class User extends BaseEntity {
         if (lastName == null || lastName.trim().isEmpty()) {
             throw new ValidationException("Last name cannot be null or empty");
         }
+        lastName = lastName.trim();
         if (lastName.length() > 100) {
             throw new ValidationException("Last name cannot exceed 100 characters");
+        }
+        if (!lastName.matches(ValidationPatterns.PERSON_NAME)) {
+            throw new ValidationException("Last name format is invalid");
         }
         this.lastName = lastName;
     }
@@ -206,6 +217,7 @@ public class User extends BaseEntity {
         if (email == null || email.trim().isEmpty()) {
             throw new ValidationException("Email cannot be null or empty");
         }
+        email = email.trim();
         if (email.length() > 255) {
             throw new ValidationException("Email cannot exceed 255 characters");
         }
@@ -219,6 +231,7 @@ public class User extends BaseEntity {
         if (phone == null || phone.trim().isEmpty()) {
             throw new ValidationException("Phone cannot be null or empty");
         }
+        phone = phone.trim();
         if (phone.length() > 20) {
             throw new ValidationException("Phone cannot exceed 20 characters");
         }
@@ -246,23 +259,54 @@ public class User extends BaseEntity {
     }
 
     public void setStreetAddress(String streetAddress) {
+        if (streetAddress != null) {
+            streetAddress = streetAddress.trim();
+            if (streetAddress.isBlank()) {
+                streetAddress = null;  // Normalize to NULL
+            } else if (!streetAddress.matches(ValidationPatterns.STREET_ADDRESS)) {
+                throw new ValidationException("Street address format is invalid");
+            }
+        }
         this.streetAddress = streetAddress;
     }
 
+
     public void setCity(String city) {
+        if (city != null) {
+            city = city.trim();
+            if (city.isBlank()) {
+                city = null;  // Normalize to NULL
+            } else if (city.length() > 100) {
+                throw new ValidationException("City cannot exceed 100 characters");
+            } else if (!city.matches(ValidationPatterns.PERSON_NAME)) {
+                throw new ValidationException("City name format is invalid");
+            }
+        }
         this.city = city;
     }
 
     public void setState(String state) {
+        if (state != null) {
+            state = state.trim();
+            if (state.isBlank()) {
+                state = null;  // Normalize to NULL
+            } else if (state.length() > 50) {
+                throw new ValidationException("State cannot exceed 50 characters");
+            } else if (!state.matches(ValidationPatterns.PERSON_NAME)) {
+                throw new ValidationException("State name format is invalid");
+            }
+        }
         this.state = state;
     }
 
     public void setPostalCode(String postalCode) {
-        if (postalCode != null && !postalCode.trim().isEmpty()) {
-            if (postalCode.length() > 20) {
+        if (postalCode != null) {
+            postalCode = postalCode.trim();
+            if (postalCode.isBlank()) {
+                postalCode = null;  // Normalize to NULL
+            } else if (postalCode.length() > 20) {
                 throw new ValidationException("Postal code cannot exceed 20 characters");
-            }
-            if (!postalCode.matches(ValidationPatterns.POSTAL_CODE)) {
+            } else if (!postalCode.matches(ValidationPatterns.POSTAL_CODE)) {
                 throw new ValidationException("Postal code format is invalid");
             }
         }
@@ -270,6 +314,16 @@ public class User extends BaseEntity {
     }
 
     public void setCountry(String country) {
+        if (country != null) {
+            country = country.trim();
+            if (country.isBlank()) {
+                country = null;  // Normalize to NULL
+            } else if (country.length() > 100) {
+                throw new ValidationException("Country cannot exceed 100 characters");
+            } else if (!country.matches(ValidationPatterns.PERSON_NAME)) {
+                throw new ValidationException("Country name format is invalid");
+            }
+        }
         this.country = country;
     }
 
@@ -280,7 +334,7 @@ public class User extends BaseEntity {
         this.status = status;
     }
 
-    public void setCustomData(String customData) {
+    public void setCustomData(JsonNode customData) {
         this.customData = customData;
     }
 
@@ -297,11 +351,7 @@ public class User extends BaseEntity {
      * @return true if user is 18 or older, false otherwise
      */
     public boolean isAdult() {
-        if (dateOfBirth == null) {
-            return false;
-        }
-        return dateOfBirth.plusYears(18).isBefore(LocalDate.now()) ||
-               dateOfBirth.plusYears(18).isEqual(LocalDate.now());
+        return dateOfBirth.plusYears(18).isBefore(LocalDate.now());
     }
 
     /**
@@ -310,11 +360,8 @@ public class User extends BaseEntity {
      * @return true if all address fields are present, false otherwise
      */
     public boolean hasCompleteAddress() {
-        return streetAddress != null && !streetAddress.trim().isEmpty() &&
-               city != null && !city.trim().isEmpty() &&
-               state != null && !state.trim().isEmpty() &&
-               postalCode != null && !postalCode.trim().isEmpty() &&
-               country != null && !country.trim().isEmpty();
+        return streetAddress != null && city != null && state != null &&
+               postalCode != null && country != null;
     }
 
 
@@ -325,15 +372,6 @@ public class User extends BaseEntity {
      */
     public boolean isActive() {
         return status == UserStatus.ACTIVE;
-    }
-
-    /**
-     * Validates that the user can be updated.
-     *
-     * @return true if user can be updated, false otherwise
-     */
-    public boolean canBeUpdated() {
-        return isActive();
     }
 
     /**
