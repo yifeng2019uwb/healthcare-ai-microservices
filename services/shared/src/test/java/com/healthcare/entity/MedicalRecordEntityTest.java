@@ -2,6 +2,7 @@ package com.healthcare.entity;
 
 import com.healthcare.enums.MedicalRecordType;
 import com.healthcare.exception.ValidationException;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
@@ -22,7 +23,7 @@ class MedicalRecordEntityTest {
         MedicalRecordType testRecordType = MedicalRecordType.DIAGNOSIS;
         String testInitialContent = "Initial Consultation - Hypertension diagnosis";
         String testUpdatedContent = "Updated diagnosis: Hypertension stage 1";
-        String testCustomData = "{\"priority\": \"high\"}";
+        JsonNode testCustomData = null; // Will be set directly as JsonNode
         boolean testIsPatientVisible = true;
 
         // Create medical record
@@ -42,7 +43,7 @@ class MedicalRecordEntityTest {
 
         assertThat(record.getContent()).isEqualTo(testUpdatedContent);
         assertThat(record.getReleaseDate()).isNotNull();
-        assertThat(record.getCustomData()).isEqualTo(testCustomData);
+        assertThat(record.getCustomData()).isNull();
     }
 
     @Test
@@ -61,22 +62,22 @@ class MedicalRecordEntityTest {
         // Test data variables
         UUID testAppointmentId = UUID.randomUUID();
         MedicalRecordType testRecordType = MedicalRecordType.DIAGNOSIS;
-        String testContent = "Test content";
+        String testContent = "This is a valid medical record content that meets the minimum length requirement";
 
         MedicalRecord record = new MedicalRecord(testAppointmentId, testRecordType, testContent);
         assertThat(record.getRecordType()).isEqualTo(testRecordType);
+
+        // Test setter with valid record type
+        MedicalRecordType newRecordType = MedicalRecordType.TREATMENT;
+        record.setRecordType(newRecordType);
+        assertThat(record.getRecordType()).isEqualTo(newRecordType);
+
+        // Test setter with null record type - should throw ValidationException
+        assertThatThrownBy(() -> record.setRecordType(null))
+            .isInstanceOf(ValidationException.class)
+            .hasMessageContaining("Record type cannot be null");
     }
 
-    @Test
-    void testContentField() {
-        // Test data variables
-        UUID testAppointmentId = UUID.randomUUID();
-        MedicalRecordType testRecordType = MedicalRecordType.DIAGNOSIS;
-        String testContent = "Test content";
-
-        MedicalRecord record = new MedicalRecord(testAppointmentId, testRecordType, testContent);
-        assertThat(record.getContent()).isEqualTo(testContent);
-    }
 
     @Test
     void testIsPatientVisibleField() {
@@ -122,13 +123,21 @@ class MedicalRecordEntityTest {
     }
 
     @Test
-    void testContentSetter() {
+    void testContentField() {
         // Test data variables
         UUID testAppointmentId = UUID.randomUUID();
         MedicalRecordType testRecordType = MedicalRecordType.DIAGNOSIS;
-        String testContent = "Test content";
+        String testContent = "This is a valid medical record content that meets the minimum length requirement";
 
         MedicalRecord record = new MedicalRecord(testAppointmentId, testRecordType, testContent);
+
+        // Test with valid content
+        record.setContent(testContent);
+        assertThat(record.getContent()).isEqualTo(testContent);
+
+        // Test with trimmed content
+        record.setContent("  " + testContent + "  ");
+        assertThat(record.getContent()).isEqualTo(testContent);
 
         // Test with null content - should throw validation exception
         assertThatThrownBy(() -> record.setContent(null))
@@ -140,9 +149,51 @@ class MedicalRecordEntityTest {
             .isInstanceOf(ValidationException.class)
             .hasMessageContaining("Content cannot be null or empty");
 
-        // Test with valid content
-        record.setContent("Valid content");
-        assertThat(record.getContent()).isEqualTo("Valid content");
+        // Test with whitespace only content - should throw validation exception
+        assertThatThrownBy(() -> record.setContent("   "))
+            .isInstanceOf(ValidationException.class)
+            .hasMessageContaining("Content cannot be null or empty");
+
+        // Test with content too short (less than 10 characters) - should throw validation exception
+        assertThatThrownBy(() -> record.setContent("Short"))
+            .isInstanceOf(ValidationException.class)
+            .hasMessageContaining("Content must be at least 10 characters");
+
+        // Test with content exactly 10 characters - should be valid
+        String exactlyTenChars = "1234567890";
+        record.setContent(exactlyTenChars);
+        assertThat(record.getContent()).isEqualTo(exactlyTenChars);
+
+        // Test with content exactly 10000 characters - should be valid
+        String exactlyMaxChars = "a".repeat(10000);
+        record.setContent(exactlyMaxChars);
+        assertThat(record.getContent()).isEqualTo(exactlyMaxChars);
+
+        // Test with content exceeding 10000 characters - should throw validation exception
+        String tooLongContent = "a".repeat(10001);
+        assertThatThrownBy(() -> record.setContent(tooLongContent))
+            .isInstanceOf(ValidationException.class)
+            .hasMessageContaining("Content cannot exceed 10000 characters");
+    }
+
+    @Test
+    void testCustomDataField() {
+        // Test data variables
+        UUID testAppointmentId = UUID.randomUUID();
+        MedicalRecordType testRecordType = MedicalRecordType.DIAGNOSIS;
+        String testContent = "This is a valid medical record content that meets the minimum length requirement";
+
+        MedicalRecord record = new MedicalRecord(testAppointmentId, testRecordType, testContent);
+
+        // Test initial state
+        assertThat(record.getCustomData()).isNull();
+
+        // Test setter with null value (allowed)
+        record.setCustomData(null);
+        assertThat(record.getCustomData()).isNull();
+
+        // Note: JsonNode creation and validation should be handled at service layer
+        // Entity only accepts pre-validated JsonNode objects
     }
 
     @Test

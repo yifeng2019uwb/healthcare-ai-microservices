@@ -3,6 +3,8 @@ package com.healthcare.entity;
 import com.healthcare.constants.DatabaseConstants;
 import com.healthcare.enums.MedicalRecordType;
 import com.healthcare.exception.ValidationException;
+import com.healthcare.utils.ValidationUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
@@ -44,7 +46,7 @@ public class MedicalRecord extends BaseEntity {
     private OffsetDateTime releaseDate;
 
     @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
-    private String customData;
+    private JsonNode customData;
 
     // Constructors
     public MedicalRecord() {}
@@ -79,16 +81,12 @@ public class MedicalRecord extends BaseEntity {
     }
 
     public void setContent(String content) {
-        if (content == null || content.trim().isEmpty()) {
-            throw new ValidationException("Content cannot be null or empty");
-        }
-        if (content.trim().length() < 10) {
-            throw new ValidationException("Content must be at least 10 characters");
-        }
-        if (content.length() > 10000) {
-            throw new ValidationException("Content cannot exceed 10000 characters");
-        }
-        this.content = content;
+        this.content = ValidationUtils.validateRequiredStringWithLength(
+            content,
+            "Content",
+            10,
+            10000
+        );
     }
 
     public Boolean getIsPatientVisible() {
@@ -107,11 +105,11 @@ public class MedicalRecord extends BaseEntity {
         this.releaseDate = releaseDate;
     }
 
-    public String getCustomData() {
+    public JsonNode getCustomData() {
         return customData;
     }
 
-    public void setCustomData(String customData) {
+    public void setCustomData(JsonNode customData) {
         this.customData = customData;
     }
 
@@ -123,6 +121,6 @@ public class MedicalRecord extends BaseEntity {
      * @return true if record is patient visible, false otherwise
      */
     public boolean isVisibleToPatient() {
-        return isPatientVisible != null && isPatientVisible;
+        return isPatientVisible;
     }
 }

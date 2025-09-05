@@ -132,4 +132,32 @@ public class ValidationUtils {
                                                              String pattern, String patternErrorMessage) {
         return validateAndNormalizeString(value, fieldName, null, pattern, patternErrorMessage);
     }
+
+    /**
+     * Validates a required string field with minimum and maximum length constraints
+     *
+     * @param value the input value to validate
+     * @param fieldName the name of the field for error messages
+     * @param minLength minimum allowed length
+     * @param maxLength maximum allowed length
+     * @return the processed value (trimmed)
+     * @throws ValidationException if validation fails
+     */
+    public static String validateRequiredStringWithLength(String value, String fieldName, int minLength, int maxLength) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new ValidationException(fieldName + " cannot be null or empty");
+        }
+
+        value = value.trim();
+
+        if (value.length() < minLength) {
+            throw new ValidationException(fieldName + " must be at least " + minLength + " characters");
+        }
+
+        if (value.length() > maxLength) {
+            throw new ValidationException(fieldName + " cannot exceed " + maxLength + " characters");
+        }
+
+        return value;
+    }
 }
