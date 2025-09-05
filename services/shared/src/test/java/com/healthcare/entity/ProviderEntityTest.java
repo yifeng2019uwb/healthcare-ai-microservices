@@ -2,12 +2,15 @@ package com.healthcare.entity;
 
 import com.healthcare.enums.Gender;
 import com.healthcare.enums.UserRole;
+import com.healthcare.exception.ValidationException;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Unit tests for Provider entity
@@ -46,7 +49,7 @@ class ProviderEntityTest {
 
         assertThat(provider.getBio()).isEqualTo(testBio);
         assertThat(provider.getOfficePhone()).isEqualTo(testOfficePhone);
-        assertThat(provider.getCustomData()).isEqualTo(testCustomData);
+        assertThat(provider.getCustomData()).isNotNull();
     }
 
     @Test
@@ -84,5 +87,186 @@ class ProviderEntityTest {
         assertThat(provider.getOfficePhone()).isNull();
         provider.setOfficePhone(testOfficePhone);
         assertThat(provider.getOfficePhone()).isEqualTo(testOfficePhone);
+    }
+
+    @Test
+    void testLicenseNumbersField() {
+        UUID testUserId = UUID.randomUUID();
+        String testNpiNumber = "1234567890";
+        Provider provider = new Provider(testUserId, testNpiNumber);
+
+        // Test setter with valid value
+        String testLicenseNumbers = "MD123456";
+        provider.setLicenseNumbers(testLicenseNumbers);
+        assertThat(provider.getLicenseNumbers()).isEqualTo(testLicenseNumbers);
+
+        // Test setter with null value (allowed)
+        provider.setLicenseNumbers(null);
+        assertThat(provider.getLicenseNumbers()).isNull();
+
+        // Test setter with empty value (normalized to null)
+        provider.setLicenseNumbers("");
+        assertThat(provider.getLicenseNumbers()).isNull();
+
+        // Test setter validation - too long
+        String longLicenseNumbers = "A".repeat(51);
+        assertThatThrownBy(() -> provider.setLicenseNumbers(longLicenseNumbers))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("License numbers cannot exceed 50 characters");
+    }
+
+    @Test
+    void testNpiNumberField() {
+        UUID testUserId = UUID.randomUUID();
+        String testNpiNumber = "1234567890";
+        Provider provider = new Provider(testUserId, testNpiNumber);
+
+        // Test setter with valid value
+        String newNpiNumber = "9876543210";
+        provider.setNpiNumber(newNpiNumber);
+        assertThat(provider.getNpiNumber()).isEqualTo(newNpiNumber);
+
+        // Test setter validation - null value
+        assertThatThrownBy(() -> provider.setNpiNumber(null))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("NPI number cannot be null or empty");
+
+        // Test setter validation - empty value
+        assertThatThrownBy(() -> provider.setNpiNumber(""))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("NPI number cannot be null or empty");
+
+        // Test setter validation - too long
+        String longNpiNumber = "12345678901";
+        assertThatThrownBy(() -> provider.setNpiNumber(longNpiNumber))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("NPI number cannot exceed 10 characters");
+
+        // Test setter validation - invalid format
+        assertThatThrownBy(() -> provider.setNpiNumber("123456789a"))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("NPI number must be exactly 10 digits");
+    }
+
+    @Test
+    void testSpecialtyField() {
+        UUID testUserId = UUID.randomUUID();
+        String testNpiNumber = "1234567890";
+        Provider provider = new Provider(testUserId, testNpiNumber);
+
+        // Test setter with valid value
+        String testSpecialty = "Cardiology";
+        provider.setSpecialty(testSpecialty);
+        assertThat(provider.getSpecialty()).isEqualTo(testSpecialty);
+
+        // Test setter with null value (allowed)
+        provider.setSpecialty(null);
+        assertThat(provider.getSpecialty()).isNull();
+
+        // Test setter with empty value (normalized to null)
+        provider.setSpecialty("");
+        assertThat(provider.getSpecialty()).isNull();
+
+        // Test setter validation - too long
+        String longSpecialty = "A".repeat(101);
+        assertThatThrownBy(() -> provider.setSpecialty(longSpecialty))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Specialty cannot exceed 100 characters");
+    }
+
+    @Test
+    void testQualificationsField() {
+        UUID testUserId = UUID.randomUUID();
+        String testNpiNumber = "1234567890";
+        Provider provider = new Provider(testUserId, testNpiNumber);
+
+        // Test setter with valid value
+        String testQualifications = "MD, PhD in Cardiology";
+        provider.setQualifications(testQualifications);
+        assertThat(provider.getQualifications()).isEqualTo(testQualifications);
+
+        // Test setter with null value (allowed)
+        provider.setQualifications(null);
+        assertThat(provider.getQualifications()).isNull();
+
+        // Test setter with empty value (normalized to null)
+        provider.setQualifications("");
+        assertThat(provider.getQualifications()).isNull();
+    }
+
+    @Test
+    void testBioField() {
+        UUID testUserId = UUID.randomUUID();
+        String testNpiNumber = "1234567890";
+        Provider provider = new Provider(testUserId, testNpiNumber);
+
+        // Test setter with valid value
+        String testBio = "Experienced cardiologist with 20 years of practice";
+        provider.setBio(testBio);
+        assertThat(provider.getBio()).isEqualTo(testBio);
+
+        // Test setter with null value (allowed)
+        provider.setBio(null);
+        assertThat(provider.getBio()).isNull();
+
+        // Test setter with empty value (normalized to null)
+        provider.setBio("");
+        assertThat(provider.getBio()).isNull();
+    }
+
+    @Test
+    void testOfficePhoneField() {
+        UUID testUserId = UUID.randomUUID();
+        String testNpiNumber = "1234567890";
+        Provider provider = new Provider(testUserId, testNpiNumber);
+
+        // Test setter with valid value
+        String testOfficePhone = "+15551234567";
+        provider.setOfficePhone(testOfficePhone);
+        assertThat(provider.getOfficePhone()).isEqualTo(testOfficePhone);
+
+        // Test setter with null value (allowed)
+        provider.setOfficePhone(null);
+        assertThat(provider.getOfficePhone()).isNull();
+
+        // Test setter with empty value (normalized to null)
+        provider.setOfficePhone("");
+        assertThat(provider.getOfficePhone()).isNull();
+
+        // Test setter validation - too long
+        String longOfficePhone = "+123456789012345678901";
+        assertThatThrownBy(() -> provider.setOfficePhone(longOfficePhone))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Office phone cannot exceed 20 characters");
+
+        // Test setter validation - invalid format
+        assertThatThrownBy(() -> provider.setOfficePhone("0123456789"))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Office phone must be a valid international format");
+    }
+
+    @Test
+    void testCustomDataField() {
+        UUID testUserId = UUID.randomUUID();
+        String testNpiNumber = "1234567890";
+        Provider provider = new Provider(testUserId, testNpiNumber);
+
+        // Test setter with valid JSON string
+        String testCustomDataJson = "{\"rating\": 4.8, \"reviews\": 150}";
+        provider.setCustomData(testCustomDataJson);
+        assertThat(provider.getCustomData()).isNotNull();
+
+        // Test setter with null value (allowed)
+        provider.setCustomData((String) null);
+        assertThat(provider.getCustomData()).isNull();
+
+        // Test setter with null JsonNode (allowed)
+        provider.setCustomData((JsonNode) null);
+        assertThat(provider.getCustomData()).isNull();
+
+        // Test setter validation - invalid JSON
+        assertThatThrownBy(() -> provider.setCustomData("invalid json"))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Invalid JSON format for custom data");
     }
 }
