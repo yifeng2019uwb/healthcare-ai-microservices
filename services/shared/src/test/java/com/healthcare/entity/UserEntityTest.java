@@ -528,19 +528,6 @@ class UserEntityTest {
         assertThat(user.isActive()).isFalse();
     }
 
-    @Test
-    void testIsDeletedMethod() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
-
-        // Test with ACTIVE status - should not be deleted
-        user.setStatus(UserStatus.ACTIVE);
-        assertThat(user.isDeleted()).isFalse();
-
-        // Test with DELETED status - should be deleted
-        user.setStatus(UserStatus.DELETED);
-        assertThat(user.isDeleted()).isTrue();
-    }
 
     @Test
     void testGetFullNameMethod() {

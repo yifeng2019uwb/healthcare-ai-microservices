@@ -367,12 +367,4 @@ public class User extends BaseEntity {
         return status == UserStatus.ACTIVE;
     }
 
-    /**
-     * Checks if the user is marked as deleted.
-     *
-     * @return true if user is deleted, false otherwise
-     */
-    public boolean isDeleted() {
-        return status == UserStatus.DELETED;
-    }
 }

@@ -6,8 +6,7 @@ package com.healthcare.enums;
 public enum UserStatus {
     ACTIVE("ACTIVE", "Active user"),
     INACTIVE("INACTIVE", "Inactive user"),
-    SUSPENDED("SUSPENDED", "Suspended user"),
-    DELETED("DELETED", "Deleted user");
+    SUSPENDED("SUSPENDED", "Suspended user");
 
     private final String code;
     private final String description;
