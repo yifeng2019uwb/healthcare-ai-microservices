@@ -62,6 +62,7 @@ public final class DatabaseConstants {
     // Appointment Columns
     public static final String COL_SCHEDULED_AT = "scheduled_at";
     public static final String COL_CHECKIN_TIME = "checkin_time";
+    public static final String COL_STATUS = "status";
     public static final String COL_APPOINTMENT_STATUS = "status";
     public static final String COL_APPOINTMENT_TYPE = "appointment_type";
     public static final String COL_NOTES = "notes";
@@ -81,16 +82,34 @@ public final class DatabaseConstants {
     public static final String COL_SOURCE_IP = "source_ip";
     public static final String COL_USER_AGENT = "user_agent";
 
-    // Index Names
-    public static final String INDEX_USERS_EMAIL = "idx_users_email";
-    public static final String INDEX_PATIENTS_USER_ID = "idx_patients_user_id";
-    public static final String INDEX_PROVIDERS_USER_ID = "idx_providers_user_id";
-    public static final String INDEX_APPOINTMENTS_PATIENT_ID = "idx_appointments_patient_id";
-    public static final String INDEX_APPOINTMENTS_PROVIDER_ID = "idx_appointments_provider_id";
-    public static final String INDEX_MEDICAL_RECORDS_PATIENT_ID = "idx_medical_records_patient_id";
-    public static final String INDEX_MEDICAL_RECORDS_PROVIDER_ID = "idx_medical_records_provider_id";
-    public static final String INDEX_AUDIT_LOGS_USER_ID = "idx_audit_logs_user_id";
-    public static final String INDEX_AUDIT_LOGS_ACTION = "idx_audit_logs_action";
+    // Index Names (matching Terraform definitions)
+    // User Profiles indexes
+    public static final String INDEX_USERS_EXTERNAL_AUTH_ID_UNIQUE = "idx_user_profiles_external_auth_id_unique";
+    public static final String INDEX_USERS_EMAIL_UNIQUE = "idx_user_profiles_email_unique";
+    public static final String INDEX_USERS_PHONE = "idx_user_profiles_phone";
+    public static final String INDEX_USERS_NAME_DOB = "idx_user_profiles_name_dob";
+
+    // Patient Profiles indexes
+    public static final String INDEX_PATIENTS_USER_ID_UNIQUE = "idx_patient_profiles_user_id_unique";
+    public static final String INDEX_PATIENTS_PATIENT_NUMBER_UNIQUE = "idx_patient_profiles_patient_number_unique";
+
+    // Provider Profiles indexes
+    public static final String INDEX_PROVIDERS_USER_ID_UNIQUE = "idx_provider_profiles_user_id_unique";
+    public static final String INDEX_PROVIDERS_NPI_NUMBER_UNIQUE = "idx_provider_profiles_npi_number_unique";
+    public static final String INDEX_PROVIDERS_SPECIALTY = "idx_provider_profiles_specialty";
+
+    // Appointments indexes
+    public static final String INDEX_APPOINTMENTS_PROVIDER_SCHEDULE = "idx_provider_schedule";
+    public static final String INDEX_APPOINTMENTS_PATIENT_SCHEDULE = "idx_patient_schedule";
+
+    // Medical Records indexes
+    public static final String INDEX_MEDICAL_RECORDS_APPOINTMENT_TYPE = "idx_medical_records_appointment_type";
+    public static final String INDEX_MEDICAL_RECORDS_PATIENT_VISIBLE = "idx_medical_records_patient_visible";
+
+    // Audit Logs indexes
+    public static final String INDEX_AUDIT_LOGS_USER_ACTIVITY = "idx_audit_logs_user_activity";
+    public static final String INDEX_AUDIT_LOGS_RESOURCE_ACTIVITY = "idx_audit_logs_resource_activity";
+    public static final String INDEX_AUDIT_LOGS_SECURITY_MONITORING = "idx_audit_logs_security_monitoring";
 
     private DatabaseConstants() {
         // Utility class

@@ -11,6 +11,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -27,7 +28,13 @@ import com.fasterxml.jackson.databind.JsonNode;
  * Maps to user_profiles table
  */
 @Entity
-@Table(name = DatabaseConstants.TABLE_USER_PROFILES)
+@Table(name = DatabaseConstants.TABLE_USER_PROFILES,
+       indexes = {
+           @Index(name = DatabaseConstants.INDEX_USERS_EXTERNAL_AUTH_ID_UNIQUE, columnList = DatabaseConstants.COL_EXTERNAL_AUTH_ID),
+           @Index(name = DatabaseConstants.INDEX_USERS_EMAIL_UNIQUE, columnList = DatabaseConstants.COL_EMAIL),
+           @Index(name = DatabaseConstants.INDEX_USERS_PHONE, columnList = DatabaseConstants.COL_PHONE),
+           @Index(name = DatabaseConstants.INDEX_USERS_NAME_DOB, columnList = DatabaseConstants.COL_LAST_NAME + "," + DatabaseConstants.COL_FIRST_NAME + "," + DatabaseConstants.COL_DATE_OF_BIRTH)
+       })
 public class User extends BaseEntity {
 
 
@@ -258,7 +265,7 @@ public class User extends BaseEntity {
             city,
             "City",
             100,
-            ValidationPatterns.PERSON_NAME,
+            ValidationPatterns.CITY_NAME,
             "City name format is invalid"
         );
     }
@@ -268,7 +275,7 @@ public class User extends BaseEntity {
             state,
             "State",
             50,
-            ValidationPatterns.PERSON_NAME,
+            ValidationPatterns.STATE_NAME,
             "State name format is invalid"
         );
     }
@@ -288,7 +295,7 @@ public class User extends BaseEntity {
             country,
             "Country",
             100,
-            ValidationPatterns.PERSON_NAME,
+            ValidationPatterns.COUNTRY_NAME,
             "Country name format is invalid"
         );
     }

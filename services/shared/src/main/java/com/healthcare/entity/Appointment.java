@@ -19,7 +19,11 @@ import java.util.UUID;
  * Maps to appointments table
  */
 @Entity
-@Table(name = DatabaseConstants.TABLE_APPOINTMENTS)
+@Table(name = DatabaseConstants.TABLE_APPOINTMENTS,
+       indexes = {
+           @Index(name = DatabaseConstants.INDEX_APPOINTMENTS_PROVIDER_SCHEDULE, columnList = DatabaseConstants.COL_PROVIDER_ID + "," + DatabaseConstants.COL_STATUS + "," + DatabaseConstants.COL_SCHEDULED_AT),
+           @Index(name = DatabaseConstants.INDEX_APPOINTMENTS_PATIENT_SCHEDULE, columnList = DatabaseConstants.COL_PATIENT_ID + "," + DatabaseConstants.COL_SCHEDULED_AT)
+       })
 public class Appointment extends BaseEntity {
 
     /**

@@ -51,6 +51,30 @@ public final class ValidationPatterns {
      */
     public static final String STREET_ADDRESS = "^[A-Za-z0-9\\s.,#-]{5,255}$";
 
+    /**
+     * City name pattern.
+     * Supports international city names with letters, spaces, hyphens, periods, and apostrophes.
+     * Examples: "St. Petersburg", "San Francisco-Oakland", "O'Connor", "New York"
+     * Minimum 2 characters, maximum 100 characters
+     */
+    public static final String CITY_NAME = "^[\\p{L}\\s.'-]{2,100}$";
+
+    /**
+     * State/Province name pattern.
+     * Supports state and province names with letters, spaces, hyphens, and periods.
+     * Examples: "New York", "British Columbia", "St. Louis", "São Paulo"
+     * Minimum 2 characters, maximum 50 characters
+     */
+    public static final String STATE_NAME = "^[\\p{L}\\s.'-]{2,50}$";
+
+    /**
+     * Country name pattern.
+     * Supports international country names with letters, spaces, hyphens, and periods.
+     * Examples: "United States", "United Kingdom", "Côte d'Ivoire", "St. Kitts and Nevis"
+     * Minimum 2 characters, maximum 100 characters
+     */
+    public static final String COUNTRY_NAME = "^[\\p{L}\\s.'-]{2,100}$";
+
     // ==================== IDENTIFICATION PATTERNS ====================
 
     /**

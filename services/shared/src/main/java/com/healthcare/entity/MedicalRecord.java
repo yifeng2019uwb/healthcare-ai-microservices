@@ -18,7 +18,11 @@ import java.util.UUID;
  * Maps to medical_records table
  */
 @Entity
-@Table(name = DatabaseConstants.TABLE_MEDICAL_RECORDS)
+@Table(name = DatabaseConstants.TABLE_MEDICAL_RECORDS,
+       indexes = {
+           @Index(name = DatabaseConstants.INDEX_MEDICAL_RECORDS_APPOINTMENT_TYPE, columnList = DatabaseConstants.COL_APPOINTMENT_ID + "," + DatabaseConstants.COL_RECORD_TYPE),
+           @Index(name = DatabaseConstants.INDEX_MEDICAL_RECORDS_PATIENT_VISIBLE, columnList = DatabaseConstants.COL_APPOINTMENT_ID + "," + DatabaseConstants.COL_IS_PATIENT_VISIBLE + "," + DatabaseConstants.COL_RELEASE_DATE)
+       })
 public class MedicalRecord extends BaseEntity {
 
     /**

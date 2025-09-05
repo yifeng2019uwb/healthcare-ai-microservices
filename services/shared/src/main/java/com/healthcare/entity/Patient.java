@@ -6,6 +6,7 @@ import com.healthcare.exception.ValidationException;
 import com.healthcare.utils.ValidationUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,7 +20,11 @@ import com.fasterxml.jackson.databind.JsonNode;
  * Maps to patient_profiles table
  */
 @Entity
-@Table(name = DatabaseConstants.TABLE_PATIENTS)
+@Table(name = DatabaseConstants.TABLE_PATIENTS,
+       indexes = {
+           @Index(name = DatabaseConstants.INDEX_PATIENTS_USER_ID_UNIQUE, columnList = DatabaseConstants.COL_USER_ID),
+           @Index(name = DatabaseConstants.INDEX_PATIENTS_PATIENT_NUMBER_UNIQUE, columnList = DatabaseConstants.COL_PATIENT_NUMBER)
+       })
 public class Patient extends BaseEntity {
 
     /**

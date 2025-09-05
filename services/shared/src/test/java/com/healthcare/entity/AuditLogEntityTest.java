@@ -233,19 +233,18 @@ class AuditLogEntityTest {
                                         testOutcome, null, null, null);
         assertThat(nullIpLog.getSourceIp()).isNull();
 
-        // Test loopback IP address - should throw ValidationException
+        // Test loopback IP address - should be allowed (valid for development/testing)
         InetAddress loopbackIp = InetAddress.getByName("127.0.0.1");
-        assertThatThrownBy(() -> new AuditLog(testUserId, testActionType, testResourceType, null,
-                                            testOutcome, null, loopbackIp, null))
-            .isInstanceOf(ValidationException.class)
-            .hasMessageContaining("Source IP cannot be a loopback address for audit purposes");
+        AuditLog loopbackLog = new AuditLog(testUserId, testActionType, testResourceType, null,
+                                          testOutcome, null, loopbackIp, null);
+        assertThat(loopbackLog.getSourceIp()).isEqualTo(loopbackIp);
 
         // Test multicast IP address - should throw ValidationException
         InetAddress multicastIp = InetAddress.getByName("224.0.0.1");
         assertThatThrownBy(() -> new AuditLog(testUserId, testActionType, testResourceType, null,
                                             testOutcome, null, multicastIp, null))
             .isInstanceOf(ValidationException.class)
-            .hasMessageContaining("Source IP cannot be a multicast address for audit purposes");
+            .hasMessageContaining("Source IP cannot be a multicast address");
 
         // Test valid public IP address
         InetAddress publicIp = InetAddress.getByName("8.8.8.8");

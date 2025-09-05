@@ -18,7 +18,12 @@ import java.util.UUID;
  * Maps to provider_profiles table
  */
 @Entity
-@Table(name = DatabaseConstants.TABLE_PROVIDERS)
+@Table(name = DatabaseConstants.TABLE_PROVIDERS,
+       indexes = {
+           @Index(name = DatabaseConstants.INDEX_PROVIDERS_USER_ID_UNIQUE, columnList = DatabaseConstants.COL_USER_ID),
+           @Index(name = DatabaseConstants.INDEX_PROVIDERS_NPI_NUMBER_UNIQUE, columnList = DatabaseConstants.COL_NPI_NUMBER),
+           @Index(name = DatabaseConstants.INDEX_PROVIDERS_SPECIALTY, columnList = DatabaseConstants.COL_SPECIALTY)
+       })
 public class Provider extends BaseEntity {
 
     /**

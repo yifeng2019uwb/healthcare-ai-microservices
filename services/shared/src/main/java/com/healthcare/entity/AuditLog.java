@@ -19,7 +19,12 @@ import java.util.UUID;
  * Maps to audit_logs table
  */
 @Entity
-@Table(name = DatabaseConstants.TABLE_AUDIT_LOGS)
+@Table(name = DatabaseConstants.TABLE_AUDIT_LOGS,
+       indexes = {
+           @Index(name = DatabaseConstants.INDEX_AUDIT_LOGS_USER_ACTIVITY, columnList = DatabaseConstants.COL_USER_ID + "," + DatabaseConstants.COL_CREATED_AT),
+           @Index(name = DatabaseConstants.INDEX_AUDIT_LOGS_RESOURCE_ACTIVITY, columnList = DatabaseConstants.COL_RESOURCE_TYPE + "," + DatabaseConstants.COL_RESOURCE_ID + "," + DatabaseConstants.COL_CREATED_AT),
+           @Index(name = DatabaseConstants.INDEX_AUDIT_LOGS_SECURITY_MONITORING, columnList = DatabaseConstants.COL_ACTION_TYPE + "," + DatabaseConstants.COL_OUTCOME + "," + DatabaseConstants.COL_CREATED_AT)
+       })
 public class AuditLog extends BaseEntity {
 
     /**
@@ -138,15 +143,11 @@ public class AuditLog extends BaseEntity {
         }
 
         // InetAddress.getByName() already validates the format, so if we have an InetAddress object,
-        // it's already valid. We just need to check if it's not a loopback or multicast address
-        // for security audit purposes (optional business rule)
-
-        if (sourceIp.isLoopbackAddress()) {
-            throw new ValidationException("Source IP cannot be a loopback address for audit purposes");
-        }
+        // it's already valid. We only reject multicast addresses as they're not valid source IPs.
+        // Loopback addresses are valid for development, testing, and local environments.
 
         if (sourceIp.isMulticastAddress()) {
-            throw new ValidationException("Source IP cannot be a multicast address for audit purposes");
+            throw new ValidationException("Source IP cannot be a multicast address");
         }
 
         return sourceIp;
