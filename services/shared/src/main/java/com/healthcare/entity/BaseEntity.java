@@ -2,6 +2,7 @@ package com.healthcare.entity;
 
 import com.healthcare.constants.DatabaseConstants;
 import com.healthcare.exception.ValidationException;
+import com.healthcare.utils.ValidationUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
@@ -131,13 +132,11 @@ public abstract class BaseEntity {
      * @throws ValidationException if updatedBy is null or exceeds length limit
      */
     public void setUpdatedBy(String updatedBy) {
-        if (updatedBy == null) {
-            throw new ValidationException("Updated by cannot be null");
-        }
-        if (updatedBy.length() > 100) {
-            throw new ValidationException("Updated by cannot exceed 100 characters");
-        }
-        this.updatedBy = updatedBy;
+        this.updatedBy = ValidationUtils.validateRequiredString(
+            updatedBy,
+            "Updated by",
+            100
+        );
     }
 
     // ==================== ENTITY METHODS ====================
