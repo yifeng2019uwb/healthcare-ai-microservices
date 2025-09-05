@@ -54,6 +54,6 @@ This module is imported as a dependency by individual services (Patient, Provide
 - [ ] Testing utilities
 
 ## 🧪 Testing
-- Unit tests with H2 in-memory database
+- Unit tests with PostgreSQL test database
 - Integration tests with Testcontainers
 - Repository tests with @DataJpaTest

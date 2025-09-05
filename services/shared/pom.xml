@@ -69,12 +69,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- H2 Database for Testing -->
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>test</scope>
-        </dependency>
+        <!-- H2 Database removed - using PostgreSQL for all environments -->
 
         <!-- Testcontainers for Integration Testing -->
         <dependency>
