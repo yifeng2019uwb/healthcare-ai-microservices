@@ -4,6 +4,8 @@ import com.healthcare.constants.DatabaseConstants;
 import com.healthcare.enums.AppointmentStatus;
 import com.healthcare.enums.AppointmentType;
 import com.healthcare.exception.ValidationException;
+import com.healthcare.utils.ValidationUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -60,7 +62,7 @@ public class Appointment extends BaseEntity {
     private String notes;
 
     @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = "JSONB")
-    private String customData;
+    private JsonNode customData;
 
     // Constructors
     public Appointment() {}
@@ -164,14 +166,18 @@ public class Appointment extends BaseEntity {
     }
 
     public void setNotes(String notes) {
-        this.notes = notes;
+        this.notes = ValidationUtils.validateAndNormalizeString(
+            notes,
+            "Appointment notes",
+            1000
+        );
     }
 
-    public String getCustomData() {
+    public JsonNode getCustomData() {
         return customData;
     }
 
-    public void setCustomData(String customData) {
+    public void setCustomData(JsonNode customData) {
         this.customData = customData;
     }
 

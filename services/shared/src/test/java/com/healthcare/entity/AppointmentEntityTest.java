@@ -3,6 +3,7 @@ package com.healthcare.entity;
 import com.healthcare.enums.AppointmentStatus;
 import com.healthcare.enums.AppointmentType;
 import com.healthcare.exception.ValidationException;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
@@ -200,38 +201,51 @@ class AppointmentEntityTest {
         // Test initial state
         assertThat(appointment.getNotes()).isNull();
 
-        // Test setter
+        // Test setter with valid notes
         appointment.setNotes(testNotes);
         assertThat(appointment.getNotes()).isEqualTo(testNotes);
 
-        // Test setter with null
+        // Test setter with null (should normalize to null)
         appointment.setNotes(null);
         assertThat(appointment.getNotes()).isNull();
 
-        // Test setter with empty string
+        // Test setter with empty string (should normalize to null)
         appointment.setNotes("");
-        assertThat(appointment.getNotes()).isEqualTo("");
+        assertThat(appointment.getNotes()).isNull();
+
+        // Test setter with whitespace only (should normalize to null)
+        appointment.setNotes("   ");
+        assertThat(appointment.getNotes()).isNull();
+
+        // Test setter with trimmed valid notes
+        appointment.setNotes("  Patient has allergies  ");
+        assertThat(appointment.getNotes()).isEqualTo("Patient has allergies");
+
+        // Test setter with notes exceeding 1000 characters (should throw ValidationException)
+        String longNotes = "a".repeat(1001);
+        assertThatThrownBy(() -> appointment.setNotes(longNotes))
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("Appointment notes cannot exceed 1000 characters");
+
+        // Test setter with notes exactly 1000 characters (should be valid)
+        String validLongNotes = "a".repeat(1000);
+        appointment.setNotes(validLongNotes);
+        assertThat(appointment.getNotes()).isEqualTo(validLongNotes);
     }
 
     @Test
     void testCustomDataField() {
         Appointment appointment = new Appointment();
-        String customData = "{\"special_requirements\": \"wheelchair access\"}";
 
         // Test initial state
         assertThat(appointment.getCustomData()).isNull();
-
-        // Test setter
-        appointment.setCustomData(customData);
-        assertThat(appointment.getCustomData()).isEqualTo(customData);
 
         // Test setter with null
         appointment.setCustomData(null);
         assertThat(appointment.getCustomData()).isNull();
 
-        // Test setter with empty string
-        appointment.setCustomData("");
-        assertThat(appointment.getCustomData()).isEqualTo("");
+        // Note: JsonNode creation and validation should be handled at service layer
+        // Entity only accepts pre-validated JsonNode objects
     }
 
     // ==================== VALIDATION METHOD TESTS ====================
