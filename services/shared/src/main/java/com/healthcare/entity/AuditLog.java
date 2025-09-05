@@ -4,6 +4,9 @@ import com.healthcare.constants.DatabaseConstants;
 import com.healthcare.enums.ActionType;
 import com.healthcare.enums.Outcome;
 import com.healthcare.enums.ResourceType;
+import com.healthcare.exception.ValidationException;
+import com.healthcare.utils.ValidationUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -46,12 +49,11 @@ public class AuditLog extends BaseEntity {
     private Outcome outcome;
 
     @Column(name = DatabaseConstants.COL_DETAILS, columnDefinition = "JSONB")
-    private String details;
+    private JsonNode details;
 
     @Column(name = DatabaseConstants.COL_SOURCE_IP, columnDefinition = "INET")
     private InetAddress sourceIp;
 
-    @Size(max = 500)
     @Column(name = DatabaseConstants.COL_USER_AGENT, columnDefinition = "TEXT")
     private String userAgent;
 
@@ -65,6 +67,19 @@ public class AuditLog extends BaseEntity {
         this.resourceType = resourceType;
         this.resourceId = resourceId;
         this.outcome = outcome;
+    }
+
+    // Full constructor for complete audit log creation
+    public AuditLog(UUID userId, ActionType actionType, ResourceType resourceType, UUID resourceId,
+                   Outcome outcome, JsonNode details, InetAddress sourceIp, String userAgent) {
+        this.userId = userId;
+        this.actionType = actionType;
+        this.resourceType = resourceType;
+        this.resourceId = resourceId;
+        this.outcome = outcome;
+        this.details = details;
+        this.sourceIp = validateSourceIp(sourceIp);
+        this.userAgent = ValidationUtils.validateAndNormalizeString(userAgent, "User agent", 500);
     }
 
     // Getters and Setters
@@ -93,7 +108,7 @@ public class AuditLog extends BaseEntity {
     }
 
 
-    public String getDetails() {
+    public JsonNode getDetails() {
         return details;
     }
 
@@ -107,5 +122,34 @@ public class AuditLog extends BaseEntity {
         return userAgent;
     }
 
+    // ==================== VALIDATION METHODS ====================
+
+    /**
+     * Validates the source IP address.
+     * If not null, ensures it's a valid IP address format.
+     *
+     * @param sourceIp the IP address to validate
+     * @return the validated IP address or null
+     * @throws ValidationException if the IP address format is invalid
+     */
+    private InetAddress validateSourceIp(InetAddress sourceIp) {
+        if (sourceIp == null) {
+            return null;
+        }
+
+        // InetAddress.getByName() already validates the format, so if we have an InetAddress object,
+        // it's already valid. We just need to check if it's not a loopback or multicast address
+        // for security audit purposes (optional business rule)
+
+        if (sourceIp.isLoopbackAddress()) {
+            throw new ValidationException("Source IP cannot be a loopback address for audit purposes");
+        }
+
+        if (sourceIp.isMulticastAddress()) {
+            throw new ValidationException("Source IP cannot be a multicast address for audit purposes");
+        }
+
+        return sourceIp;
+    }
 
 }
