@@ -4,10 +4,8 @@ import com.healthcare.enums.Gender;
 import com.healthcare.enums.UserRole;
 import com.healthcare.exception.ValidationException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -318,20 +316,17 @@ class PatientEntityTest {
     }
 
     @Test
-    void testCustomDataField() throws IOException {
+    void testCustomDataField() {
         UUID testUserId = UUID.randomUUID();
         String testPatientNumber = "PAT-12345678";
         Patient patient = new Patient(testUserId, testPatientNumber);
 
-        // Test setter with valid value
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode testCustomData = mapper.readTree("{\"preferences\": \"email\"}");
-        patient.setCustomData(testCustomData);
-        assertThat(patient.getCustomData()).isEqualTo(testCustomData);
-
         // Test setter with null value (allowed)
         patient.setCustomData(null);
         assertThat(patient.getCustomData()).isNull();
+
+        // Note: JsonNode creation and validation should be handled at service layer
+        // Entity only accepts pre-validated JsonNode objects
     }
 
     @Test

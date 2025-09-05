@@ -3,6 +3,7 @@ package com.healthcare.entity;
 import com.healthcare.constants.DatabaseConstants;
 import com.healthcare.constants.ValidationPatterns;
 import com.healthcare.exception.ValidationException;
+import com.healthcare.utils.ValidationUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -92,13 +93,13 @@ public class Patient extends BaseEntity {
     }
 
     public void setMedicalHistory(String medicalHistory) {
-        if (medicalHistory != null) {
-            medicalHistory = medicalHistory.trim();
-            if (medicalHistory.isBlank()) {
-                medicalHistory = null;  // Normalize to NULL
-            }
-        }
-        this.medicalHistory = medicalHistory;
+        this.medicalHistory = ValidationUtils.validateAndNormalizeString(
+            medicalHistory,
+            "Medical history",
+            (Integer) null,
+            null,
+            null
+        );
     }
 
     public String getAllergies() {
@@ -106,13 +107,13 @@ public class Patient extends BaseEntity {
     }
 
     public void setAllergies(String allergies) {
-        if (allergies != null) {
-            allergies = allergies.trim();
-            if (allergies.isBlank()) {
-                allergies = null;  // Normalize to NULL
-            }
-        }
-        this.allergies = allergies;
+        this.allergies = ValidationUtils.validateAndNormalizeString(
+            allergies,
+            "Allergies",
+            (Integer) null,
+            null,
+            null
+        );
     }
 
     public String getCurrentMedications() {
@@ -120,15 +121,11 @@ public class Patient extends BaseEntity {
     }
 
     public void setCurrentMedications(String currentMedications) {
-        if (currentMedications != null) {
-            currentMedications = currentMedications.trim();
-            if (currentMedications.isBlank()) {
-                currentMedications = null;  // Normalize to NULL
-            } else if (currentMedications.length() > 2000) {
-                throw new ValidationException("Current medications cannot exceed 2000 characters");
-            }
-        }
-        this.currentMedications = currentMedications;
+        this.currentMedications = ValidationUtils.validateAndNormalizeString(
+            currentMedications,
+            "Current medications",
+            2000
+        );
     }
 
     public String getInsuranceProvider() {
@@ -136,15 +133,11 @@ public class Patient extends BaseEntity {
     }
 
     public void setInsuranceProvider(String insuranceProvider) {
-        if (insuranceProvider != null) {
-            insuranceProvider = insuranceProvider.trim();
-            if (insuranceProvider.isBlank()) {
-                insuranceProvider = null;  // Normalize to NULL
-            } else if (insuranceProvider.length() > 100) {
-                throw new ValidationException("Insurance provider cannot exceed 100 characters");
-            }
-        }
-        this.insuranceProvider = insuranceProvider;
+        this.insuranceProvider = ValidationUtils.validateAndNormalizeString(
+            insuranceProvider,
+            "Insurance provider",
+            100
+        );
     }
 
     public String getInsurancePolicyNumber() {
@@ -152,17 +145,13 @@ public class Patient extends BaseEntity {
     }
 
     public void setInsurancePolicyNumber(String insurancePolicyNumber) {
-        if (insurancePolicyNumber != null) {
-            insurancePolicyNumber = insurancePolicyNumber.trim();
-            if (insurancePolicyNumber.isBlank()) {
-                insurancePolicyNumber = null;  // Normalize to NULL
-            } else if (insurancePolicyNumber.length() > 50) {
-                throw new ValidationException("Insurance policy number cannot exceed 50 characters");
-            } else if (!insurancePolicyNumber.matches(ValidationPatterns.INSURANCE_POLICY)) {
-                throw new ValidationException("Insurance policy number must be 8-20 alphanumeric characters");
-            }
-        }
-        this.insurancePolicyNumber = insurancePolicyNumber;
+        this.insurancePolicyNumber = ValidationUtils.validateAndNormalizeString(
+            insurancePolicyNumber,
+            "Insurance policy number",
+            50,
+            ValidationPatterns.INSURANCE_POLICY,
+            "Insurance policy number must be 8-20 alphanumeric characters"
+        );
     }
 
     public String getEmergencyContactName() {
@@ -170,15 +159,11 @@ public class Patient extends BaseEntity {
     }
 
     public void setEmergencyContactName(String emergencyContactName) {
-        if (emergencyContactName != null) {
-            emergencyContactName = emergencyContactName.trim();
-            if (emergencyContactName.isBlank()) {
-                emergencyContactName = null;  // Normalize to NULL
-            } else if (emergencyContactName.length() > 100) {
-                throw new ValidationException("Emergency contact name cannot exceed 100 characters");
-            }
-        }
-        this.emergencyContactName = emergencyContactName;
+        this.emergencyContactName = ValidationUtils.validateAndNormalizeString(
+            emergencyContactName,
+            "Emergency contact name",
+            100
+        );
     }
 
     public String getEmergencyContactPhone() {
@@ -186,17 +171,13 @@ public class Patient extends BaseEntity {
     }
 
     public void setEmergencyContactPhone(String emergencyContactPhone) {
-        if (emergencyContactPhone != null) {
-            emergencyContactPhone = emergencyContactPhone.trim();
-            if (emergencyContactPhone.isBlank()) {
-                emergencyContactPhone = null;  // Normalize to NULL
-            } else if (emergencyContactPhone.length() > 20) {
-                throw new ValidationException("Emergency contact phone cannot exceed 20 characters");
-            } else if (!emergencyContactPhone.matches(ValidationPatterns.PHONE)) {
-                throw new ValidationException("Emergency contact phone must be a valid international format");
-            }
-        }
-        this.emergencyContactPhone = emergencyContactPhone;
+        this.emergencyContactPhone = ValidationUtils.validateAndNormalizeString(
+            emergencyContactPhone,
+            "Emergency contact phone",
+            20,
+            ValidationPatterns.PHONE,
+            "Emergency contact phone must be a valid international format"
+        );
     }
 
     public String getPrimaryCarePhysician() {
@@ -204,15 +185,11 @@ public class Patient extends BaseEntity {
     }
 
     public void setPrimaryCarePhysician(String primaryCarePhysician) {
-        if (primaryCarePhysician != null) {
-            primaryCarePhysician = primaryCarePhysician.trim();
-            if (primaryCarePhysician.isBlank()) {
-                primaryCarePhysician = null;  // Normalize to NULL
-            } else if (primaryCarePhysician.length() > 100) {
-                throw new ValidationException("Primary care physician cannot exceed 100 characters");
-            }
-        }
-        this.primaryCarePhysician = primaryCarePhysician;
+        this.primaryCarePhysician = ValidationUtils.validateAndNormalizeString(
+            primaryCarePhysician,
+            "Primary care physician",
+            100
+        );
     }
 
     public JsonNode getCustomData() {

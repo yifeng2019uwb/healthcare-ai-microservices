@@ -3,8 +3,8 @@ package com.healthcare.entity;
 import com.healthcare.constants.DatabaseConstants;
 import com.healthcare.constants.ValidationPatterns;
 import com.healthcare.exception.ValidationException;
+import com.healthcare.utils.ValidationUtils;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -76,15 +76,11 @@ public class Provider extends BaseEntity {
     }
 
     public void setLicenseNumbers(String licenseNumbers) {
-        if (licenseNumbers != null) {
-            licenseNumbers = licenseNumbers.trim();
-            if (licenseNumbers.isBlank()) {
-                licenseNumbers = null;  // Normalize to NULL
-            } else if (licenseNumbers.length() > 50) {
-                throw new ValidationException("License numbers cannot exceed 50 characters");
-            }
-        }
-        this.licenseNumbers = licenseNumbers;
+        this.licenseNumbers = ValidationUtils.validateAndNormalizeString(
+            licenseNumbers,
+            "License numbers",
+            50
+        );
     }
 
     public String getNpiNumber() {
@@ -92,17 +88,13 @@ public class Provider extends BaseEntity {
     }
 
     public void setNpiNumber(String npiNumber) {
-        if (npiNumber == null || npiNumber.trim().isEmpty()) {
-            throw new ValidationException("NPI number cannot be null or empty");
-        }
-        npiNumber = npiNumber.trim();
-        if (npiNumber.length() > 10) {
-            throw new ValidationException("NPI number cannot exceed 10 characters");
-        }
-        if (!npiNumber.matches(ValidationPatterns.NPI)) {
-            throw new ValidationException("NPI number must be exactly 10 digits");
-        }
-        this.npiNumber = npiNumber;
+        this.npiNumber = ValidationUtils.validateRequiredString(
+            npiNumber,
+            "NPI number",
+            10,
+            ValidationPatterns.NPI,
+            "NPI number must be exactly 10 digits"
+        );
     }
 
     public String getSpecialty() {
@@ -110,15 +102,11 @@ public class Provider extends BaseEntity {
     }
 
     public void setSpecialty(String specialty) {
-        if (specialty != null) {
-            specialty = specialty.trim();
-            if (specialty.isBlank()) {
-                specialty = null;  // Normalize to NULL
-            } else if (specialty.length() > 100) {
-                throw new ValidationException("Specialty cannot exceed 100 characters");
-            }
-        }
-        this.specialty = specialty;
+        this.specialty = ValidationUtils.validateAndNormalizeString(
+            specialty,
+            "Specialty",
+            100
+        );
     }
 
     public String getQualifications() {
@@ -126,13 +114,13 @@ public class Provider extends BaseEntity {
     }
 
     public void setQualifications(String qualifications) {
-        if (qualifications != null) {
-            qualifications = qualifications.trim();
-            if (qualifications.isBlank()) {
-                qualifications = null;  // Normalize to NULL
-            }
-        }
-        this.qualifications = qualifications;
+        this.qualifications = ValidationUtils.validateAndNormalizeString(
+            qualifications,
+            "Qualifications",
+            (Integer) null,
+            null,
+            null
+        );
     }
 
     public String getBio() {
@@ -140,13 +128,13 @@ public class Provider extends BaseEntity {
     }
 
     public void setBio(String bio) {
-        if (bio != null) {
-            bio = bio.trim();
-            if (bio.isBlank()) {
-                bio = null;  // Normalize to NULL
-            }
-        }
-        this.bio = bio;
+        this.bio = ValidationUtils.validateAndNormalizeString(
+            bio,
+            "Bio",
+            (Integer) null,
+            null,
+            null
+        );
     }
 
     public String getOfficePhone() {
@@ -154,17 +142,13 @@ public class Provider extends BaseEntity {
     }
 
     public void setOfficePhone(String officePhone) {
-        if (officePhone != null) {
-            officePhone = officePhone.trim();
-            if (officePhone.isBlank()) {
-                officePhone = null;  // Normalize to NULL
-            } else if (officePhone.length() > 20) {
-                throw new ValidationException("Office phone cannot exceed 20 characters");
-            } else if (!officePhone.matches(ValidationPatterns.PHONE)) {
-                throw new ValidationException("Office phone must be a valid international format");
-            }
-        }
-        this.officePhone = officePhone;
+        this.officePhone = ValidationUtils.validateAndNormalizeString(
+            officePhone,
+            "Office phone",
+            20,
+            ValidationPatterns.PHONE,
+            "Office phone must be a valid international format"
+        );
     }
 
     public JsonNode getCustomData() {
@@ -174,21 +158,5 @@ public class Provider extends BaseEntity {
     public void setCustomData(JsonNode customData) {
         this.customData = customData;
     }
-
-    public void setCustomData(String customDataJson) {
-        if (customDataJson == null) {
-            this.customData = null;
-            return;
-        }
-
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            this.customData = mapper.readTree(customDataJson);
-        } catch (Exception e) {
-            throw new ValidationException("Invalid JSON format for custom data: " + e.getMessage());
-        }
-    }
-
-    // ==================== VALIDATION METHODS ====================
 
 }

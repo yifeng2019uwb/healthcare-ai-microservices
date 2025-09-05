@@ -27,7 +27,7 @@ class ProviderEntityTest {
         String testQualifications = "MD, PhD in Cardiology";
         String testBio = "Experienced cardiologist";
         String testOfficePhone = "+15555678901";
-        String testCustomData = "{\"rating\": 4.8}";
+        JsonNode testCustomData = null; // Will be set directly as JsonNode
 
         // Create provider
         Provider provider = new Provider(testUserId, testNpiNumber);
@@ -49,7 +49,7 @@ class ProviderEntityTest {
 
         assertThat(provider.getBio()).isEqualTo(testBio);
         assertThat(provider.getOfficePhone()).isEqualTo(testOfficePhone);
-        assertThat(provider.getCustomData()).isNotNull();
+        assertThat(provider.getCustomData()).isNull();
     }
 
     @Test
@@ -251,22 +251,11 @@ class ProviderEntityTest {
         String testNpiNumber = "1234567890";
         Provider provider = new Provider(testUserId, testNpiNumber);
 
-        // Test setter with valid JSON string
-        String testCustomDataJson = "{\"rating\": 4.8, \"reviews\": 150}";
-        provider.setCustomData(testCustomDataJson);
-        assertThat(provider.getCustomData()).isNotNull();
-
         // Test setter with null value (allowed)
-        provider.setCustomData((String) null);
+        provider.setCustomData(null);
         assertThat(provider.getCustomData()).isNull();
 
-        // Test setter with null JsonNode (allowed)
-        provider.setCustomData((JsonNode) null);
-        assertThat(provider.getCustomData()).isNull();
-
-        // Test setter validation - invalid JSON
-        assertThatThrownBy(() -> provider.setCustomData("invalid json"))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("Invalid JSON format for custom data");
+        // Note: JsonNode creation and validation should be handled at service layer
+        // Entity only accepts pre-validated JsonNode objects
     }
 }

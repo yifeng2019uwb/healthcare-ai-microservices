@@ -6,6 +6,7 @@ import com.healthcare.enums.Gender;
 import com.healthcare.enums.UserRole;
 import com.healthcare.enums.UserStatus;
 import com.healthcare.exception.ValidationException;
+import com.healthcare.utils.ValidationUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -186,59 +187,43 @@ public class User extends BaseEntity {
 
     // ==================== SETTERS ====================
     public void setFirstName(String firstName) {
-        if (firstName == null || firstName.trim().isEmpty()) {
-            throw new ValidationException("First name cannot be null or empty");
-        }
-        firstName = firstName.trim();
-        if (firstName.length() > 100) {
-            throw new ValidationException("First name cannot exceed 100 characters");
-        }
-        if (!firstName.matches(ValidationPatterns.PERSON_NAME)) {
-            throw new ValidationException("First name format is invalid");
-        }
-        this.firstName = firstName;
+        this.firstName = ValidationUtils.validateRequiredString(
+            firstName,
+            "First name",
+            100,
+            ValidationPatterns.PERSON_NAME,
+            "First name format is invalid"
+        );
     }
 
     public void setLastName(String lastName) {
-        if (lastName == null || lastName.trim().isEmpty()) {
-            throw new ValidationException("Last name cannot be null or empty");
-        }
-        lastName = lastName.trim();
-        if (lastName.length() > 100) {
-            throw new ValidationException("Last name cannot exceed 100 characters");
-        }
-        if (!lastName.matches(ValidationPatterns.PERSON_NAME)) {
-            throw new ValidationException("Last name format is invalid");
-        }
-        this.lastName = lastName;
+        this.lastName = ValidationUtils.validateRequiredString(
+            lastName,
+            "Last name",
+            100,
+            ValidationPatterns.PERSON_NAME,
+            "Last name format is invalid"
+        );
     }
 
     public void setEmail(String email) {
-        if (email == null || email.trim().isEmpty()) {
-            throw new ValidationException("Email cannot be null or empty");
-        }
-        email = email.trim();
-        if (email.length() > 255) {
-            throw new ValidationException("Email cannot exceed 255 characters");
-        }
-        if (!email.matches(ValidationPatterns.EMAIL)) {
-            throw new ValidationException("Email format is invalid");
-        }
-        this.email = email;
+        this.email = ValidationUtils.validateRequiredString(
+            email,
+            "Email",
+            255,
+            ValidationPatterns.EMAIL,
+            "Email format is invalid"
+        );
     }
 
     public void setPhone(String phone) {
-        if (phone == null || phone.trim().isEmpty()) {
-            throw new ValidationException("Phone cannot be null or empty");
-        }
-        phone = phone.trim();
-        if (phone.length() > 20) {
-            throw new ValidationException("Phone cannot exceed 20 characters");
-        }
-        if (!phone.matches(ValidationPatterns.PHONE)) {
-            throw new ValidationException("Phone number format is invalid");
-        }
-        this.phone = phone;
+        this.phone = ValidationUtils.validateRequiredString(
+            phone,
+            "Phone",
+            20,
+            ValidationPatterns.PHONE,
+            "Phone number format is invalid"
+        );
     }
 
     public void setDateOfBirth(LocalDate dateOfBirth) {
@@ -259,72 +244,53 @@ public class User extends BaseEntity {
     }
 
     public void setStreetAddress(String streetAddress) {
-        if (streetAddress != null) {
-            streetAddress = streetAddress.trim();
-            if (streetAddress.isBlank()) {
-                streetAddress = null;  // Normalize to NULL
-            } else if (!streetAddress.matches(ValidationPatterns.STREET_ADDRESS)) {
-                throw new ValidationException("Street address format is invalid");
-            }
-        }
-        this.streetAddress = streetAddress;
+        this.streetAddress = ValidationUtils.validateAndNormalizeStringWithPattern(
+            streetAddress,
+            "Street address",
+            ValidationPatterns.STREET_ADDRESS,
+            "Street address format is invalid"
+        );
     }
 
 
     public void setCity(String city) {
-        if (city != null) {
-            city = city.trim();
-            if (city.isBlank()) {
-                city = null;  // Normalize to NULL
-            } else if (city.length() > 100) {
-                throw new ValidationException("City cannot exceed 100 characters");
-            } else if (!city.matches(ValidationPatterns.PERSON_NAME)) {
-                throw new ValidationException("City name format is invalid");
-            }
-        }
-        this.city = city;
+        this.city = ValidationUtils.validateAndNormalizeString(
+            city,
+            "City",
+            100,
+            ValidationPatterns.PERSON_NAME,
+            "City name format is invalid"
+        );
     }
 
     public void setState(String state) {
-        if (state != null) {
-            state = state.trim();
-            if (state.isBlank()) {
-                state = null;  // Normalize to NULL
-            } else if (state.length() > 50) {
-                throw new ValidationException("State cannot exceed 50 characters");
-            } else if (!state.matches(ValidationPatterns.PERSON_NAME)) {
-                throw new ValidationException("State name format is invalid");
-            }
-        }
-        this.state = state;
+        this.state = ValidationUtils.validateAndNormalizeString(
+            state,
+            "State",
+            50,
+            ValidationPatterns.PERSON_NAME,
+            "State name format is invalid"
+        );
     }
 
     public void setPostalCode(String postalCode) {
-        if (postalCode != null) {
-            postalCode = postalCode.trim();
-            if (postalCode.isBlank()) {
-                postalCode = null;  // Normalize to NULL
-            } else if (postalCode.length() > 20) {
-                throw new ValidationException("Postal code cannot exceed 20 characters");
-            } else if (!postalCode.matches(ValidationPatterns.POSTAL_CODE)) {
-                throw new ValidationException("Postal code format is invalid");
-            }
-        }
-        this.postalCode = postalCode;
+        this.postalCode = ValidationUtils.validateAndNormalizeString(
+            postalCode,
+            "Postal code",
+            20,
+            ValidationPatterns.POSTAL_CODE,
+            "Postal code format is invalid"
+        );
     }
 
     public void setCountry(String country) {
-        if (country != null) {
-            country = country.trim();
-            if (country.isBlank()) {
-                country = null;  // Normalize to NULL
-            } else if (country.length() > 100) {
-                throw new ValidationException("Country cannot exceed 100 characters");
-            } else if (!country.matches(ValidationPatterns.PERSON_NAME)) {
-                throw new ValidationException("Country name format is invalid");
-            }
-        }
-        this.country = country;
+        this.country = ValidationUtils.validateAndNormalizeString(
+            country,
+            "Country",
+            100,
+            ValidationPatterns.PERSON_NAME,
+            "Country name format is invalid"
+        );
     }
 
     public void setStatus(UserStatus status) {
