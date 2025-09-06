@@ -1,124 +1,78 @@
-# Provider Profiles table - Provider-specific profile data
-# Industry standard: Separate table for role-specific data
+# Provider Profiles Table
+# This file creates the provider_profiles table and related ENUMs using null_resource
 
-resource "postgresql_table" "provider_profiles" {
-  provider = postgresql.neon
-  name     = "provider_profiles"
-  schema   = postgresql_schema.public.name
+resource "null_resource" "create_provider_profiles_table" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      PGPASSWORD="${var.neon_password}" psql \
+        -h "${var.neon_host}" \
+        -p "${var.neon_port}" \
+        -U "${var.neon_username}" \
+        -d "${var.neon_database}" \
+        -c "
+      -- Create ENUM types for provider profiles
+      DO \$\$ BEGIN
+          CREATE TYPE provider_type_enum AS ENUM ('DOCTOR', 'NURSE', 'SPECIALIST', 'THERAPIST', 'TECHNICIAN', 'ADMIN');
+      EXCEPTION
+          WHEN duplicate_object THEN null;
+      END \$\$;
+      
+      DO \$\$ BEGIN
+          CREATE TYPE provider_status_enum AS ENUM ('ACTIVE', 'INACTIVE', 'SUSPENDED', 'ON_LEAVE');
+      EXCEPTION
+          WHEN duplicate_object THEN null;
+      END \$\$;
+      
+      DO \$\$ BEGIN
+          CREATE TYPE license_status_enum AS ENUM ('ACTIVE', 'EXPIRED', 'SUSPENDED', 'REVOKED');
+      EXCEPTION
+          WHEN duplicate_object THEN null;
+      END \$\$;
 
-  column {
-    name     = "id"
-    type     = "UUID"
-    null_able = false
-    default  = "gen_random_uuid()"
+      -- Create provider_profiles table
+      CREATE TABLE IF NOT EXISTS provider_profiles (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_profile_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
+          provider_number VARCHAR(20) NOT NULL UNIQUE,
+          npi_number VARCHAR(10) UNIQUE,
+          license_number VARCHAR(50) NOT NULL,
+          license_status license_status_enum NOT NULL DEFAULT 'ACTIVE',
+          provider_type provider_type_enum NOT NULL,
+          specialty VARCHAR(100),
+          department VARCHAR(100),
+          phone VARCHAR(20) NOT NULL,
+          email VARCHAR(255) NOT NULL,
+          street_address VARCHAR(255),
+          city VARCHAR(100),
+          state VARCHAR(50),
+          postal_code VARCHAR(20),
+          country VARCHAR(50),
+          office_hours JSONB,
+          languages TEXT[],
+          certifications TEXT[],
+          status provider_status_enum NOT NULL DEFAULT 'ACTIVE',
+          custom_data JSONB,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_by VARCHAR(100)
+      );
+
+      -- Create indexes for provider_profiles
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_provider_profiles_provider_number_unique ON provider_profiles(provider_number);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_provider_profiles_npi_number_unique ON provider_profiles(npi_number);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_provider_profiles_license_number_unique ON provider_profiles(license_number);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_provider_profiles_email_unique ON provider_profiles(email);
+      CREATE INDEX IF NOT EXISTS idx_provider_profiles_phone ON provider_profiles(phone);
+      CREATE INDEX IF NOT EXISTS idx_provider_profiles_user_profile_id ON provider_profiles(user_profile_id);
+      CREATE INDEX IF NOT EXISTS idx_provider_profiles_provider_type ON provider_profiles(provider_type);
+      CREATE INDEX IF NOT EXISTS idx_provider_profiles_specialty ON provider_profiles(specialty);
+      CREATE INDEX IF NOT EXISTS idx_provider_profiles_department ON provider_profiles(department);
+      CREATE INDEX IF NOT EXISTS idx_provider_profiles_status ON provider_profiles(status);
+      CREATE INDEX IF NOT EXISTS idx_provider_profiles_license_status ON provider_profiles(license_status);
+      "
+    EOT
   }
-
-  column {
-    name     = "user_id"
-    type     = "UUID"
-    null_able = false
+  triggers = {
+    schema_version = "1.0"
   }
-
-  column {
-    name     = "license_numbers"
-    type     = "VARCHAR(50)"
-    null_able = true
-  }
-
-  column {
-    name     = "npi_number"
-    type     = "VARCHAR(10)"
-    null_able = false
-  }
-
-  column {
-    name     = "specialty"
-    type     = "VARCHAR(100)"
-    null_able = true
-  }
-
-  column {
-    name     = "qualifications"
-    type     = "TEXT"
-    null_able = true
-  }
-
-  column {
-    name     = "bio"
-    type     = "TEXT"
-    null_able = true
-  }
-
-  column {
-    name     = "office_phone"
-    type     = "VARCHAR(20)"
-    null_able = true
-  }
-
-  column {
-    name     = "custom_data"
-    type     = "JSONB"
-    null_able = true
-  }
-
-  column {
-    name     = "created_at"
-    type     = "TIMESTAMPTZ"
-    null_able = false
-    default  = "CURRENT_TIMESTAMP"
-  }
-
-  column {
-    name     = "updated_at"
-    type     = "TIMESTAMPTZ"
-    null_able = false
-    default  = "CURRENT_TIMESTAMP"
-  }
-
-  column {
-    name     = "updated_by"
-    type     = "VARCHAR(100)"
-    null_able = true
-  }
-
-  primary_key {
-    columns = ["id"]
-  }
-
-  foreign_key {
-    columns     = ["user_id"]
-    references {
-      table  = postgresql_table.user_profiles.name
-      column = "id"
-    }
-  }
-}
-
-# Create unique index on user_id
-resource "postgresql_index" "provider_profiles_user_id_unique" {
-  provider = postgresql.neon
-  name     = "idx_provider_profiles_user_id_unique"
-  table    = postgresql_table.provider_profiles.name
-  schema   = postgresql_schema.public.name
-  columns  = ["user_id"]
-  unique   = true
-}
-
-# Create unique index on npi_number
-resource "postgresql_index" "provider_profiles_npi_number_unique" {
-  provider = postgresql.neon
-  name     = "idx_provider_profiles_npi_number_unique"
-  table    = postgresql_table.provider_profiles.name
-  schema   = postgresql_schema.public.name
-  columns  = ["npi_number"]
-  unique   = true
-}
-
-# Create index on specialty for provider search
-resource "postgresql_index" "provider_profiles_specialty" {
-  provider = postgresql.neon
-  name     = "idx_provider_profiles_specialty"
-  table    = postgresql_table.provider_profiles.name
-  schema   = postgresql_schema.public.name
-  columns  = ["specialty"]
 }

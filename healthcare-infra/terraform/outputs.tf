@@ -1,33 +1,69 @@
-# Output values for the database infrastructure
-output "neon_database_name" {
-  description = "The Neon database name"
+# Output values for the Neon database infrastructure
+output "neon_project_id" {
+  description = "Neon project ID"
+  value       = "medconnect-healthcare"
+}
+
+output "neon_project_name" {
+  description = "Neon project name"
+  value       = "medconnect-healthcare"
+}
+
+# Development branch outputs
+output "development_database_name" {
+  description = "Development database name"
   value       = var.neon_database
 }
 
-output "neon_database_host" {
-  description = "The Neon database host"
+output "development_database_host" {
+  description = "Development database host"
   value       = var.neon_host
 }
 
-output "neon_database_port" {
-  description = "The Neon database port"
+output "development_database_port" {
+  description = "Development database port"
   value       = var.neon_port
 }
 
-output "neon_database_url" {
-  description = "The complete database connection URL"
+output "development_database_url" {
+  description = "Development database connection URL"
   value       = "postgresql://${var.neon_username}:${var.neon_password}@${var.neon_host}:${var.neon_port}/${var.neon_database}?sslmode=require"
   sensitive   = true
 }
 
+
 output "database_tables" {
   description = "List of created database tables"
   value = [
-    postgresql_table.users.name,
-    postgresql_table.patients.name,
-    postgresql_table.providers.name,
-    postgresql_table.appointments.name,
-    postgresql_table.medical_records.name,
-    postgresql_table.audit_logs.name
+    "user_profiles",
+    "patient_profiles",
+    "provider_profiles",
+    "appointments",
+    "medical_records",
+    "audit_logs"
+  ]
+}
+
+output "database_enums" {
+  description = "List of created database ENUMs"
+  value = [
+    "gender_enum",
+    "role_enum",
+    "status_enum",
+    "patient_status_enum",
+    "insurance_type_enum",
+    "emergency_contact_relationship_enum",
+    "provider_type_enum",
+    "provider_status_enum",
+    "license_status_enum",
+    "appointment_status_enum",
+    "appointment_type_enum",
+    "appointment_priority_enum",
+    "medical_record_type_enum",
+    "medical_record_status_enum",
+    "medical_record_priority_enum",
+    "audit_action_enum",
+    "audit_status_enum",
+    "resource_type_enum"
   ]
 }

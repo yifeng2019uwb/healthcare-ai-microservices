@@ -8,25 +8,29 @@
 
 ```
 terraform/
-├── main.tf                    # Provider configuration and Neon project setup
-├── schema.tf                  # Database schema creation
+├── main.tf                    # Core infrastructure configuration
+├── variables.tf               # Variable definitions
 ├── outputs.tf                 # Output values for database connection
-├── tables/                    # Individual table definitions
-│   ├── users.tf              # Users table (authentication)
-│   ├── patients.tf           # Patients table (patient profiles)
-│   ├── providers.tf          # Providers table (healthcare providers)
-│   ├── appointments.tf       # Appointments table (scheduling)
-│   ├── medical_records.tf    # Medical records table (patient records)
-│   └── audit_logs.tf         # Audit logs table (compliance tracking)
+├── neon-project.tf            # Database connection configuration
+├── terraform.tfvars.example   # Example configuration file
+├── tables/                    # Database table definitions
+│   ├── main.tf               # Tables main configuration
+│   ├── users.tf              # User profiles table
+│   ├── patient_profiles.tf   # Patient profiles table
+│   ├── provider_profiles.tf  # Provider profiles table
+│   ├── appointments.tf       # Appointments table
+│   ├── medical_records.tf    # Medical records table
+│   ├── audit_logs.tf         # Audit logs table
+│   └── README.md             # Tables documentation
 └── README.md                 # This file
 ```
 
 ## 🗄️ **Database Tables**
 
 ### **Core Tables (6 total)**
-1. **users** - User authentication and basic profile data
-2. **patients** - Patient profiles and medical information
-3. **providers** - Healthcare provider profiles and credentials
+1. **user_profiles** - User authentication and basic profile data
+2. **patient_profiles** - Patient profiles and medical information
+3. **provider_profiles** - Healthcare provider profiles and credentials
 4. **appointments** - Appointment scheduling and management
 5. **medical_records** - Patient medical records and documents
 6. **audit_logs** - Audit trail for all data changes and compliance
@@ -41,30 +45,104 @@ terraform/
 ## 🚀 **Usage**
 
 ### **Prerequisites**
-1. **Existing Neon Database** - You already have `medconnect-healthcase` database
-2. **Database Connection Details** - Host, port, username, password
+1. **Neon Account** - Sign up at [neon.tech](https://neon.tech)
+2. **Neon Database** - Create a new database project
 3. **Terraform** - Install Terraform CLI
+4. **Credentials** - Neon API key + database connection details
 
-### **Setup**
+### **Step 1: Get Neon Credentials**
+
+#### **A. Neon API Key (Required)**
+1. Go to [Neon Console](https://console.neon.tech)
+2. Navigate to **Settings** → **API Keys**
+3. Click **Create API Key**
+4. Copy the API key (starts with `neon_`)
+
+#### **B. Database Connection Details**
+1. In Neon Console, go to your project
+2. Navigate to **Dashboard** → **Connection Details**
+3. Copy these details:
+   - **Host**: `your-project.neon.tech`
+   - **Database**: `neondb` (or your custom name)
+   - **Username**: `your-username`
+   - **Password**: `your-password`
+   - **Port**: `5432`
+
+### **Step 2: Configure Credentials**
+
+#### **A. Set Neon API Key (Environment Variable)**
 ```bash
-# Copy the example variables file from examples directory
-cp ../examples/terraform.tfvars.example terraform.tfvars
+# Set the Neon API key as environment variable
+export NEON_API_KEY="neon_your_actual_api_key_here"
 
-# Edit terraform.tfvars with your actual database connection details
-# neon_host     = "your-neon-host.neon.tech"
-# neon_port     = 5432
-# neon_database = "medconnect-healthcase"
-# neon_username = "your-username"
-# neon_password = "your-password"
+# Verify it's set
+echo $NEON_API_KEY
+```
 
+#### **B. Configure Database Connection**
+```bash
+# Copy example variables file
+cp terraform.tfvars.example terraform.tfvars
+
+# Edit with your actual Neon database details
+nano terraform.tfvars
+```
+
+**Fill in `terraform.tfvars`:**
+```hcl
+# Neon database connection details
+neon_host     = "your-project.neon.tech"
+neon_port     = 5432
+neon_database = "neondb"
+neon_username = "your-username"
+neon_password = "your-password"
+```
+
+### **Step 3: Deploy Database Schema**
+
+#### **Option A: Deploy All Tables**
+```bash
 # Initialize Terraform
 terraform init
 
-# Plan the infrastructure
+# Review deployment plan
 terraform plan
 
-# Apply the infrastructure
+# Deploy all tables and indexes
 terraform apply
+```
+
+#### **Option B: Deploy Single Table**
+```bash
+# Deploy only user profiles table
+terraform apply -target=null_resource.create_database_schema
+
+# Deploy only appointments table
+terraform apply -target=null_resource.create_appointments_table
+```
+
+#### **Option C: Use Deployment Script**
+```bash
+# Deploy all tables
+../scripts/deploy-neon.sh
+
+# Deploy single table
+../scripts/deploy-neon.sh -s user_profiles
+
+# List available tables
+../scripts/deploy-neon.sh -l
+```
+
+### **Step 4: Verify Deployment**
+```bash
+# Get database connection URL
+terraform output neon_database_url
+
+# Connect to database
+psql "$(terraform output -raw neon_database_url)"
+
+# List tables
+\dt
 ```
 
 ### **Database Connection**
@@ -88,11 +166,11 @@ After applying, you'll get:
 
 ```
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│    users    │    │  patients   │    │  providers  │
+│user_profiles│    │patient_profiles│ │provider_profiles│
 │             │    │             │    │             │
 │ • id (PK)   │◄───┤ • user_id   │    │ • user_id   │
 │ • email     │    │ • first_name│    │ • specialty │
-│ • user_type │    │ • last_name │    │ • license   │
+│ • role      │    │ • last_name │    │ • license   │
 └─────────────┘    └─────────────┘    └─────────────┘
        │                   │                   │
        │                   │                   │
@@ -129,6 +207,64 @@ WHERE table_schema = 'public';
 -- Check foreign key relationships
 SELECT * FROM information_schema.table_constraints
 WHERE constraint_type = 'FOREIGN KEY';
+```
+
+## 🔧 **Troubleshooting**
+
+### **Common Issues**
+
+#### **1. Neon API Key Issues**
+```bash
+# Error: "No API key found"
+# Solution: Set the NEON_API_KEY environment variable
+export NEON_API_KEY="neon_your_actual_api_key_here"
+
+# Verify it's set
+echo $NEON_API_KEY
+```
+
+#### **2. Database Connection Issues**
+```bash
+# Error: "connection refused" or "authentication failed"
+# Solution: Check your terraform.tfvars file
+cat terraform.tfvars
+
+# Verify connection details in Neon Console
+# - Host: your-project.neon.tech
+# - Username: your-username
+# - Password: your-password
+# - Database: neondb
+```
+
+#### **3. Permission Issues**
+```bash
+# Error: "permission denied for table"
+# Solution: Ensure your Neon user has CREATE privileges
+# Check in Neon Console → Settings → Database Users
+```
+
+#### **4. Terraform State Issues**
+```bash
+# Error: "state file not found"
+# Solution: Initialize Terraform first
+terraform init
+
+# If state is corrupted, remove and reinitialize
+rm -rf .terraform
+terraform init
+```
+
+### **Verification Commands**
+```bash
+# Check Terraform version
+terraform version
+
+# Check if credentials are set
+echo "API Key: $NEON_API_KEY"
+echo "Database: $(grep neon_database terraform.tfvars)"
+
+# Test database connection
+psql "$(terraform output -raw neon_database_url)" -c "\dt"
 ```
 
 ## 🔄 **Next Steps**

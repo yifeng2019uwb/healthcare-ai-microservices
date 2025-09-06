@@ -1,203 +1,111 @@
-# User Profiles table - Core user profile data (no authentication)
-# Industry standard: Common fields only, role-specific data in separate tables
+# Database Schema Deployment for Healthcare AI Microservices
+# This file creates all database tables, enums, and indexes using the proper Neon approach
 
-# Create ENUM types first
-resource "postgresql_extension" "uuid_ossp" {
-  provider = postgresql.neon
-  name     = "uuid-ossp"
-}
+# Create all database objects using null_resource with local-exec provisioner
+# Using existing neondb database directly to avoid API permission issues
+resource "null_resource" "create_database_schema" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      # Get connection details from terraform.tfvars
+      PGPASSWORD="${var.neon_password}" psql \
+        -h "${var.neon_host}" \
+        -p "${var.neon_port}" \
+        -U "${var.neon_username}" \
+        -d "${var.neon_database}" \
+        -c "
+      -- Enable UUID extension
+      CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
 
-# Create custom ENUM types
-resource "postgresql_schema" "public" {
-  provider = postgresql.neon
-  name     = "public"
-}
+      -- Create ENUM types
+      DO \$\$ BEGIN
+          CREATE TYPE gender_enum AS ENUM ('MALE', 'FEMALE', 'OTHER', 'UNKNOWN');
+      EXCEPTION
+          WHEN duplicate_object THEN null;
+      END \$\$;
 
-# Create ENUM types
-resource "postgresql_sql" "gender_enum" {
-  provider = postgresql.neon
-  depends_on = [postgresql_schema.public]
-  query = "CREATE TYPE gender_enum AS ENUM ('MALE', 'FEMALE', 'OTHER', 'UNKNOWN');"
-}
+      DO \$\$ BEGIN
+          CREATE TYPE role_enum AS ENUM ('PATIENT', 'PROVIDER');
+      EXCEPTION
+          WHEN duplicate_object THEN null;
+      END \$\$;
 
-resource "postgresql_sql" "role_enum" {
-  provider = postgresql.neon
-  depends_on = [postgresql_schema.public]
-  query = "CREATE TYPE role_enum AS ENUM ('PATIENT', 'PROVIDER');"
-}
+      DO \$\$ BEGIN
+          CREATE TYPE status_enum AS ENUM ('ACTIVE', 'INACTIVE', 'SUSPENDED');
+      EXCEPTION
+          WHEN duplicate_object THEN null;
+      END \$\$;
 
-resource "postgresql_sql" "status_enum" {
-  provider = postgresql.neon
-  depends_on = [postgresql_schema.public]
-  query = "CREATE TYPE status_enum AS ENUM ('ACTIVE', 'INACTIVE', 'SUSPENDED');"
-}
+      -- Create user_profiles table
+      CREATE TABLE IF NOT EXISTS user_profiles (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          external_auth_id VARCHAR(255) NOT NULL,
+          first_name VARCHAR(100) NOT NULL,
+          last_name VARCHAR(100) NOT NULL,
+          email VARCHAR(255) NOT NULL,
+          phone VARCHAR(20) NOT NULL,
+          date_of_birth DATE NOT NULL,
+          gender gender_enum NOT NULL,
+          street_address VARCHAR(255),
+          city VARCHAR(100),
+          state VARCHAR(50),
+          postal_code VARCHAR(20),
+          country VARCHAR(50),
+          role role_enum NOT NULL,
+          status status_enum NOT NULL DEFAULT 'ACTIVE',
+          custom_data JSONB,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_by VARCHAR(100)
+      );
 
-resource "postgresql_table" "user_profiles" {
-  provider = postgresql.neon
-  name     = "user_profiles"
-  schema   = postgresql_schema.public.name
-
-  depends_on = [
-    postgresql_sql.gender_enum,
-    postgresql_sql.role_enum,
-    postgresql_sql.status_enum
-  ]
-
-  column {
-    name     = "id"
-    type     = "UUID"
-    null_able = false
-    default  = "gen_random_uuid()"
+      -- Create indexes for user_profiles
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_user_profiles_external_auth_id_unique ON user_profiles(external_auth_id);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_user_profiles_email_unique ON user_profiles(email);
+      CREATE INDEX IF NOT EXISTS idx_user_profiles_phone ON user_profiles(phone);
+      CREATE INDEX IF NOT EXISTS idx_user_profiles_name_dob ON user_profiles(last_name, first_name, date_of_birth);
+      "
+    EOT
   }
 
-  column {
-    name     = "external_auth_id"
-    type     = "VARCHAR(255)"
-    null_able = false
-    comment  = "External authentication provider ID (Auth0, Cognito, etc). Future: rename to auth_id if internal auth is added"
-  }
-
-  column {
-    name     = "first_name"
-    type     = "VARCHAR(100)"
-    null_able = false
-  }
-
-  column {
-    name     = "last_name"
-    type     = "VARCHAR(100)"
-    null_able = false
-  }
-
-  column {
-    name     = "email"
-    type     = "VARCHAR(255)"
-    null_able = false
-  }
-
-  column {
-    name     = "phone"
-    type     = "VARCHAR(20)"
-    null_able = false
-  }
-
-  column {
-    name     = "date_of_birth"
-    type     = "DATE"
-    null_able = false
-  }
-
-  column {
-    name     = "gender"
-    type     = "gender_enum"
-    null_able = false
-  }
-
-  column {
-    name     = "street_address"
-    type     = "VARCHAR(255)"
-    null_able = true
-  }
-
-  column {
-    name     = "city"
-    type     = "VARCHAR(100)"
-    null_able = true
-  }
-
-  column {
-    name     = "state"
-    type     = "VARCHAR(50)"
-    null_able = true
-  }
-
-  column {
-    name     = "postal_code"
-    type     = "VARCHAR(20)"
-    null_able = true
-  }
-
-  column {
-    name     = "country"
-    type     = "VARCHAR(50)"
-    null_able = true
-  }
-
-  column {
-    name     = "role"
-    type     = "role_enum"
-    null_able = false
-  }
-
-  column {
-    name     = "status"
-    type     = "status_enum"
-    null_able = false
-    default  = "ACTIVE"
-  }
-
-  column {
-    name     = "custom_data"
-    type     = "JSONB"
-    null_able = true
-  }
-
-  column {
-    name     = "created_at"
-    type     = "TIMESTAMPTZ"
-    null_able = false
-    default  = "CURRENT_TIMESTAMP"
-  }
-
-  column {
-    name     = "updated_at"
-    type     = "TIMESTAMPTZ"
-    null_able = false
-    default  = "CURRENT_TIMESTAMP"
-  }
-
-  column {
-    name     = "updated_by"
-    type     = "VARCHAR(100)"
-    null_able = true
-  }
-
-  primary_key {
-    columns = ["id"]
+  # Trigger recreation when SQL changes
+  triggers = {
+    schema_version = "1.0"
   }
 }
 
 # Create indexes
-resource "postgresql_index" "user_profiles_external_auth_id_unique" {
-  provider = postgresql.neon
-  name     = "idx_user_profiles_external_auth_id_unique"
-  table    = postgresql_table.user_profiles.name
-  schema   = postgresql_schema.public.name
-  columns  = ["external_auth_id"]
-  unique   = true
-}
+# Note: postgresql_index resource not supported in current provider version
+# These indexes need to be created manually in the database
+# resource "postgresql_index" "user_profiles_external_auth_id_unique" {
+#   provider = postgresql.neon
+#   name     = "idx_user_profiles_external_auth_id_unique"
+#   table    = postgresql_table.user_profiles.name
+#   schema   = postgresql_schema.public.name
+#   columns  = ["external_auth_id"]
+#   unique   = true
+# }
 
-resource "postgresql_index" "user_profiles_email_unique" {
-  provider = postgresql.neon
-  name     = "idx_user_profiles_email_unique"
-  table    = postgresql_table.user_profiles.name
-  schema   = postgresql_schema.public.name
-  columns  = ["email"]
-  unique   = true
-}
+# resource "postgresql_index" "user_profiles_email_unique" {
+#   provider = postgresql.neon
+#   name     = "idx_user_profiles_email_unique"
+#   table    = postgresql_table.user_profiles.name
+#   schema   = postgresql_schema.public.name
+#   columns  = ["email"]
+#   unique   = true
+# }
 
-resource "postgresql_index" "user_profiles_phone" {
-  provider = postgresql.neon
-  name     = "idx_user_profiles_phone"
-  table    = postgresql_table.user_profiles.name
-  schema   = postgresql_schema.public.name
-  columns  = ["phone"]
-}
+# resource "postgresql_index" "user_profiles_phone" {
+#   provider = postgresql.neon
+#   name     = "idx_user_profiles_phone"
+#   table    = postgresql_table.user_profiles.name
+#   schema   = postgresql_schema.public.name
+#   columns  = ["phone"]
+# }
 
-resource "postgresql_index" "user_profiles_name_dob" {
-  provider = postgresql.neon
-  name     = "idx_user_profiles_name_dob"
-  table    = postgresql_table.user_profiles.name
-  schema   = postgresql_schema.public.name
-  columns  = ["last_name", "first_name", "date_of_birth"]
-}
+# resource "postgresql_index" "user_profiles_name_dob" {
+#   provider = postgresql.neon
+#   name     = "idx_user_profiles_name_dob"
+#   table    = postgresql_table.user_profiles.name
+#   schema   = postgresql_schema.public.name
+#   columns  = ["last_name", "first_name", "date_of_birth"]
+# }

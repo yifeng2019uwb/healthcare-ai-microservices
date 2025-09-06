@@ -1,4 +1,4 @@
-# Variables for connecting to existing Neon database
+# Variables for database table deployment
 variable "neon_host" {
   description = "Neon database host"
   type        = string
@@ -13,7 +13,6 @@ variable "neon_port" {
 variable "neon_database" {
   description = "Neon database name"
   type        = string
-  default     = "medconnect-healthcare"
 }
 
 variable "neon_username" {
@@ -26,5 +25,3 @@ variable "neon_password" {
   type        = string
   sensitive   = true
 }
-
-# Note: neon_api_key removed - we're using direct psql connection instead of Neon provider

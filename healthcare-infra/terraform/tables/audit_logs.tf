@@ -1,138 +1,70 @@
-# Audit logs table - Track all data changes for compliance and security
+# Audit Logs Table
+# This file creates the audit_logs table and related ENUMs using null_resource
 
-# Create ENUM types for audit logs
-resource "postgresql_sql" "action_type_enum" {
-  provider = postgresql.neon
-  depends_on = [postgresql_schema.public]
-  query = "CREATE TYPE action_type_enum AS ENUM ('CREATE', 'READ', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT');"
-}
+resource "null_resource" "create_audit_logs_table" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      PGPASSWORD="${var.neon_password}" psql \
+        -h "${var.neon_host}" \
+        -p "${var.neon_port}" \
+        -U "${var.neon_username}" \
+        -d "${var.neon_database}" \
+        -c "
+      -- Create ENUM types for audit logs
+      DO \$\$ BEGIN
+          CREATE TYPE audit_action_enum AS ENUM ('CREATE', 'READ', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'EXPORT', 'IMPORT', 'BACKUP', 'RESTORE');
+      EXCEPTION
+          WHEN duplicate_object THEN null;
+      END \$\$;
+      
+      DO \$\$ BEGIN
+          CREATE TYPE audit_status_enum AS ENUM ('SUCCESS', 'FAILURE', 'PENDING', 'CANCELLED');
+      EXCEPTION
+          WHEN duplicate_object THEN null;
+      END \$\$;
+      
+      DO \$\$ BEGIN
+          CREATE TYPE resource_type_enum AS ENUM ('USER_PROFILE', 'PATIENT_PROFILE', 'PROVIDER_PROFILE', 'APPOINTMENT', 'MEDICAL_RECORD', 'AUDIT_LOG', 'SYSTEM');
+      EXCEPTION
+          WHEN duplicate_object THEN null;
+      END \$\$;
 
-resource "postgresql_sql" "resource_type_enum" {
-  provider = postgresql.neon
-  depends_on = [postgresql_schema.public]
-  query = "CREATE TYPE resource_type_enum AS ENUM ('USER_PROFILE', 'PATIENT_PROFILE', 'PROVIDER_PROFILE', 'APPOINTMENT', 'MEDICAL_RECORD');"
-}
+      -- Create audit_logs table
+      CREATE TABLE IF NOT EXISTS audit_logs (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id UUID REFERENCES user_profiles(id) ON DELETE SET NULL,
+          action audit_action_enum NOT NULL,
+          resource_type resource_type_enum NOT NULL,
+          resource_id UUID,
+          old_values JSONB,
+          new_values JSONB,
+          status audit_status_enum NOT NULL DEFAULT 'SUCCESS',
+          error_message TEXT,
+          ip_address INET,
+          user_agent TEXT,
+          session_id VARCHAR(255),
+          request_id VARCHAR(255),
+          duration_ms INTEGER,
+          metadata JSONB,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
 
-resource "postgresql_sql" "outcome_enum" {
-  provider = postgresql.neon
-  depends_on = [postgresql_schema.public]
-  query = "CREATE TYPE outcome_enum AS ENUM ('SUCCESS', 'FAILURE');"
-}
-
-resource "postgresql_table" "audit_logs" {
-  provider = postgresql.neon
-  name     = "audit_logs"
-  schema   = postgresql_schema.public.name
-
-  depends_on = [
-    postgresql_sql.action_type_enum,
-    postgresql_sql.resource_type_enum,
-    postgresql_sql.outcome_enum
-  ]
-
-  column {
-    name     = "id"
-    type     = "UUID"
-    null_able = false
-    default  = "gen_random_uuid()"
+      -- Create indexes for audit_logs
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_resource_type ON audit_logs(resource_type);
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_resource_id ON audit_logs(resource_id);
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_status ON audit_logs(status);
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_ip_address ON audit_logs(ip_address);
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_session_id ON audit_logs(session_id);
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_request_id ON audit_logs(request_id);
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_user_action ON audit_logs(user_id, action);
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_resource_action ON audit_logs(resource_type, resource_id, action);
+      "
+    EOT
   }
-
-  column {
-    name     = "user_id"
-    type     = "UUID"
-    null_able = false
+  triggers = {
+    schema_version = "1.0"
   }
-
-  column {
-    name     = "action_type"
-    type     = "action_type_enum"
-    null_able = false
-  }
-
-  column {
-    name     = "resource_type"
-    type     = "resource_type_enum"
-    null_able = false
-  }
-
-  column {
-    name     = "resource_id"
-    type     = "UUID"
-    null_able = true
-  }
-
-  column {
-    name     = "outcome"
-    type     = "outcome_enum"
-    null_able = false
-  }
-
-  column {
-    name     = "details"
-    type     = "JSONB"
-    null_able = true
-  }
-
-  column {
-    name     = "source_ip"
-    type     = "INET"
-    null_able = true
-  }
-
-  column {
-    name     = "user_agent"
-    type     = "TEXT"
-    null_able = true
-  }
-
-  column {
-    name     = "created_at"
-    type     = "TIMESTAMPTZ"
-    null_able = false
-    default  = "CURRENT_TIMESTAMP"
-  }
-
-  primary_key {
-    columns = ["id"]
-  }
-
-  foreign_key {
-    columns     = ["user_id"]
-    references {
-      table  = postgresql_table.user_profiles.name
-      column = "id"
-    }
-  }
-}
-
-# Create optimized composite indexes for frequent query patterns
-# Note: Individual field indexes removed to reduce write cost - composite indexes handle most queries efficiently
-
-# For user activity queries: "show me this user's latest activity" or "last 100 records for user"
-resource "postgresql_index" "audit_logs_user_activity" {
-  provider = postgresql.neon
-  name     = "idx_audit_logs_user_activity"
-  table    = postgresql_table.audit_logs.name
-  schema   = postgresql_schema.public.name
-  columns  = ["user_id", "created_at"]
-  # Note: DESC ordering handled at query level for better performance
-}
-
-# For resource activity queries: "all activity for this resource, ordered by time" (common in audit views)
-resource "postgresql_index" "audit_logs_resource_activity" {
-  provider = postgresql.neon
-  name     = "idx_audit_logs_resource_activity"
-  table    = postgresql_table.audit_logs.name
-  schema   = postgresql_schema.public.name
-  columns  = ["resource_type", "resource_id", "created_at"]
-  # Note: DESC ordering handled at query level for better performance
-}
-
-# For security monitoring: "all failed logins" or "all failed updates in last 24h"
-resource "postgresql_index" "audit_logs_security_monitoring" {
-  provider = postgresql.neon
-  name     = "idx_audit_logs_security_monitoring"
-  table    = postgresql_table.audit_logs.name
-  schema   = postgresql_schema.public.name
-  columns  = ["action_type", "outcome", "created_at"]
 }
