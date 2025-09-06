@@ -253,7 +253,7 @@ User → Gateway → Auth → Patient Service → Database
   "firstName": "John",
   "lastName": "Doe",
   "email": "john.doe@example.com",
-  "phone": "+1-555-0123",
+  "phone": "+1234567890",
   "dateOfBirth": "1990-05-15",
   "gender": "MALE",
   "streetAddress": "123 Main St",
@@ -262,7 +262,7 @@ User → Gateway → Auth → Patient Service → Database
   "postalCode": "10001",
   "country": "USA",
   "emergencyContactName": "Jane Doe",
-  "emergencyContactPhone": "+1-555-0124"
+  "emergencyContactPhone": "+1234567890"
 }
 ```
 
@@ -359,7 +359,7 @@ User → Gateway → Auth → Patient Service → Database
     "firstName": "John",
     "lastName": "Doe",
     "email": "john.doe@example.com",
-    "phone": "+1-555-0123",
+    "phone": "+1234567890",
     "dateOfBirth": "1990-05-15",
     "gender": "MALE",
     "streetAddress": "123 Main St",
@@ -380,22 +380,15 @@ User → Gateway → Auth → Patient Service → Database
       "hospitalizations": ["Emergency visit (2023-05-15)"]
     },
     "allergies": {
-      "penicillin": {
-        "severity": "SEVERE",
-        "reaction": "Anaphylaxis",
-        "diagnosedDate": "2015-06-10"
-      },
-      "shellfish": {
-        "severity": "MODERATE",
-        "reaction": "Hives and swelling",
-        "diagnosedDate": "2018-03-22"
-      }
+      "medications": ["penicillin", "aspirin"],
+      "foods": ["shellfish", "nuts"],
+      "environmental": ["pollen", "dust"]
     },
     "insuranceProvider": "Blue Cross Blue Shield",
     "insurancePolicyNumber": "BC123456789",
     "primaryCarePhysician": "Dr. Sarah Johnson",
     "emergencyContactName": "Jane Doe",
-    "emergencyContactPhone": "+1-555-0124",
+    "emergencyContactPhone": "+1234567890",
     "createdAt": "2024-01-15T10:30:00Z",
     "updatedAt": "2024-01-15T10:30:00Z"
   }
@@ -454,7 +447,7 @@ User → Gateway → Auth → Patient Service → Database
   "postalCode": "11201",
   "country": "USA",
   "emergencyContactName": "Jane Doe",
-  "emergencyContactPhone": "+1-555-0124"
+  "emergencyContactPhone": "+1234567890"
 }
 ```
 
@@ -466,7 +459,7 @@ User → Gateway → Auth → Patient Service → Database
     "firstName": "John",
     "lastName": "Doe",
     "email": "john.doe@example.com",
-    "phone": "+1-555-0123",
+    "phone": "+1234567890",
     "dateOfBirth": "1990-05-15",
     "gender": "MALE",
     "streetAddress": "456 Oak Ave",
@@ -482,7 +475,7 @@ User → Gateway → Auth → Patient Service → Database
   "patientProfile": {
     "patientNumber": "P20240115001",
     "emergencyContactName": "Jane Doe",
-    "emergencyContactPhone": "+1-555-0124",
+    "emergencyContactPhone": "+1234567890",
     "createdAt": "2024-01-15T10:30:00Z",
     "updatedAt": "2024-01-15T14:45:00Z"
   }
@@ -584,16 +577,9 @@ User → Gateway → Auth → Patient Service → Database
       "hospitalizations": ["Emergency visit (2023-05-15)"]
     },
     "allergies": {
-      "penicillin": {
-        "severity": "SEVERE",
-        "reaction": "Anaphylaxis",
-        "diagnosedDate": "2015-06-10"
-      },
-      "shellfish": {
-        "severity": "MODERATE",
-        "reaction": "Hives and swelling",
-        "diagnosedDate": "2018-03-22"
-      }
+      "medications": ["penicillin", "aspirin"],
+      "foods": ["shellfish", "nuts"],
+      "environmental": ["pollen", "dust"]
     },
     "insuranceProvider": "Blue Cross Blue Shield",
     "insurancePolicyNumber": "BC123456789",

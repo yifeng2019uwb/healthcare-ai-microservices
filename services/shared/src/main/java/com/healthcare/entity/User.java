@@ -17,6 +17,10 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
@@ -104,6 +108,7 @@ public class User extends BaseEntity {
     @Column(name = DatabaseConstants.COL_USER_STATUS, nullable = false)
     private UserStatus status = UserStatus.ACTIVE;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private JsonNode customData;
 

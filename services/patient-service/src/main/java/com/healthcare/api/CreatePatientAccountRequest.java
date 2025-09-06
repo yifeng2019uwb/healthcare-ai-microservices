@@ -91,4 +91,13 @@ public class CreatePatientAccountRequest {
     private String emergencyContactPhone;
 
     // Lombok generates: @NoArgsConstructor, all getters and setters
+
+    // Manual getters for now (Lombok issue)
+    public String getExternalUserId() { return externalUserId; }
+    public String getFirstName() { return firstName; }
+    public String getLastName() { return lastName; }
+    public String getEmail() { return email; }
+    public String getPhone() { return phone; }
+    public LocalDate getDateOfBirth() { return dateOfBirth; }
+    public String getGender() { return gender; }
 }

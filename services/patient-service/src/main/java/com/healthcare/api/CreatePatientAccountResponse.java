@@ -8,9 +8,9 @@ import lombok.AllArgsConstructor;
 
 /**
  * API Response for creating a new patient account
- * 
+ *
  * This matches the design document specification for POST /api/patients
- * 
+ *
  * @author Healthcare AI Team
  * @version 1.0.0
  * @since 2025-01-09
@@ -27,4 +27,10 @@ public class CreatePatientAccountResponse {
     private String message;
 
     // Lombok generates: @NoArgsConstructor, @AllArgsConstructor, and all getters
+
+    // Manual constructor for now
+    public CreatePatientAccountResponse(boolean success, String message) {
+        this.success = success;
+        this.message = message;
+    }
 }

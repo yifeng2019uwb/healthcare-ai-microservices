@@ -4,14 +4,16 @@ import com.healthcare.constants.DatabaseConstants;
 import com.healthcare.enums.MedicalRecordType;
 import com.healthcare.exception.ValidationException;
 import com.healthcare.utils.ValidationUtils;
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Medical record entity representing patient medical records
@@ -49,6 +51,7 @@ public class MedicalRecord extends BaseEntity {
     @Column(name = DatabaseConstants.COL_RELEASE_DATE, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TIMESTAMPTZ)
     private OffsetDateTime releaseDate;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private JsonNode customData;
 

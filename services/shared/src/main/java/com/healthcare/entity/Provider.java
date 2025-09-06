@@ -4,7 +4,6 @@ import com.healthcare.constants.DatabaseConstants;
 import com.healthcare.constants.ValidationPatterns;
 import com.healthcare.exception.ValidationException;
 import com.healthcare.utils.ValidationUtils;
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -12,6 +11,9 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Provider entity representing healthcare provider information
@@ -58,6 +60,7 @@ public class Provider extends BaseEntity {
     @Column(name = DatabaseConstants.COL_OFFICE_PHONE)
     private String officePhone;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private JsonNode customData;
 

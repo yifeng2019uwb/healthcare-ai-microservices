@@ -5,14 +5,10 @@ import com.healthcare.exception.ValidationException;
 import com.healthcare.utils.ValidationUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -42,28 +38,37 @@ public abstract class BaseEntity {
      * Primary key identifier for the entity.
      * Auto-generated UUID that uniquely identifies each record.
      * This field is read-only and cannot be modified after creation.
+     *
+     * Uses database-level UUID generation via gen_random_uuid() for guaranteed
+     * uniqueness and better performance in distributed systems.
+     *
+     * IMPORTANT: No @GeneratedValue annotation needed - database handles ID generation
+     * via DEFAULT gen_random_uuid() in the column definition.
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = DatabaseConstants.COL_ID, updatable = false, nullable = false)
+    @Column(name = DatabaseConstants.COL_ID, updatable = false, nullable = false, columnDefinition = "UUID DEFAULT gen_random_uuid()")
     private UUID id;
 
     /**
      * Timestamp when the entity was created.
-     * Automatically managed by Hibernate @CreationTimestamp annotation.
+     * Automatically managed by database DEFAULT CURRENT_TIMESTAMP.
      * This field is read-only and cannot be modified after creation.
+     *
+     * IMPORTANT: No @CreationTimestamp annotation needed - database handles timestamp
+     * generation via DEFAULT CURRENT_TIMESTAMP in the column definition.
      */
-    @CreationTimestamp
-    @Column(name = DatabaseConstants.COL_CREATED_AT, nullable = false, updatable = false, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TIMESTAMPTZ)
+    @Column(name = DatabaseConstants.COL_CREATED_AT, nullable = false, updatable = false, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TIMESTAMPTZ + " DEFAULT CURRENT_TIMESTAMP")
     private OffsetDateTime createdAt;
 
     /**
      * Timestamp when the entity was last updated.
-     * Automatically managed by Hibernate @UpdateTimestamp annotation.
+     * Automatically managed by database DEFAULT CURRENT_TIMESTAMP.
      * This field is read-only and is updated on every save operation.
+     *
+     * IMPORTANT: No @UpdateTimestamp annotation needed - database handles timestamp
+     * generation via DEFAULT CURRENT_TIMESTAMP in the column definition.
      */
-    @UpdateTimestamp
-    @Column(name = DatabaseConstants.COL_UPDATED_AT, nullable = false, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TIMESTAMPTZ)
+    @Column(name = DatabaseConstants.COL_UPDATED_AT, nullable = false, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TIMESTAMPTZ + " DEFAULT CURRENT_TIMESTAMP")
     private OffsetDateTime updatedAt;
 
     /**

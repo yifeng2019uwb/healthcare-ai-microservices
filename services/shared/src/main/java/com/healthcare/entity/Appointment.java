@@ -5,14 +5,16 @@ import com.healthcare.enums.AppointmentStatus;
 import com.healthcare.enums.AppointmentType;
 import com.healthcare.exception.ValidationException;
 import com.healthcare.utils.ValidationUtils;
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Future;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Appointment entity representing scheduled appointments
@@ -65,6 +67,7 @@ public class Appointment extends BaseEntity {
     @Column(name = DatabaseConstants.COL_NOTES, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TEXT)
     private String notes;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private JsonNode customData;
 

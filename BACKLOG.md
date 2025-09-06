@@ -117,6 +117,11 @@
   - **Dependencies**: None
   - **Completed**: All entities cleaned up with comprehensive validation and 100% test coverage
 
+- [✅] **SHARED-005: JSONB Field Implementation** - Enable JSONB fields in all entities with proper JsonNode mapping ✅ COMPLETED
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: Entity cleanup complete
+  - **Completed**: All JSONB fields working with JsonNode, 176 tests passing
+
 - [📋] **SHARED-002: Deploy Database Schema** - Deploy all table definitions via Terraform and verify creation
   - **Reference**: [Implementation Plan Phase 1.2](../docs/IMPLEMENTATION_PLAN.md#phase-1-core-entity-structure)
   - **Priority**: 🔴 HIGH

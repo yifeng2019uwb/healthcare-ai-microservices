@@ -31,6 +31,25 @@ output "development_database_url" {
   sensitive   = true
 }
 
+# Individual connection components for environment variables
+output "database_url" {
+  description = "JDBC database URL for Spring Boot"
+  value       = "jdbc:postgresql://${var.neon_host}:${var.neon_port}/${var.neon_database}?sslmode=require"
+  sensitive   = false
+}
+
+output "database_username" {
+  description = "Database username"
+  value       = var.neon_username
+  sensitive   = false
+}
+
+output "database_password" {
+  description = "Database password"
+  value       = var.neon_password
+  sensitive   = true
+}
+
 
 output "database_tables" {
   description = "List of created database tables"

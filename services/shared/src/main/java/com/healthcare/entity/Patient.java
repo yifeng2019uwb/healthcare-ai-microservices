@@ -10,6 +10,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
@@ -38,11 +40,13 @@ public class Patient extends BaseEntity {
     @Column(name = DatabaseConstants.COL_PATIENT_NUMBER, nullable = false, unique = true)
     private String patientNumber;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = DatabaseConstants.COL_MEDICAL_HISTORY, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
-    private String medicalHistory;
+    private JsonNode medicalHistory;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = DatabaseConstants.COL_ALLERGIES, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
-    private String allergies;
+    private JsonNode allergies;
 
     @Size(max = 2000)
     @Column(name = DatabaseConstants.COL_CURRENT_MEDICATIONS)
@@ -68,6 +72,7 @@ public class Patient extends BaseEntity {
     @Column(name = DatabaseConstants.COL_PRIMARY_CARE_PHYSICIAN)
     private String primaryCarePhysician;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private JsonNode customData;
 
@@ -107,32 +112,20 @@ public class Patient extends BaseEntity {
         return patientNumber;
     }
 
-    public String getMedicalHistory() {
+    public JsonNode getMedicalHistory() {
         return medicalHistory;
     }
 
-    public void setMedicalHistory(String medicalHistory) {
-        this.medicalHistory = ValidationUtils.validateAndNormalizeString(
-            medicalHistory,
-            "Medical history",
-            null,
-            null,
-            null
-        );
+    public void setMedicalHistory(JsonNode medicalHistory) {
+        this.medicalHistory = medicalHistory;
     }
 
-    public String getAllergies() {
+    public JsonNode getAllergies() {
         return allergies;
     }
 
-    public void setAllergies(String allergies) {
-        this.allergies = ValidationUtils.validateAndNormalizeString(
-            allergies,
-            "Allergies",
-            null,
-            null,
-            null
-        );
+    public void setAllergies(JsonNode allergies) {
+        this.allergies = allergies;
     }
 
     public String getCurrentMedications() {

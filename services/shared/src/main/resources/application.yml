@@ -1,33 +1,21 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/healthcare_dev_db
+    url: ${DATABASE_URL}
     driver-class-name: org.postgresql.Driver
-    username: healthcare_dev
-    password: dev_password
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: create-drop
-    show-sql: true
+      ddl-auto: validate
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
-        use_sql_comments: true
-        # PostgreSQL-specific settings
         jdbc:
           time_zone: UTC
-        connection:
-          provider_disables_autocommit: true
-
-  sql:
-    init:
-      mode: always
-      schema-locations: classpath:schema.sql
-      data-locations: classpath:data.sql
 
 logging:
   level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    com.healthcare: DEBUG
+    com.healthcare: INFO

@@ -4,6 +4,7 @@ import com.healthcare.enums.Gender;
 import com.healthcare.enums.UserRole;
 import com.healthcare.exception.ValidationException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -23,8 +24,9 @@ class PatientEntityTest {
         // Test data variables
         UUID testUserId = UUID.randomUUID();
         String testPatientNumber = "PAT-12345678";
-        String testMedicalHistory = "No significant medical history";
-        String testAllergies = "Peanuts";
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode testMedicalHistory = mapper.createObjectNode().put("history", "No significant medical history");
+        JsonNode testAllergies = mapper.createArrayNode().add("Peanuts");
         String testEmergencyContactName = "John Smith";
         String testEmergencyContactPhone = "+15551234567";
 
@@ -63,8 +65,9 @@ class PatientEntityTest {
         String testEmergencyContactPhone = "+15551234567";
         String testInsuranceProvider = "Blue Cross";
         String testInsurancePolicyNumber = "BC1234567890";
-        String testMedicalHistory = "Previous surgery in 2020";
-        String testAllergies = "Peanuts, Shellfish";
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode testMedicalHistory = mapper.createObjectNode().put("surgery", "Previous surgery in 2020");
+        JsonNode testAllergies = mapper.createArrayNode().add("Peanuts").add("Shellfish");
         String testCurrentMedications = "Lisinopril 10mg daily";
 
         UUID testUserId = UUID.randomUUID();
@@ -109,20 +112,13 @@ class PatientEntityTest {
         Patient patient = new Patient(testUserId, testPatientNumber);
 
         // Test setter with valid value
-        String testMedicalHistory = "Previous surgery in 2020";
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode testMedicalHistory = mapper.createObjectNode().put("surgery", "Previous surgery in 2020");
         patient.setMedicalHistory(testMedicalHistory);
         assertThat(patient.getMedicalHistory()).isEqualTo(testMedicalHistory);
 
         // Test setter with null value (allowed)
         patient.setMedicalHistory(null);
-        assertThat(patient.getMedicalHistory()).isNull();
-
-        // Test setter with empty value (normalized to null)
-        patient.setMedicalHistory("");
-        assertThat(patient.getMedicalHistory()).isNull();
-
-        // Test setter with whitespace value (normalized to null)
-        patient.setMedicalHistory("   ");
         assertThat(patient.getMedicalHistory()).isNull();
     }
 
@@ -133,20 +129,13 @@ class PatientEntityTest {
         Patient patient = new Patient(testUserId, testPatientNumber);
 
         // Test setter with valid value
-        String testAllergies = "Peanuts, Shellfish";
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode testAllergies = mapper.createArrayNode().add("Peanuts").add("Shellfish");
         patient.setAllergies(testAllergies);
         assertThat(patient.getAllergies()).isEqualTo(testAllergies);
 
         // Test setter with null value (allowed)
         patient.setAllergies(null);
-        assertThat(patient.getAllergies()).isNull();
-
-        // Test setter with empty value (normalized to null)
-        patient.setAllergies("");
-        assertThat(patient.getAllergies()).isNull();
-
-        // Test setter with whitespace value (normalized to null)
-        patient.setAllergies("   ");
         assertThat(patient.getAllergies()).isNull();
     }
 

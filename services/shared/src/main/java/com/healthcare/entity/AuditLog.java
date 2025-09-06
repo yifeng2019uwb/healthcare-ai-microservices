@@ -6,13 +6,15 @@ import com.healthcare.enums.Outcome;
 import com.healthcare.enums.ResourceType;
 import com.healthcare.exception.ValidationException;
 import com.healthcare.utils.ValidationUtils;
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.validation.constraints.Size;
 
 import java.net.InetAddress;
 import java.util.UUID;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Audit log entity for tracking system activities
@@ -53,6 +55,7 @@ public class AuditLog extends BaseEntity {
     @Column(name = DatabaseConstants.COL_OUTCOME, nullable = false)
     private Outcome outcome;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = DatabaseConstants.COL_DETAILS, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private JsonNode details;
 
@@ -117,6 +120,9 @@ public class AuditLog extends BaseEntity {
         return details;
     }
 
+    public void setDetails(JsonNode details) {
+        this.details = details;
+    }
 
     public InetAddress getSourceIp() {
         return sourceIp;
