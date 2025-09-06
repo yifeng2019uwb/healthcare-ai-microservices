@@ -6,7 +6,8 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
-import java.util.Map;
+import com.healthcare.api.MedicalHistory;
+import com.healthcare.api.Allergies;
 
 /**
  * API Request for updating patient info
@@ -24,10 +25,10 @@ import java.util.Map;
 public class UpdatePatientInfoRequest {
 
     @JsonProperty(PatientServiceConstants.JSON_FIELD_MEDICAL_HISTORY)
-    private Map<String, Object> medicalHistory;
+    private MedicalHistory medicalHistory;
 
     @JsonProperty(PatientServiceConstants.JSON_FIELD_ALLERGIES)
-    private Map<String, Object> allergies;
+    private Allergies allergies;
 
     @Size(max = PatientServiceConstants.MAX_INSURANCE_PROVIDER_LENGTH, message = "Insurance provider must not exceed " + PatientServiceConstants.MAX_INSURANCE_PROVIDER_LENGTH + " characters")
     @JsonProperty(PatientServiceConstants.JSON_FIELD_INSURANCE_PROVIDER)

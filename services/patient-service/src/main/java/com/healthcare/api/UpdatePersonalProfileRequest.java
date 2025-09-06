@@ -9,9 +9,9 @@ import lombok.NoArgsConstructor;
 
 /**
  * API Request for updating personal profile
- * 
+ *
  * This matches the design document specification for PUT /api/patients/profile
- * 
+ *
  * @author Healthcare AI Team
  * @version 1.0.0
  * @since 2025-01-09
@@ -21,21 +21,25 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UpdatePersonalProfileRequest {
 
-    @Size(min = PatientServiceConstants.MIN_NAME_LENGTH, max = PatientServiceConstants.MAX_NAME_LENGTH, 
+    @Size(min = PatientServiceConstants.MIN_NAME_LENGTH, max = PatientServiceConstants.MAX_NAME_LENGTH,
           message = "First name must be between " + PatientServiceConstants.MIN_NAME_LENGTH + " and " + PatientServiceConstants.MAX_NAME_LENGTH + " characters")
-    @Pattern(regexp = PatientServiceConstants.PATTERN_NAME_LETTERS_ONLY, message = "First name must contain only letters")
+    @Pattern(regexp = PatientServiceConstants.PATTERN_NAME_LETTERS_ONLY, message = "First name must contain only letters, spaces, hyphens, and apostrophes")
     @JsonProperty(PatientServiceConstants.JSON_FIELD_FIRST_NAME)
     private String firstName;
 
-    @Size(min = PatientServiceConstants.MIN_NAME_LENGTH, max = PatientServiceConstants.MAX_NAME_LENGTH, 
+    @Size(min = PatientServiceConstants.MIN_NAME_LENGTH, max = PatientServiceConstants.MAX_NAME_LENGTH,
           message = "Last name must be between " + PatientServiceConstants.MIN_NAME_LENGTH + " and " + PatientServiceConstants.MAX_NAME_LENGTH + " characters")
-    @Pattern(regexp = PatientServiceConstants.PATTERN_NAME_LETTERS_ONLY, message = "Last name must contain only letters")
+    @Pattern(regexp = PatientServiceConstants.PATTERN_NAME_LETTERS_ONLY, message = "Last name must contain only letters, spaces, hyphens, and apostrophes")
     @JsonProperty(PatientServiceConstants.JSON_FIELD_LAST_NAME)
     private String lastName;
 
-    @Pattern(regexp = PatientServiceConstants.PATTERN_PHONE_E164, message = "Phone must be in E.164 format (+1-555-0123)")
+    @Pattern(regexp = PatientServiceConstants.PATTERN_PHONE_E164, message = "Phone must be in international format (+1234567890)")
     @JsonProperty(PatientServiceConstants.JSON_FIELD_PHONE)
     private String phone;
+
+    @Pattern(regexp = PatientServiceConstants.PATTERN_GENDER_VALUES, message = "Gender must be MALE, FEMALE, OTHER, or UNKNOWN")
+    @JsonProperty(PatientServiceConstants.JSON_FIELD_GENDER)
+    private String gender;
 
     @Size(max = PatientServiceConstants.MAX_ADDRESS_LENGTH, message = "Street address must not exceed " + PatientServiceConstants.MAX_ADDRESS_LENGTH + " characters")
     @JsonProperty(PatientServiceConstants.JSON_FIELD_STREET_ADDRESS)
@@ -61,7 +65,7 @@ public class UpdatePersonalProfileRequest {
     @JsonProperty(PatientServiceConstants.JSON_FIELD_EMERGENCY_CONTACT_NAME)
     private String emergencyContactName;
 
-    @Pattern(regexp = PatientServiceConstants.PATTERN_PHONE_E164, message = "Emergency contact phone must be in E.164 format (+1-555-0124)")
+    @Pattern(regexp = PatientServiceConstants.PATTERN_PHONE_E164, message = "Emergency contact phone must be in international format (+1234567890)")
     @JsonProperty(PatientServiceConstants.JSON_FIELD_EMERGENCY_CONTACT_PHONE)
     private String emergencyContactPhone;
 

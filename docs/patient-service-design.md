@@ -271,10 +271,10 @@ User → Gateway → Auth → Patient Service → Database
 | Field | Type | Required | Pattern/Format | Description |
 |-------|------|----------|----------------|-------------|
 | `externalUserId` | String | ✅ Required | UUID format | Supabase user ID from authentication |
-| `firstName` | String | ✅ Required | 2-100 characters, letters only | User's first name |
-| `lastName` | String | ✅ Required | 2-100 characters, letters only | User's last name |
+| `firstName` | String | ✅ Required | 2-100 characters, letters, spaces, hyphens, apostrophes | User's first name |
+| `lastName` | String | ✅ Required | 2-100 characters, letters, spaces, hyphens, apostrophes | User's last name |
 | `email` | String | ✅ Required | Valid email format | Contact email address |
-| `phone` | String | ✅ Required | E.164 format (+1-555-0123) | Contact phone number |
+| `phone` | String | ✅ Required | International format (+1234567890) | Contact phone number |
 | `dateOfBirth` | String | ✅ Required | YYYY-MM-DD, not future date | User's date of birth |
 | `gender` | String | ✅ Required | MALE, FEMALE, OTHER, UNKNOWN | User's gender |
 | `streetAddress` | String | ❌ Optional | 1-255 characters | Street address |
@@ -283,7 +283,7 @@ User → Gateway → Auth → Patient Service → Database
 | `postalCode` | String | ❌ Optional | 1-20 characters | Postal or ZIP code |
 | `country` | String | ❌ Optional | 1-50 characters | Country name |
 | `emergencyContactName` | String | ❌ Optional | 1-100 characters | Emergency contact name |
-| `emergencyContactPhone` | String | ❌ Optional | E.164 format (+1-555-0124) | Emergency contact phone |
+| `emergencyContactPhone` | String | ❌ Optional | International format (+1234567890) | Emergency contact phone |
 
 #### **Response (201 Created)**:
 ```json
@@ -446,7 +446,8 @@ User → Gateway → Auth → Patient Service → Database
 {
   "firstName": "John",
   "lastName": "Doe",
-  "phone": "+1-555-0123",
+  "phone": "+1234567890",
+  "gender": "MALE",
   "streetAddress": "456 Oak Ave",
   "city": "Brooklyn",
   "state": "NY",
@@ -492,16 +493,17 @@ User → Gateway → Auth → Patient Service → Database
 
 | Field | Type | Required | Pattern/Format | Description |
 |-------|------|----------|----------------|-------------|
-| `firstName` | String | ❌ Optional | 2-100 characters, letters only | User's first name |
-| `lastName` | String | ❌ Optional | 2-100 characters, letters only | User's last name |
-| `phone` | String | ❌ Optional | E.164 format (+1-555-0123) | Contact phone number |
+| `firstName` | String | ❌ Optional | 2-100 characters, letters, spaces, hyphens, apostrophes | User's first name |
+| `lastName` | String | ❌ Optional | 2-100 characters, letters, spaces, hyphens, apostrophes | User's last name |
+| `phone` | String | ❌ Optional | International format (+1234567890) | Contact phone number |
+| `gender` | String | ❌ Optional | MALE, FEMALE, OTHER, UNKNOWN | User's gender |
 | `streetAddress` | String | ❌ Optional | 1-255 characters | Street address |
 | `city` | String | ❌ Optional | 1-100 characters | City name |
 | `state` | String | ❌ Optional | 1-50 characters | State or province |
 | `postalCode` | String | ❌ Optional | 1-20 characters | Postal or ZIP code |
 | `country` | String | ❌ Optional | 1-50 characters | Country name |
 | `emergencyContactName` | String | ❌ Optional | 1-100 characters | Emergency contact name |
-| `emergencyContactPhone` | String | ❌ Optional | E.164 format (+1-555-0124) | Emergency contact phone |
+| `emergencyContactPhone` | String | ❌ Optional | International format (+1234567890) | Emergency contact phone |
 
 #### **Error Responses**:
 

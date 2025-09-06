@@ -60,8 +60,8 @@ public final class PatientServiceConstants {
     public static final String ERROR_UNEXPECTED_GENERAL = "An unexpected error occurred";
 
     // Validation Patterns
-    public static final String PATTERN_PHONE_E164 = "^\\+1-\\d{3}-\\d{3}-\\d{4}$";
-    public static final String PATTERN_NAME_LETTERS_ONLY = "^[a-zA-Z\\s]+$";
+    public static final String PATTERN_PHONE_E164 = "^\\+?[1-9]\\d{1,14}$";
+    public static final String PATTERN_NAME_LETTERS_ONLY = "^[\\p{L}\\s'-]{2,100}$";
     public static final String PATTERN_GENDER_VALUES = "^(MALE|FEMALE|OTHER|UNKNOWN)$";
 
     // Field Lengths
@@ -137,6 +137,16 @@ public final class PatientServiceConstants {
     public static final String JSON_FIELD_MEDICAL_HISTORY = "medicalHistory";
     public static final String JSON_FIELD_ALLERGIES = "allergies";
     public static final String JSON_FIELD_PATIENT_NUMBER = "patientNumber";
+
+    // Medical History Field Names
+    public static final String JSON_FIELD_CONDITIONS = "conditions";
+    public static final String JSON_FIELD_SURGERIES = "surgeries";
+    public static final String JSON_FIELD_HOSPITALIZATIONS = "hospitalizations";
+
+    // Allergies Field Names
+    public static final String JSON_FIELD_MEDICATIONS = "medications";
+    public static final String JSON_FIELD_FOODS = "foods";
+    public static final String JSON_FIELD_ENVIRONMENTAL = "environmental";
     public static final String JSON_FIELD_ROLE = "role";
     public static final String JSON_FIELD_STATUS = "status";
     public static final String JSON_FIELD_CREATED_AT = "createdAt";

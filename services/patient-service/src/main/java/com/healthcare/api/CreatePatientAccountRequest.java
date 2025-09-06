@@ -30,14 +30,14 @@ public class CreatePatientAccountRequest {
     @NotBlank(message = "First name is required")
     @Size(min = PatientServiceConstants.MIN_NAME_LENGTH, max = PatientServiceConstants.MAX_NAME_LENGTH,
           message = "First name must be between " + PatientServiceConstants.MIN_NAME_LENGTH + " and " + PatientServiceConstants.MAX_NAME_LENGTH + " characters")
-    @Pattern(regexp = PatientServiceConstants.PATTERN_NAME_LETTERS_ONLY, message = "First name must contain only letters")
+    @Pattern(regexp = PatientServiceConstants.PATTERN_NAME_LETTERS_ONLY, message = "First name must contain only letters, spaces, hyphens, and apostrophes")
     @JsonProperty(PatientServiceConstants.JSON_FIELD_FIRST_NAME)
     private String firstName;
 
     @NotBlank(message = "Last name is required")
     @Size(min = PatientServiceConstants.MIN_NAME_LENGTH, max = PatientServiceConstants.MAX_NAME_LENGTH,
           message = "Last name must be between " + PatientServiceConstants.MIN_NAME_LENGTH + " and " + PatientServiceConstants.MAX_NAME_LENGTH + " characters")
-    @Pattern(regexp = PatientServiceConstants.PATTERN_NAME_LETTERS_ONLY, message = "Last name must contain only letters")
+    @Pattern(regexp = PatientServiceConstants.PATTERN_NAME_LETTERS_ONLY, message = "Last name must contain only letters, spaces, hyphens, and apostrophes")
     @JsonProperty(PatientServiceConstants.JSON_FIELD_LAST_NAME)
     private String lastName;
 
@@ -48,7 +48,7 @@ public class CreatePatientAccountRequest {
     private String email;
 
     @NotBlank(message = "Phone number is required")
-    @Pattern(regexp = PatientServiceConstants.PATTERN_PHONE_E164, message = "Phone must be in E.164 format (+1-555-0123)")
+    @Pattern(regexp = PatientServiceConstants.PATTERN_PHONE_E164, message = "Phone must be in international format (+1234567890)")
     @JsonProperty(PatientServiceConstants.JSON_FIELD_PHONE)
     private String phone;
 
@@ -86,7 +86,7 @@ public class CreatePatientAccountRequest {
     @JsonProperty(PatientServiceConstants.JSON_FIELD_EMERGENCY_CONTACT_NAME)
     private String emergencyContactName;
 
-    @Pattern(regexp = PatientServiceConstants.PATTERN_PHONE_E164, message = "Emergency contact phone must be in E.164 format (+1-555-0124)")
+    @Pattern(regexp = PatientServiceConstants.PATTERN_PHONE_E164, message = "Emergency contact phone must be in international format (+1234567890)")
     @JsonProperty(PatientServiceConstants.JSON_FIELD_EMERGENCY_CONTACT_PHONE)
     private String emergencyContactPhone;
 
