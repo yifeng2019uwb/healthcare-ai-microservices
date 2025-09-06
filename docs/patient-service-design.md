@@ -236,6 +236,7 @@ User → Gateway → Auth → Patient Service → Database
 |  POST  | `/api/patients`                 | Create patient account     | Yes  |
 |  GET   | `/api/patients/profile`         | Get my patient profile     | Yes  |
 |  PUT   | `/api/patients/profile`         | Update my patient profile  | Yes  |
+|  PUT   | `/api/patients/patient-info`    | Update patient info        | Yes  |
 |  GET   | `/api/patients/medical-history` | Get my medical history     | Yes  |
 
 ## 🔌 **API Documentation**
@@ -283,11 +284,6 @@ User → Gateway → Auth → Patient Service → Database
 | `country` | String | ❌ Optional | 1-50 characters | Country name |
 | `emergencyContactName` | String | ❌ Optional | 1-100 characters | Emergency contact name |
 | `emergencyContactPhone` | String | ❌ Optional | E.164 format (+1-555-0124) | Emergency contact phone |
-| `primaryCarePhysician` | String | ❌ Optional | 1-100 characters | Primary care physician name |
-| `insuranceProvider` | String | ❌ Optional | 1-100 characters | Insurance provider name |
-| `insurancePolicyNumber` | String | ❌ Optional | 1-50 characters | Insurance policy number |
-| `medicalHistory` | Object | ❌ Optional | JSON object | Medical history and conditions |
-| `allergies` | Object | ❌ Optional | JSON object | Known allergies and reactions |
 
 #### **Response (201 Created)**:
 ```json
@@ -543,11 +539,11 @@ User → Gateway → Auth → Patient Service → Database
 
 ---
 
-### **4. Update Medical Information**
-**Endpoint**: `PUT /api/patients/medical-info`
-**Description**: Update medical information (history, allergies, insurance, physician)
+### **4. Update Patient Info**
+**Endpoint**: `PUT /api/patients/patient-info`
+**Description**: Update patient info (medical history, allergies, insurance, physician)
 **Authentication**: Required (JWT token)
-**Note**: This endpoint can be used by both patients and providers
+**Note**: Patients can update medical information like allergies and insurance, but not medical records. Emergency contacts are updated via the user profile endpoint.
 
 #### **Request Body**:
 ```json
@@ -621,7 +617,7 @@ User → Gateway → Auth → Patient Service → Database
 ```json
 {
   "error": "BAD_REQUEST",
-  "message": "Invalid medical data format"
+  "message": "Invalid patient info data format"
 }
 ```
 
@@ -637,7 +633,7 @@ User → Gateway → Auth → Patient Service → Database
 ```json
 {
   "error": "FORBIDDEN",
-  "message": "Insufficient permissions to update medical information"
+  "message": "Insufficient permissions to update patient information"
 }
 ```
 
@@ -653,7 +649,7 @@ User → Gateway → Auth → Patient Service → Database
 ```json
 {
   "error": "INTERNAL_SERVER_ERROR",
-  "message": "An unexpected error occurred while updating medical information"
+  "message": "An unexpected error occurred while updating patient information"
 }
 ```
 
@@ -783,10 +779,10 @@ For enhanced patient experience before medical visits, the following APIs can be
 #### **Pre-Visit Update Endpoints**
 | Method | Endpoint | Description | Purpose |
 |--------|----------|-------------|---------|
-| PUT | `/api/patients/pre-visit/allergies` | Update allergies before visit | Pre-visit preparation |
-| PUT | `/api/patients/pre-visit/medications` | Update current medications | Pre-visit preparation |
-| PUT | `/api/patients/pre-visit/health-status` | Update recent health status | Pre-visit preparation |
-| PUT | `/api/patients/pre-visit/emergency-contact` | Update emergency contact | Pre-visit preparation |
+| PUT | `/api/patients/allergies` | Update allergies before visit | Pre-visit preparation |
+| PUT | `/api/patients/medications` | Update current medications | Pre-visit preparation |
+| PUT | `/api/patients/health-status` | Update recent health status | Pre-visit preparation |
+
 
 #### **Benefits of Pre-Visit APIs**
 - **Specific purpose**: Clear focus on pre-visit data updates
