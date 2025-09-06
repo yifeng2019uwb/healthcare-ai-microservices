@@ -3,7 +3,7 @@ package com.healthcare.dto.patient;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.healthcare.enums.Gender;
 import com.healthcare.enums.UserStatus;
-import com.healthcare.validation.ValidationPatterns;
+import com.healthcare.constants.ValidationPatterns;
 import jakarta.validation.constraints.*;
 import java.time.LocalDate;
 import java.util.List;
