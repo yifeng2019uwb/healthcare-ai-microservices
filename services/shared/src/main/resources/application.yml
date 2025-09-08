@@ -1,14 +1,14 @@
 spring:
   datasource:
-    url: ${DATABASE_URL}
+    url: "jdbc:postgresql://ep-rough-sun-a5xq8x2p.us-east-2.aws.neon.tech:5432/neondb?sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.DefaultJavaSSLFactory"
+    username: neondb_owner
+    password: pg_mNa1rdsbhP7V
     driver-class-name: org.postgresql.Driver
-    username: ${DATABASE_USERNAME}
-    password: ${DATABASE_PASSWORD}
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:

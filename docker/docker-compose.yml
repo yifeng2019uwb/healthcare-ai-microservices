@@ -1,11 +1,24 @@
 # Healthcare AI Microservices - Docker Compose
-# Basic structure for local development
+# Local development environment
 
 version: '3.8'
 
 services:
-  # Placeholder for services
-  # Will be implemented later
+  # Patient Service
+  patient-service:
+    build:
+      context: ../
+      dockerfile: services/patient-service/Dockerfile
+    container_name: healthcare-patient-service
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://ep-rough-sun-a5xq8x2p.us-east-2.aws.neon.tech:5432/neondb?sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.DefaultJavaSSLFactory"
+      SPRING_DATASOURCE_USERNAME: neondb_owner
+      SPRING_DATASOURCE_PASSWORD: pg_mNa1rdsbhP7V
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+    ports:
+      - "8080:8080"
+    networks:
+      - healthcare-network
 
 networks:
   healthcare-network:

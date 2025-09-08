@@ -5,6 +5,8 @@ import com.healthcare.exception.ValidationException;
 import com.healthcare.utils.ValidationUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
@@ -12,6 +14,8 @@ import jakarta.persistence.PreUpdate;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * Base entity providing common fields for all healthcare entities.
@@ -46,6 +50,7 @@ public abstract class BaseEntity {
      * via DEFAULT gen_random_uuid() in the column definition.
      */
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = DatabaseConstants.COL_ID, updatable = false, nullable = false, columnDefinition = "UUID DEFAULT gen_random_uuid()")
     private UUID id;
 
@@ -57,6 +62,7 @@ public abstract class BaseEntity {
      * IMPORTANT: No @CreationTimestamp annotation needed - database handles timestamp
      * generation via DEFAULT CURRENT_TIMESTAMP in the column definition.
      */
+    @CreationTimestamp
     @Column(name = DatabaseConstants.COL_CREATED_AT, nullable = false, updatable = false, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TIMESTAMPTZ + " DEFAULT CURRENT_TIMESTAMP")
     private OffsetDateTime createdAt;
 
@@ -68,6 +74,7 @@ public abstract class BaseEntity {
      * IMPORTANT: No @UpdateTimestamp annotation needed - database handles timestamp
      * generation via DEFAULT CURRENT_TIMESTAMP in the column definition.
      */
+    @UpdateTimestamp
     @Column(name = DatabaseConstants.COL_UPDATED_AT, nullable = false, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TIMESTAMPTZ + " DEFAULT CURRENT_TIMESTAMP")
     private OffsetDateTime updatedAt;
 

@@ -284,7 +284,6 @@ public class User extends BaseEntity {
         );
     }
 
-
     public void setCity(String city) {
         this.city = ValidationUtils.validateAndNormalizeString(
             city,

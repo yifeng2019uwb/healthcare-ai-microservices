@@ -27,10 +27,4 @@ public class CreatePatientAccountResponse {
     private String message;
 
     // Lombok generates: @NoArgsConstructor, @AllArgsConstructor, and all getters
-
-    // Manual constructor for now
-    public CreatePatientAccountResponse(boolean success, String message) {
-        this.success = success;
-        this.message = message;
-    }
 }

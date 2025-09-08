@@ -17,7 +17,6 @@ import lombok.AllArgsConstructor;
  */
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
 public class GetMedicalHistoryRequest {
 
     // JWT token is handled via Authorization header, not in request body

@@ -80,8 +80,10 @@ public class PatientController {
      * @return the User entity
      */
     private User buildUserFromRequest(CreatePatientAccountRequest request) {
-        // Convert gender string to enum
-        Gender gender = Gender.valueOf(request.getGender().toUpperCase());
+        // Convert gender string to enum (with null check)
+        Gender gender = request.getGender() != null ?
+            Gender.valueOf(request.getGender().toUpperCase()) :
+            Gender.OTHER;
 
         User user = new User(
             request.getExternalUserId().trim(),
