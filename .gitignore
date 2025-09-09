@@ -92,6 +92,15 @@ healthcare-infra/gcp/service-account-*.json
 .env.production
 .env.staging
 
+# Configuration Files with Credentials
+terraform.tfvars
+terraform.tfvars.*
+!terraform.tfvars.example
+application-local.yml
+application-*.yml
+!application-example.yml
+!application.yml
+
 # Config Directory - Completely Ignored
 healthcare-infra/config/
 
