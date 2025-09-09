@@ -1,8 +1,8 @@
 # Database Schema Deployment for Healthcare AI Microservices
-# This file creates all database tables, enums, and indexes using the proper Neon approach
+# This file creates all database tables, enums, and indexes using the proper PostgreSQL approach
 
 # Create all database objects using null_resource with local-exec provisioner
-# Using existing neondb database directly to avoid API permission issues
+# Using existing database directly to avoid API permission issues
 resource "null_resource" "create_database_schema" {
   provisioner "local-exec" {
     command = <<-EOT
@@ -57,39 +57,3 @@ resource "null_resource" "create_database_schema" {
   }
 }
 
-# Create indexes
-# Note: postgresql_index resource not supported in current provider version
-# These indexes need to be created manually in the database
-# resource "postgresql_index" "user_profiles_external_auth_id_unique" {
-#   provider = postgresql.neon
-#   name     = "idx_user_profiles_external_auth_id_unique"
-#   table    = postgresql_table.user_profiles.name
-#   schema   = postgresql_schema.public.name
-#   columns  = ["external_auth_id"]
-#   unique   = true
-# }
-
-# resource "postgresql_index" "user_profiles_email_unique" {
-#   provider = postgresql.neon
-#   name     = "idx_user_profiles_email_unique"
-#   table    = postgresql_table.user_profiles.name
-#   schema   = postgresql_schema.public.name
-#   columns  = ["email"]
-#   unique   = true
-# }
-
-# resource "postgresql_index" "user_profiles_phone" {
-#   provider = postgresql.neon
-#   name     = "idx_user_profiles_phone"
-#   table    = postgresql_table.user_profiles.name
-#   schema   = postgresql_schema.public.name
-#   columns  = ["phone"]
-# }
-
-# resource "postgresql_index" "user_profiles_name_dob" {
-#   provider = postgresql.neon
-#   name     = "idx_user_profiles_name_dob"
-#   table    = postgresql_table.user_profiles.name
-#   schema   = postgresql_schema.public.name
-#   columns  = ["last_name", "first_name", "date_of_birth"]
-# }

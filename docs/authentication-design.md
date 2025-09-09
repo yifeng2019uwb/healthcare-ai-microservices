@@ -51,7 +51,7 @@ Business services receive validated user context from the Auth Service, includin
 ## 🔧 **Solution Alternatives**
 
 ### **Current System Infrastructure & Data (Available to All Services)**
-- **Neon PostgreSQL**: Single database for all business data
+- **Supabase PostgreSQL**: Single database for all business data
 - **Spring Cloud Gateway**: Central routing and middleware
 - **JWT Tokens**: Issued by external authentication provider
 - **External Auth Provider**: Handles user login/registration (Supabase Auth, Auth0, etc.)
@@ -132,7 +132,7 @@ Internal Auth Service positioned between the Gateway and backend services, valid
 2. **JWT Token**: Supabase Auth issues JWT token with user info and roles
 3. **Auth Service**: Validates JWT tokens, extracts user context
 4. **Business Services**: Use validated user context for business logic
-5. **User Data**: Stored in Neon database for business services (Patient, Provider, etc.)
+5. **User Data**: Stored in Supabase database for business services (Patient, Provider, etc.)
 
 ### **Key Components**
 - **Auth Service**: JWT validation only, no authentication data management (Port 8001)
@@ -180,12 +180,12 @@ Internal Auth Service positioned between the Gateway and backend services, valid
 - **Why JWT**: Stateless, scalable, widely supported
 - **Why Internal Service**: Full control, no external dependencies, healthcare compliance
 - **Why Gateway Integration**: Centralized authentication, consistent across all services
-- **Why Neon PostgreSQL**: Single database for all data including authentication tables
+- **Why Supabase PostgreSQL**: Single database for all data including authentication tables
 
 ### **Database Strategy**
 - **Auth Service**: No database tables, completely stateless, only JWT validation
-- **Business Services**: Use Neon PostgreSQL for all business data including user-related tables
-- **User Data Storage**: Patient records, provider profiles, appointments stored in Neon database
+- **Business Services**: Use Supabase PostgreSQL for all business data including user-related tables
+- **User Data Storage**: Patient records, provider profiles, appointments stored in Supabase database
 - **External Auth Provider**: Handles user authentication, registration, password reset (Supabase Auth, Auth0, etc.)
 - **No Internal User Management**: All user management operations handled by external provider
 
@@ -194,7 +194,7 @@ Internal Auth Service positioned between the Gateway and backend services, valid
 - **Auth Service**: JWT validation and user context
 - **Backend Services**: Receive validated user context
 - **Frontend**: Login/logout and token management
-- **Database**: Neon PostgreSQL for all data storage
+- **Database**: Supabase PostgreSQL for all data storage
 
 ## 🔌 **API Design**
 

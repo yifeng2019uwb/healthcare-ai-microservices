@@ -20,8 +20,8 @@ import java.time.LocalDate;
  */
 @SpringBootTest
 @TestPropertySource(properties = {
-    "spring.datasource.url=jdbc:postgresql://ep-rough-sun-a5xq8x2p.us-east-2.aws.neon.tech:5432/neondb?sslmode=require",
-    "spring.datasource.username=neondb_owner",
+    "spring.datasource.url=jdbc:postgresql://db.dummy-project-ref.supabase.co:5432/postgres?sslmode=require",
+    "spring.datasource.username=postgres",
     "spring.datasource.password=pg_mNa1rdsbhP7V",
     "spring.jpa.hibernate.ddl-auto=validate"
 })
@@ -31,7 +31,7 @@ public class PatientServiceTest {
     private PatientService patientService;
 
     @Test
-    @Disabled("Disabled due to database connection issues with Neon SCRAM authentication")
+    @Disabled("Disabled due to database connection issues - using dummy credentials for testing")
     public void testCreatePatient() {
         System.out.println("=== Testing Create Patient ===");
 

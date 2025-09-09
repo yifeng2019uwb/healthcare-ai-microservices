@@ -28,7 +28,7 @@ healthcare-infra/
 - **Monitoring Design**: Observability and monitoring strategy
 
 ### **Infrastructure Components**
-- **Supabase Database**: PostgreSQL with integrated Auth + Storage
+- **PostgreSQL Database**: Primary database for all business data
 - **AWS S3**: Medical document storage with compliance
 - **Security Layer**: IAM, encryption, access control
 - **Monitoring Layer**: Health checks, logging, metrics
@@ -42,7 +42,7 @@ healthcare-infra/
 **Deliverables**: Architecture, module designs, implementation roadmap
 
 ### **Phase 1: Foundation Services**
-**Infrastructure**: Basic Supabase database, simple security, basic monitoring
+**Infrastructure**: Basic PostgreSQL database, simple security, basic monitoring
 **Services**: Gateway + Auth + Patient Service
 
 ### **Phase 2: Provider + Medical Records**
@@ -66,7 +66,7 @@ healthcare-infra/
 - No major redesigns needed
 
 ### **2. Multi-Cloud Strategy**
-- **Neon**: Best managed PostgreSQL
+- **PostgreSQL**: Primary database for all business data
 - **AWS S3**: Industry standard file storage
 - **Railway**: Simple deployment
 - **Hybrid**: Use best service for each need
@@ -90,10 +90,12 @@ healthcare-infra/
 - [x] Terraform folder moved from root
 - [x] Infrastructure design document created
 - [x] High-level architecture defined
+- [x] Database schema implemented with Terraform
+- [x] Neon references removed from documentation
+- [x] PostgreSQL database setup completed
 
 ### **🔄 In Progress**
 - [ ] Complete infrastructure design
-- [ ] Terraform module designs
 - [ ] Environment configuration plans
 - [ ] Implementation roadmap
 
@@ -125,7 +127,7 @@ healthcare-infra/
 
 ### **Planned Documents**
 - **ARCHITECTURE_DIAGRAMS/**: Network, security, monitoring diagrams
-- **docs/**: Setup guides for Neon, AWS, security, monitoring
+- **docs/**: Setup guides for PostgreSQL, AWS, security, monitoring
 - **terraform/**: Complete Terraform configurations
 - **scripts/**: Infrastructure automation scripts
 

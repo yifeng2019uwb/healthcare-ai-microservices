@@ -11,14 +11,5 @@ terraform {
   required_version = ">= 1.0"
 }
 
-# Load database table configurations from tables/ directory
-module "database_tables" {
-  source = "./tables"
-
-  # Pass variables to the tables module
-  neon_host     = var.neon_host
-  neon_port     = var.neon_port
-  neon_database = var.neon_database
-  neon_username = var.neon_username
-  neon_password = var.neon_password
-}
+# Note: Database tables are now managed by Supabase
+# See healthcare-infra/terraform/supabase/ for Supabase-specific configurations

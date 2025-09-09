@@ -40,7 +40,7 @@
          ┌───────────────────┼───────────────────┐
          │                   │                   │
     ┌────▼────---┐   ┌─────--▼────--┐   ┌─────---▼────┐
-    │ Neon DB    │   │   S3         │   │   Shared    │
+    │ Supabase   │   │   S3         │   │   Shared    │
     │(PostgreSQL)│   │(File Storage)│   │   Data      │
     │            │   │              │   │   Layer     │
     └──────────--┘   └──────────----┘   └──────────---┘
@@ -122,8 +122,8 @@
 
 ## 🗄️ **Data Layer Strategy**
 
-### **Primary Database: Neon PostgreSQL**
-- **Single Database**: All business data in one Neon PostgreSQL instance
+### **Primary Database: PostgreSQL**
+- **Single Database**: All business data in one PostgreSQL instance
 - **Business Data**: Patient records, appointments, provider information, AI analysis results
 
 ### **File Storage: AWS S3**
@@ -212,7 +212,7 @@ Service → Database → Response to Client
 
 ### **Platform: Railway**
 - **Services**: Java Spring Boot and Python FastAPI microservices
-- **Database**: Neon PostgreSQL
+- **Database**: PostgreSQL
 - **File Storage**: AWS S3
 - **Frontend**: React web applications
 - **Monitoring**: Railway built-in metrics

@@ -21,11 +21,11 @@
 - [x] **API Testing** - Verified complete end-to-end functionality from API to database
 - [x] **Docker Containerization** - Successfully created Dockerfile and docker-compose.yml for patient service
 - [x] **Docker Build Optimization** - Fixed multi-stage build with proper Maven dependency management
-- [x] **Neon Database Integration** - Configured Docker to connect directly to Neon PostgreSQL database
+- [x] **Database Integration** - Configured Docker to connect directly to PostgreSQL database
 - [x] **API Testing** - Tested patient registration API with Docker containerized service
-- [x] **Neon SCRAM Issue Identification** - Identified root cause of database connection failures
+- [x] **Database Connection Issue Identification** - Identified root cause of database connection failures
 - [x] **Test Suite Validation** - All tests passing with comprehensive coverage
-- [x] **Docker Compose Configuration** - Set up proper environment variables for Neon database connection
+- [x] **Docker Compose Configuration** - Set up proper environment variables for database connection
 
 ---
 
@@ -38,7 +38,7 @@
 
 - [x] **JSONB Field Implementation** - Enabled JSONB fields in all entities with proper JsonNode mapping
 - [x] **Test Compilation Fixes** - Updated all test files to use JsonNode instead of String for JSON fields
-- [x] **PatientService Test Disabling** - Disabled database-dependent tests due to Neon connection issues
+- [x] **PatientService Test Disabling** - Disabled database-dependent tests due to connection issues
 - [x] **Test Suite Validation** - All 176 tests passing with comprehensive coverage
 - [x] **Entity Method Completion** - Enabled all getter/setter methods for JSON fields
 - [x] **ObjectMapper Integration** - Added proper JSON serialization/deserialization in tests
@@ -67,7 +67,7 @@
 - [x] **Backlog & Daily Work Updates** - Updated project tracking documents with today's accomplishments
 - [x] **Terraform Organization** - Reorganized Terraform files to separate table configurations from infrastructure
 - [x] **Tables Directory Structure** - Moved all table .tf files to dedicated tables/ directory for better organization
-- [x] **Infrastructure Separation** - Separated Neon-specific table deployments from general infrastructure configuration
+- [x] **Infrastructure Separation** - Separated database-specific table deployments from general infrastructure configuration
 - [x] **Deploy Script Enhancement** - Enhanced deploy-neon.sh script to support all tables or single table deployment
 - [x] **Documentation Updates** - Updated README files to reflect new organized structure
 - [x] **Credential Security** - Verified terraform.tfvars is properly ignored by git

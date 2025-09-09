@@ -10,7 +10,7 @@ A comprehensive healthcare AI microservices platform designed for learning Sprin
 - **🔐 Authentication**: JWT-based authentication with Supabase Auth
 - **🏥 Healthcare Services**: Patient, Provider, and Appointment management
 - **🤖 AI Integration**: Healthcare analytics and clinical insights
-- **📊 Data Management**: Neon PostgreSQL with AWS S3 file storage
+- **📊 Data Management**: Supabase PostgreSQL with AWS S3 file storage
 - **🚀 Microservices**: Spring Boot services with API Gateway
 
 ## 🏗️ **Project Structure**
@@ -66,7 +66,7 @@ cd healthcare-ai-microservices
 # Copy configuration template
 cp healthcare-infra/examples/terraform.tfvars.example healthcare-infra/config/terraform.tfvars
 
-# Edit with your Neon database credentials
+# Edit with your Supabase database credentials
 # Then create database tables
 cd healthcare-infra/terraform
 terraform init
@@ -124,7 +124,7 @@ git push
          ┌───────────────────┼───────────────────┐
          │                   │                   │
     ┌────▼────┐   ┌─────────▼────────┐   ┌──────▼────┐
-    │ Neon DB │   │   S3             │   │   Shared  │
+    │ Supabase │   │   S3             │   │   Shared  │
     │(PostgreSQL)│   │(File Storage)   │   │   Data    │
     │            │   │                 │   │   Layer   │
     └───────────┘   └─────────────────┘   └───────────┘
@@ -143,7 +143,7 @@ git push
 ## 🎯 **Technology Stack**
 
 **Backend**: Spring Boot 3.2+, Java 17
-**Database**: Neon PostgreSQL
+**Database**: Supabase PostgreSQL
 **File Storage**: AWS S3
 **Frontend**: React 18+ with TypeScript
 **Authentication**: Supabase Auth + JWT

@@ -1,4 +1,4 @@
-# Healthcare Database Tables - Neon PostgreSQL
+# Healthcare Database Tables - PostgreSQL
 # This file manages all database table deployments for the healthcare microservices
 
 # Import all table configurations

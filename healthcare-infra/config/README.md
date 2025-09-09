@@ -10,7 +10,7 @@ This directory contains configuration templates and examples for the healthcare 
 
 ### Database Configurations
 - `supabase.tfvars.example` - Supabase database configuration template
-- `neon.tfvars.example` - Neon database configuration template (legacy)
+- `neon.tfvars.example` - Legacy database configuration template (deprecated)
 
 ### Environment Configurations
 - `dev.tfvars.example` - Development environment variables

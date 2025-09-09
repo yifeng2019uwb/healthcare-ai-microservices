@@ -58,7 +58,7 @@ Project Reference: [PROJECT-REF]
 ## 🔧 **Step 5: Update Our Configuration**
 
 1. **Open `services/shared/src/main/resources/application.yml`**
-2. **Replace the Neon database URL with Supabase URL:**
+2. **Replace the database URL with Supabase URL:**
    ```yaml
    spring:
      datasource:

@@ -30,7 +30,7 @@
 - **Railway**: Simple deployment for learning and rapid iteration
 - **Hybrid Approach**: Use best service for each need
 
-### **Why Supabase Over Neon**
+### **Why Supabase Over Other Providers**
 - **Integrated Ecosystem**: Database + Auth + Storage in one platform
 - **Free Tier**: 500MB storage, 2GB bandwidth, 50K users - perfect for development
 - **No SCRAM Issues**: Reliable PostgreSQL connection without authentication problems

@@ -14,7 +14,7 @@
 
 ### **Data Strategy Overview**
 Our healthcare AI microservices platform uses a clear, industry-standard data architecture:
-- ✅ **Single Neon PostgreSQL** for all business data
+- ✅ **Single PostgreSQL** for all business data
 - ✅ **Supabase for authentication** (external auth provider)
 - ✅ **No auth tables in our database** (auth handled externally)
 - ✅ **Industry-standard separate profile tables** for scalability
@@ -22,8 +22,8 @@ Our healthcare AI microservices platform uses a clear, industry-standard data ar
 ## 🏗️ **Consistent Data Strategy**
 
 ### **1. Database Strategy**
-- **Primary Database**: Neon PostgreSQL for all business data
-- **User-Related Tables**: Business user data (profiles, roles, permissions) stored in Neon
+- **Primary Database**: PostgreSQL for all business data
+- **User-Related Tables**: Business user data (profiles, roles, permissions) stored in database
 - **No Authentication Tables**: Login credentials, passwords, auth sessions NOT stored
 - **Clear Separation**: Auth ≠ User Data
 
@@ -33,7 +33,7 @@ Our healthcare AI microservices platform uses a clear, industry-standard data ar
 │                    HEALTHCARE PLATFORM                      │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │              BUSINESS DATA IN NEON DB                   │ │
+│ │              BUSINESS DATA IN DATABASE                  │ │
 │ │                                                         │ │
 │ │ • User profiles (common identity)                      │ │
 │ │ • Patient profiles (medical-specific)                  │ │
@@ -48,7 +48,7 @@ Our healthcare AI microservices platform uses a clear, industry-standard data ar
 
 ## 🗄️ **Database Schema Strategy**
 
-### **What Goes in Neon Database**
+### **What Goes in Database**
 ✅ **User Business Data**:
 - User profiles (name, contact info, preferences)
 - User roles and permissions for business logic
@@ -58,7 +58,7 @@ Our healthcare AI microservices platform uses a clear, industry-standard data ar
 - Medical records
 - Audit logs and business events
 
-❌ **What Does NOT Go in Neon Database**:
+❌ **What Does NOT Go in Database**:
 - User login credentials (passwords)
 - Authentication sessions
 - JWT token storage
@@ -206,7 +206,7 @@ This database design follows healthcare industry standards (Epic, Cerner, Allscr
 - **Data Classification**: All medical records, patient profiles, and appointment data classified as ePHI
 - **Access Controls**: Role-based access with minimum necessary principle
 - **Data Encryption**: All ePHI encrypted at rest and in transit
-- **Secure Storage**: Neon PostgreSQL with encryption and access controls
+- **Secure Storage**: PostgreSQL with encryption and access controls
 
 ### **Audit & Monitoring Requirements**
 - **Comprehensive Logging**: All ePHI access logged in audit_logs table
@@ -225,7 +225,7 @@ This database design follows healthcare industry standards (Epic, Cerner, Allscr
 ## 🔗 **Data Integration Points**
 
 ### **Internal Data Access**
-- **Business Services**: Direct access to Neon database with audit logging
+- **Business Services**: Direct access to database with audit logging
 - **Shared Data Layer**: Common database access patterns with compliance controls
 - **Data Validation**: Strict healthcare compliance requirements and PHI protection
 

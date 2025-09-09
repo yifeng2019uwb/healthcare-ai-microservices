@@ -82,7 +82,7 @@ healthcare-ai-microservices/
 - **Containerization**: Docker
 - **Orchestration**: Kubernetes
 - **Infrastructure**: Terraform
-- **Database**: Neon PostgreSQL
+- **Database**: Supabase PostgreSQL
 - **File Storage**: AWS S3
 
 ## 🚀 **Next Steps**

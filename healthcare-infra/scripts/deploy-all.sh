@@ -9,13 +9,8 @@ echo "================================================"
 # Check prerequisites
 echo "🔍 Checking prerequisites..."
 
-# Check if NEON_API_KEY is set
-if [ -z "$NEON_API_KEY" ]; then
-    echo "❌ Error: NEON_API_KEY environment variable not set"
-    echo "   Get your API key from: https://console.neon.tech/settings/api-keys"
-    echo "   Then run: export NEON_API_KEY='neon_your_api_key_here'"
-    exit 1
-fi
+# Note: Database is now managed by Supabase
+# See healthcare-infra/terraform/supabase/ for database deployment
 
 # Check if GCP credentials exist
 if [ ! -f "config/gcp-credentials.json" ]; then
@@ -28,25 +23,8 @@ fi
 echo "✅ Prerequisites check passed"
 echo ""
 
-# Deploy Neon database first
-echo "🗄️ Step 1: Deploying Neon Database..."
-./scripts/deploy-neon.sh
-
-if [ $? -eq 0 ]; then
-    echo "✅ Neon database deployed successfully!"
-else
-    echo "❌ Neon database deployment failed!"
-    exit 1
-fi
-
-echo ""
-
-# Wait for database to be ready
-echo "⏳ Waiting for database to be ready..."
-sleep 10
-
 # Deploy GCP infrastructure
-echo "☁️ Step 2: Deploying GCP Infrastructure..."
+echo "☁️ Step 1: Deploying GCP Infrastructure..."
 ./scripts/deploy-gcp.sh
 
 if [ $? -eq 0 ]; then
@@ -61,12 +39,12 @@ echo "🎉 Full infrastructure deployed successfully!"
 echo "================================================"
 echo ""
 echo "📊 Your healthcare platform is ready:"
-echo "   🗄️ Database: Neon PostgreSQL with all tables"
+echo "   🗄️ Database: Supabase PostgreSQL (see healthcare-infra/terraform/supabase/)"
 echo "   ☁️ Cloud: GCP Cloud Run + Storage"
 echo "   🔗 Gateway: API Gateway service"
 echo ""
 echo "🧪 Test your deployment:"
-echo "   Database: psql \"\$(cd terraform && terraform output -raw neon_database_url)\""
+echo "   Database: See healthcare-infra/terraform/supabase/ for connection details"
 echo "   Gateway: Check Cloud Run console for service URL"
 echo ""
 echo "🔧 Next steps:"

@@ -1,46 +1,46 @@
-# Neon Database Deployment Scripts
+# Database Deployment Scripts
 
 ## Overview
 
-This directory contains scripts for deploying the healthcare database infrastructure to Neon PostgreSQL.
+This directory contains scripts for deploying the healthcare database infrastructure to PostgreSQL.
 
 ## Scripts
 
-### `deploy-neon.sh`
+### `deploy-all.sh`
 
-Deploy database tables to Neon PostgreSQL with flexible options.
+Deploy all database tables to PostgreSQL with flexible options.
 
 #### Usage
 
 ```bash
 # Deploy all tables (default)
-./scripts/deploy-neon.sh
+./scripts/deploy-all.sh
 
 # Deploy all tables explicitly
-./scripts/deploy-neon.sh -a
-./scripts/deploy-neon.sh --all
+./scripts/deploy-all.sh -a
+./scripts/deploy-all.sh --all
 
 # Deploy a single table
-./scripts/deploy-neon.sh -s user_profiles
-./scripts/deploy-neon.sh --single appointments
+./scripts/deploy-all.sh -s user_profiles
+./scripts/deploy-all.sh --single appointments
 
 # List available tables
-./scripts/deploy-neon.sh -l
-./scripts/deploy-neon.sh --list
+./scripts/deploy-all.sh -l
+./scripts/deploy-all.sh --list
 
 # Deploy specific resource (advanced)
-./scripts/deploy-neon.sh -t null_resource.create_database_schema
+./scripts/deploy-all.sh -t null_resource.create_database_schema
 
 # Show help
-./scripts/deploy-neon.sh -h
-./scripts/deploy-neon.sh --help
+./scripts/deploy-all.sh -h
+./scripts/deploy-all.sh --help
 ```
 
 #### Available Tables
 
 | Table Name | Description | Terraform Resource |
 |------------|-------------|-------------------|
-| `user_profiles` | User profiles and authentication | `null_resource.create_database_schema` |
+| `user_profiles` | User profiles and authentication | `null_resource.create_users_table` |
 | `patient_profiles` | Patient information and medical history | `null_resource.create_patient_profiles_table` |
 | `provider_profiles` | Healthcare provider information | `null_resource.create_provider_profiles_table` |
 | `appointments` | Appointment scheduling and management | `null_resource.create_appointments_table` |
@@ -51,29 +51,36 @@ Deploy database tables to Neon PostgreSQL with flexible options.
 
 ```bash
 # Deploy all tables at once
-./scripts/deploy-neon.sh
+./scripts/deploy-all.sh
 
 # Deploy only the user profiles table
-./scripts/deploy-neon.sh -s user_profiles
+./scripts/deploy-all.sh -s user_profiles
 
 # Deploy only the appointments table
-./scripts/deploy-neon.sh -s appointments
+./scripts/deploy-all.sh -s appointments
 
 # List all available tables
-./scripts/deploy-neon.sh -l
+./scripts/deploy-all.sh -l
 ```
 
 #### Prerequisites
 
-1. **Neon API Key**: Set the `NEON_API_KEY` environment variable
+1. **Database Credentials**: Configure database connection details
    ```bash
-   export NEON_API_KEY='napi_your_api_key_here'
+   # Copy example configuration
+   cp terraform/supabase/terraform.tfvars.example terraform/supabase/config/terraform.tfvars
+
+   # Edit with your database details
+   nano terraform/supabase/config/terraform.tfvars
    ```
 
-2. **Terraform Variables**: Ensure `terraform/terraform.tfvars` is configured
+2. **Terraform**: Install Terraform CLI
    ```bash
-   cp terraform/terraform.tfvars.example terraform/terraform.tfvars
-   nano terraform/terraform.tfvars
+   # macOS
+   brew install terraform
+
+   # Ubuntu/Debian
+   sudo apt-get install terraform
    ```
 
 3. **PostgreSQL Client**: Install `psql` for database operations
@@ -96,7 +103,7 @@ The script provides detailed output including:
 #### Error Handling
 
 The script includes comprehensive error handling for:
-- Missing API keys
+- Missing database credentials
 - Invalid table names
 - Terraform configuration issues
 - Database connection problems
@@ -106,36 +113,37 @@ The script includes comprehensive error handling for:
 ```
 healthcare-infra/
 ├── scripts/
-│   ├── deploy-neon.sh          # Main deployment script
+│   ├── deploy-all.sh           # Main deployment script
 │   └── README.md               # This file
 └── terraform/
-    ├── main.tf                 # Terraform configuration
-    ├── variables.tf            # Variable definitions
-    ├── terraform.tfvars        # Variable values
-    ├── outputs.tf              # Output definitions
-    ├── users.tf                # User profiles table
-    ├── patient_profiles.tf     # Patient profiles table
-    ├── provider_profiles.tf    # Provider profiles table
-    ├── appointments.tf         # Appointments table
-    ├── medical_records.tf      # Medical records table
-    └── audit_logs.tf           # Audit logs table
+    └── supabase/
+        ├── main.tf             # Terraform configuration
+        ├── variables.tf        # Variable definitions
+        ├── config/             # Configuration files (gitignored)
+        │   └── terraform.tfvars # Database credentials
+        ├── 01_users.tf         # User profiles table
+        ├── 02_patient_profiles.tf # Patient profiles table
+        ├── 03_provider_profiles.tf # Provider profiles table
+        ├── 04_appointments.tf  # Appointments table
+        ├── 05_medical_records.tf # Medical records table
+        └── 06_audit_logs.tf    # Audit logs table
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **API Key Not Set**
+1. **Database Credentials Not Set**
    ```
-   ❌ Error: NEON_API_KEY environment variable not set
+   ❌ Error: Database credentials not configured
    ```
-   **Solution**: Set your Neon API key as an environment variable
+   **Solution**: Configure `terraform/supabase/config/terraform.tfvars`
 
 2. **Invalid Table Name**
    ```
    ❌ Unknown table: invalid_table
    ```
-   **Solution**: Use `./scripts/deploy-neon.sh -l` to list available tables
+   **Solution**: Use `./scripts/deploy-all.sh -l` to list available tables
 
 3. **Terraform Configuration Missing**
    ```
@@ -147,10 +155,10 @@ healthcare-infra/
    ```
    Error: connection to server failed
    ```
-   **Solution**: Check your Neon connection details in `terraform.tfvars`
+   **Solution**: Check your database connection details in `terraform.tfvars`
 
 ### Getting Help
 
-- Run `./scripts/deploy-neon.sh --help` for usage information
-- Run `./scripts/deploy-neon.sh --list` to see available tables
+- Run `./scripts/deploy-all.sh --help` for usage information
+- Run `./scripts/deploy-all.sh --list` to see available tables
 - Check the Terraform logs for detailed error information

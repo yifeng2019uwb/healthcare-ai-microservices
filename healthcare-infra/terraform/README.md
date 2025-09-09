@@ -2,7 +2,7 @@
 
 > **🎯 Database Table Creation with Terraform**
 >
-> This directory contains Terraform configurations to create and manage our healthcare database tables using Neon PostgreSQL.
+> This directory contains Terraform configurations to create and manage our healthcare database tables using PostgreSQL.
 
 ## 📁 **File Structure**
 
@@ -10,18 +10,16 @@
 terraform/
 ├── main.tf                    # Core infrastructure configuration
 ├── variables.tf               # Variable definitions
-├── outputs.tf                 # Output values for database connection
-├── neon-project.tf            # Database connection configuration
-├── terraform.tfvars.example   # Example configuration file
-├── tables/                    # Database table definitions
-│   ├── main.tf               # Tables main configuration
-│   ├── users.tf              # User profiles table
-│   ├── patient_profiles.tf   # Patient profiles table
-│   ├── provider_profiles.tf  # Provider profiles table
-│   ├── appointments.tf       # Appointments table
-│   ├── medical_records.tf    # Medical records table
-│   ├── audit_logs.tf         # Audit logs table
-│   └── README.md             # Tables documentation
+├── supabase/                  # Supabase-specific configurations
+│   ├── main.tf               # Supabase provider configuration
+│   ├── variables.tf          # Supabase variables
+│   ├── 01_users.tf           # User profiles table
+│   ├── 02_patient_profiles.tf # Patient profiles table
+│   ├── 03_provider_profiles.tf # Provider profiles table
+│   ├── 04_appointments.tf    # Appointments table
+│   ├── 05_medical_records.tf # Medical records table
+│   ├── 06_audit_logs.tf      # Audit logs table
+│   └── config/               # Configuration files (gitignored)
 └── README.md                 # This file
 ```
 
@@ -45,63 +43,41 @@ terraform/
 ## 🚀 **Usage**
 
 ### **Prerequisites**
-1. **Neon Account** - Sign up at [neon.tech](https://neon.tech)
-2. **Neon Database** - Create a new database project
-3. **Terraform** - Install Terraform CLI
-4. **Credentials** - Neon API key + database connection details
+1. **PostgreSQL Database** - Any PostgreSQL provider (Supabase, AWS RDS, etc.)
+2. **Terraform** - Install Terraform CLI
+3. **Credentials** - Database connection details
 
-### **Step 1: Get Neon Credentials**
+### **Step 1: Configure Database Connection**
 
-#### **A. Neon API Key (Required)**
-1. Go to [Neon Console](https://console.neon.tech)
-2. Navigate to **Settings** → **API Keys**
-3. Click **Create API Key**
-4. Copy the API key (starts with `neon_`)
-
-#### **B. Database Connection Details**
-1. In Neon Console, go to your project
-2. Navigate to **Dashboard** → **Connection Details**
-3. Copy these details:
-   - **Host**: `your-project.neon.tech`
-   - **Database**: `neondb` (or your custom name)
-   - **Username**: `your-username`
-   - **Password**: `your-password`
-   - **Port**: `5432`
-
-### **Step 2: Configure Credentials**
-
-#### **A. Set Neon API Key (Environment Variable)**
-```bash
-# Set the Neon API key as environment variable
-export NEON_API_KEY="neon_your_actual_api_key_here"
-
-# Verify it's set
-echo $NEON_API_KEY
-```
-
-#### **B. Configure Database Connection**
+#### **A. Copy Configuration Template**
 ```bash
 # Copy example variables file
-cp terraform.tfvars.example terraform.tfvars
+cp supabase/terraform.tfvars.example supabase/config/terraform.tfvars
+```
 
-# Edit with your actual Neon database details
-nano terraform.tfvars
+#### **B. Edit Configuration**
+```bash
+# Edit with your actual database details
+nano supabase/config/terraform.tfvars
 ```
 
 **Fill in `terraform.tfvars`:**
 ```hcl
-# Neon database connection details
-neon_host     = "your-project.neon.tech"
-neon_port     = 5432
-neon_database = "neondb"
-neon_username = "your-username"
-neon_password = "your-password"
+# Database connection details
+supabase_host     = "your-db-host.com"
+supabase_port     = 5432
+supabase_database = "postgres"
+supabase_username = "your-username"
+supabase_password = "your-password"
 ```
 
-### **Step 3: Deploy Database Schema**
+### **Step 2: Deploy Database Schema**
 
-#### **Option A: Deploy All Tables**
+#### **Deploy All Tables**
 ```bash
+# Navigate to supabase directory
+cd supabase
+
 # Initialize Terraform
 terraform init
 
@@ -112,55 +88,34 @@ terraform plan
 terraform apply
 ```
 
-#### **Option B: Deploy Single Table**
+#### **Deploy Single Table**
 ```bash
 # Deploy only user profiles table
-terraform apply -target=null_resource.create_database_schema
+terraform apply -target=null_resource.create_users_table
 
 # Deploy only appointments table
 terraform apply -target=null_resource.create_appointments_table
 ```
 
-#### **Option C: Use Deployment Script**
+### **Step 3: Verify Deployment**
 ```bash
-# Deploy all tables
-../scripts/deploy-neon.sh
-
-# Deploy single table
-../scripts/deploy-neon.sh -s user_profiles
-
-# List available tables
-../scripts/deploy-neon.sh -l
-```
-
-### **Step 4: Verify Deployment**
-```bash
-# Get database connection URL
-terraform output neon_database_url
-
 # Connect to database
-psql "$(terraform output -raw neon_database_url)"
+psql -h your-db-host.com -p 5432 -U your-username -d postgres
 
 # List tables
 \dt
 ```
 
-### **Database Connection**
-After applying, you'll get:
-- **Database URL** - Complete connection string
-- **Host/Port** - Database connection details
-- **Table List** - All created tables
-
 ## 🔧 **Configuration**
 
 ### **Environment Variables**
-- `terraform.tfvars` - Database connection details (required)
-- **Location**: Copy from `../examples/terraform.tfvars.example`
+- `supabase/config/terraform.tfvars` - Database connection details (required)
+- **Location**: Copy from `supabase/terraform.tfvars.example`
 
 ### **Customization**
 - **Database Connection** - Update variables in `terraform.tfvars`
-- **Table Structure** - Edit individual table files in `tables/`
-- **Security** - All credentials stored in `../config/` directory
+- **Table Structure** - Edit individual table files
+- **Security** - All credentials stored in `config/` directory (gitignored)
 
 ## 📊 **Database Schema Overview**
 
@@ -188,14 +143,14 @@ After applying, you'll get:
 
 ### **Direct Database Testing**
 ```bash
-# Connect to database using output URL
-psql "$(terraform output -raw neon_database_url)"
+# Connect to database
+psql -h your-db-host.com -p 5432 -U your-username -d postgres
 
 # Test table creation
 \dt
 
 # Test data insertion
-INSERT INTO users (email, user_type) VALUES ('test@test.com', 'PATIENT');
+INSERT INTO user_profiles (email, role) VALUES ('test@test.com', 'PATIENT');
 ```
 
 ### **Table Validation**
@@ -213,37 +168,26 @@ WHERE constraint_type = 'FOREIGN KEY';
 
 ### **Common Issues**
 
-#### **1. Neon API Key Issues**
-```bash
-# Error: "No API key found"
-# Solution: Set the NEON_API_KEY environment variable
-export NEON_API_KEY="neon_your_actual_api_key_here"
-
-# Verify it's set
-echo $NEON_API_KEY
-```
-
-#### **2. Database Connection Issues**
+#### **1. Database Connection Issues**
 ```bash
 # Error: "connection refused" or "authentication failed"
 # Solution: Check your terraform.tfvars file
-cat terraform.tfvars
+cat supabase/config/terraform.tfvars
 
-# Verify connection details in Neon Console
-# - Host: your-project.neon.tech
+# Verify connection details
+# - Host: your-db-host.com
 # - Username: your-username
 # - Password: your-password
-# - Database: neondb
+# - Database: postgres
 ```
 
-#### **3. Permission Issues**
+#### **2. Permission Issues**
 ```bash
 # Error: "permission denied for table"
-# Solution: Ensure your Neon user has CREATE privileges
-# Check in Neon Console → Settings → Database Users
+# Solution: Ensure your database user has CREATE privileges
 ```
 
-#### **4. Terraform State Issues**
+#### **3. Terraform State Issues**
 ```bash
 # Error: "state file not found"
 # Solution: Initialize Terraform first
@@ -260,11 +204,10 @@ terraform init
 terraform version
 
 # Check if credentials are set
-echo "API Key: $NEON_API_KEY"
-echo "Database: $(grep neon_database terraform.tfvars)"
+cat supabase/config/terraform.tfvars
 
 # Test database connection
-psql "$(terraform output -raw neon_database_url)" -c "\dt"
+psql -h your-db-host.com -p 5432 -U your-username -d postgres -c "\dt"
 ```
 
 ## 🔄 **Next Steps**
