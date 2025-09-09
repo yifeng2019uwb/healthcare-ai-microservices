@@ -26,11 +26,5 @@ public class CreatePatientAccountResponse {
     @JsonProperty(PatientServiceConstants.JSON_FIELD_MESSAGE)
     private String message;
 
-    // Manual constructor for compatibility
-    public CreatePatientAccountResponse(boolean success, String message) {
-        this.success = success;
-        this.message = message;
-    }
-
     // Lombok generates: @NoArgsConstructor, @AllArgsConstructor, and all getters
 }
