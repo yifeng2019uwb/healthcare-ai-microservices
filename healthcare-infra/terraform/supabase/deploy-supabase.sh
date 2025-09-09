@@ -32,7 +32,14 @@ terraform apply -target=null_resource.create_audit_logs_table -auto-approve
 
 # Verify all tables were created
 echo "🔍 Verifying table creation..."
-PGPASSWORD="cloudP2025@yf" psql -h "db.vohmpqlyiqysdtvzccnz.supabase.co" -p 5432 -U "postgres" -d "postgres" -c "\dt"
+# Load environment variables from terraform.tfvars if it exists
+if [ -f "terraform.tfvars" ]; then
+    source terraform.tfvars
+    PGPASSWORD="${supabase_password}" psql -h "${supabase_host}" -p "${supabase_port}" -U "${supabase_username}" -d "${supabase_database}" -c "\dt"
+else
+    echo "⚠️  Warning: terraform.tfvars not found. Skipping verification."
+    echo "📝 Please create terraform.tfvars with your Supabase credentials to enable verification."
+fi
 
 if [ $? -eq 0 ]; then
     echo "✅ Database deployment completed successfully!"
