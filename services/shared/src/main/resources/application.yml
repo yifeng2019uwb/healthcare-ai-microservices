@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/healthcare_dev?sslmode=require}"
+    url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://db.dummy-project-ref.supabase.co:5432/postgres?sslmode=require&connectTimeout=60000&socketTimeout=60000&loginTimeout=60000}"
     username: "${SPRING_DATASOURCE_USERNAME:postgres}"
-    password: "${SPRING_DATASOURCE_PASSWORD:password}"
+    password: "${SPRING_DATASOURCE_PASSWORD:dummy-password-123}"
     driver-class-name: org.postgresql.Driver
 
   jpa:

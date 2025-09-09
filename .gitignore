@@ -91,6 +91,7 @@ healthcare-infra/gcp/service-account-*.json
 .env.development
 .env.production
 .env.staging
+!env.example
 
 # Configuration Files with Credentials
 terraform.tfvars
@@ -104,8 +105,18 @@ docker-compose.yml
 docker-compose.*.yml
 !docker-compose.example.yml
 
+# Patient Service Configuration (contains credentials)
+docker/patient/
+
+# Service Resource Packages (may contain credentials)
+services/*/src/main/resources/application-local.yml
+services/*/src/main/resources/application-*.yml
+!services/*/src/main/resources/application-example.yml
+!services/*/src/main/resources/application.yml
+
 # Config Directory - Completely Ignored
 healthcare-infra/config/
+healthcare-infra/terraform/supabase/config/
 
 # Build artifacts
 bin/
