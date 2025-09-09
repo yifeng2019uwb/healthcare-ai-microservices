@@ -100,6 +100,9 @@ application-local.yml
 application-*.yml
 !application-example.yml
 !application.yml
+docker-compose.yml
+docker-compose.*.yml
+!docker-compose.example.yml
 
 # Config Directory - Completely Ignored
 healthcare-infra/config/
