@@ -97,6 +97,19 @@ jobs:
 
         echo "🎉 Project structure validation passed!"
 
+    - name: Install parent POM and shared module
+      run: |
+        echo "📦 Installing parent POM and shared module..."
+        cd services
+
+        # Install parent POM first
+        mvn clean install -N
+
+        # Install shared module (needed by other services)
+        cd shared
+        mvn clean install
+        cd ..
+
     - name: Test all services
       run: |
         echo "🧪 Testing all services..."
