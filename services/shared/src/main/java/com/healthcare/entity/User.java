@@ -74,7 +74,7 @@ public class User extends BaseEntity {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = DatabaseConstants.COL_GENDER, nullable = false)
+    @Column(name = DatabaseConstants.COL_GENDER, nullable = false, columnDefinition = "VARCHAR(20) CHECK (gender IN ('MALE', 'FEMALE', 'OTHER', 'UNKNOWN'))")
     private Gender gender;
 
     @Size(max = 255)
@@ -100,12 +100,12 @@ public class User extends BaseEntity {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = DatabaseConstants.COL_ROLE, nullable = false)
+    @Column(name = DatabaseConstants.COL_ROLE, nullable = false, columnDefinition = "VARCHAR(20) CHECK (role IN ('PATIENT', 'PROVIDER'))")
     private UserRole role; // IMMUTABLE after creation
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = DatabaseConstants.COL_USER_STATUS, nullable = false)
+    @Column(name = DatabaseConstants.COL_USER_STATUS, nullable = false, columnDefinition = "VARCHAR(20) CHECK (status IN ('ACTIVE', 'INACTIVE', 'SUSPENDED'))")
     private UserStatus status = UserStatus.ACTIVE;
 
     @JdbcTypeCode(SqlTypes.JSON)

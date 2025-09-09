@@ -133,6 +133,12 @@ public final class DatabaseConstants {
     public static final String COLUMN_DEFINITION_TEXT = "TEXT";
     public static final String COLUMN_DEFINITION_INET = "INET";
 
+    // Enum Type Definitions
+    public static final String COLUMN_DEFINITION_GENDER_ENUM = "gender_enum";
+    public static final String COLUMN_DEFINITION_STATUS_ENUM = "status_enum";
+    public static final String COLUMN_DEFINITION_ROLE_ENUM = "role_enum";
+    public static final String COLUMN_DEFINITION_APPOINTMENT_STATUS_ENUM = "appointment_status_enum";
+
     private DatabaseConstants() {
         // Utility class
     }

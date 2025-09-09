@@ -28,7 +28,7 @@ healthcare-infra/
 - **Monitoring Design**: Observability and monitoring strategy
 
 ### **Infrastructure Components**
-- **Neon Database**: PostgreSQL with automated schema creation
+- **Supabase Database**: PostgreSQL with integrated Auth + Storage
 - **AWS S3**: Medical document storage with compliance
 - **Security Layer**: IAM, encryption, access control
 - **Monitoring Layer**: Health checks, logging, metrics
@@ -42,7 +42,7 @@ healthcare-infra/
 **Deliverables**: Architecture, module designs, implementation roadmap
 
 ### **Phase 1: Foundation Services**
-**Infrastructure**: Basic Neon database, simple security, basic monitoring
+**Infrastructure**: Basic Supabase database, simple security, basic monitoring
 **Services**: Gateway + Auth + Patient Service
 
 ### **Phase 2: Provider + Medical Records**

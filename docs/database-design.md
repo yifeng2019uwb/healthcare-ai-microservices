@@ -393,7 +393,9 @@ CREATE INDEX idx_medical_records_patient_visible ON medical_records (appointment
 | resource_type | ENUM | NOT NULL | COMPOSITE INDEX | USER_PROFILE, PATIENT_PROFILE, PROVIDER_PROFILE, APPOINTMENT, MEDICAL_RECORD |
 | resource_id | UUID   | - | COMPOSITE INDEX | ID of the resource being acted upon (nullable for system actions) |
 | outcome     | ENUM   | NOT NULL | COMPOSITE INDEX | SUCCESS, FAILURE |
-| details     | JSONB  | - | - | Additional action details |
+| old_values  | JSONB  | - | - | Previous state before modification (for UPDATE/DELETE actions) |
+| new_values  | JSONB  | - | - | New state after modification (for CREATE/UPDATE actions) |
+| details     | JSONB  | - | - | Additional action details and context |
 | source_ip   | INET   | - | - | IP address of the request |
 | user_agent  | TEXT   | - | - | User agent string |
 | created_at  | TIMESTAMPTZ | NOT NULL | COMPOSITE INDEX | Action timestamp (timezone-aware) |
@@ -403,6 +405,37 @@ CREATE INDEX idx_medical_records_patient_visible ON medical_records (appointment
 ALTER TABLE audit_logs
 ADD CONSTRAINT fk_audit_user_id
 FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
+```
+
+#### **Healthcare Audit Requirements:**
+
+##### **Why Old/New Values Are Essential:**
+- **HIPAA Compliance**: Required for tracking modifications to electronic protected health information (ePHI)
+- **Data Integrity**: Clear trail of what changed, when, and by whom
+- **Forensic Analysis**: Detect unauthorized changes and security breaches
+- **Legal Defensibility**: Evidence in malpractice cases and regulatory audits
+- **Error Detection**: Quickly identify and correct mistakes in medical records
+- **Industry Standards**: Follows FHIR AuditEvent and ASTM E2147-18 standards
+
+##### **Audit Log Usage Examples:**
+```json
+// Medication dosage change
+{
+  "action_type": "UPDATE",
+  "resource_type": "MEDICAL_RECORD",
+  "old_values": {"medication": "Lisinopril", "dosage": "10mg", "frequency": "daily"},
+  "new_values": {"medication": "Lisinopril", "dosage": "20mg", "frequency": "daily"},
+  "details": {"reason": "Blood pressure not controlled", "provider_notes": "Increase per protocol"}
+}
+
+// Patient address update
+{
+  "action_type": "UPDATE",
+  "resource_type": "PATIENT_PROFILE",
+  "old_values": {"street_address": "123 Main St", "city": "Boston", "state": "MA"},
+  "new_values": {"street_address": "456 Oak Ave", "city": "Cambridge", "state": "MA"},
+  "details": {"verification_method": "insurance_card", "updated_by_patient": true}
+}
 ```
 
 #### **Audit Trail Strategy:**
@@ -557,7 +590,7 @@ CREATE INDEX idx_audit_logs_security_monitoring ON audit_logs (action_type, outc
 
 ## 📋 **Success Criteria**
 
-- [ ] All 6 tables can be created in Neon PostgreSQL
+- [ ] All 6 tables can be created in Supabase PostgreSQL
 - [ ] Basic CRUD operations work for each table
 - [ ] Foreign key relationships are properly enforced
 - [ ] Audit logging captures all data access

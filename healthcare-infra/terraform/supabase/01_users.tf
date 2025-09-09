@@ -7,33 +7,17 @@ resource "null_resource" "create_database_schema" {
   provisioner "local-exec" {
     command = <<-EOT
       # Get connection details from terraform.tfvars
-      PGPASSWORD="${var.neon_password}" psql \
-        -h "${var.neon_host}" \
-        -p "${var.neon_port}" \
-        -U "${var.neon_username}" \
-        -d "${var.neon_database}" \
+      PGPASSWORD="${var.supabase_password}" psql \
+        -h "${var.supabase_host}" \
+        -p "${var.supabase_port}" \
+        -U "${var.supabase_username}" \
+        -d "${var.supabase_database}" \
         -c "
       -- Enable UUID extension
       CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
 
-      -- Create ENUM types
-      DO \$\$ BEGIN
-          CREATE TYPE gender_enum AS ENUM ('MALE', 'FEMALE', 'OTHER', 'UNKNOWN');
-      EXCEPTION
-          WHEN duplicate_object THEN null;
-      END \$\$;
-
-      DO \$\$ BEGIN
-          CREATE TYPE role_enum AS ENUM ('PATIENT', 'PROVIDER');
-      EXCEPTION
-          WHEN duplicate_object THEN null;
-      END \$\$;
-
-      DO \$\$ BEGIN
-          CREATE TYPE status_enum AS ENUM ('ACTIVE', 'INACTIVE', 'SUSPENDED');
-      EXCEPTION
-          WHEN duplicate_object THEN null;
-      END \$\$;
+      -- Note: Using VARCHAR with CHECK constraints instead of ENUM types
+      -- This provides better compatibility with Hibernate when ddl-auto: none
 
       -- Create user_profiles table
       CREATE TABLE IF NOT EXISTS user_profiles (
@@ -44,14 +28,14 @@ resource "null_resource" "create_database_schema" {
           email VARCHAR(255) NOT NULL,
           phone VARCHAR(20) NOT NULL,
           date_of_birth DATE NOT NULL,
-          gender gender_enum NOT NULL,
+          gender VARCHAR(20) NOT NULL CHECK (gender IN ('MALE', 'FEMALE', 'OTHER', 'UNKNOWN')),
           street_address VARCHAR(255),
           city VARCHAR(100),
           state VARCHAR(50),
           postal_code VARCHAR(20),
           country VARCHAR(50),
-          role role_enum NOT NULL,
-          status status_enum NOT NULL DEFAULT 'ACTIVE',
+          role VARCHAR(20) NOT NULL CHECK (role IN ('PATIENT', 'PROVIDER')),
+          status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE', 'SUSPENDED')),
           custom_data JSONB,
           created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -69,7 +53,7 @@ resource "null_resource" "create_database_schema" {
 
   # Trigger recreation when SQL changes
   triggers = {
-    schema_version = "1.0"
+    schema_version = "2.0"
   }
 }
 

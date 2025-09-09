@@ -18,23 +18,31 @@
 
 ### **What We're Building**
 **Multi-Cloud Infrastructure** that supports our healthcare microservices platform:
-- **Database**: Neon PostgreSQL (managed service)
+- **Database**: Supabase PostgreSQL (managed service)
 - **File Storage**: AWS S3 (medical documents, images)
 - **Deployment**: Railway (application hosting)
 - **Security**: AWS IAM + custom security layers
 - **Monitoring**: Hybrid monitoring approach
 
 ### **Why This Infrastructure Mix**
-- **Neon**: Best managed PostgreSQL for development and scaling
+- **Supabase**: Best managed PostgreSQL for development and scaling with integrated Auth + Storage
 - **AWS S3**: Industry standard for secure file storage (including ML model files)
 - **Railway**: Simple deployment for learning and rapid iteration
 - **Hybrid Approach**: Use best service for each need
+
+### **Why Supabase Over Neon**
+- **Integrated Ecosystem**: Database + Auth + Storage in one platform
+- **Free Tier**: 500MB storage, 2GB bandwidth, 50K users - perfect for development
+- **No SCRAM Issues**: Reliable PostgreSQL connection without authentication problems
+- **Unified Dashboard**: Manage everything from one interface
+- **Future Scalability**: Easy to upgrade when needed
+- **Better Documentation**: Comprehensive guides and examples
 
 ### **AI Service Architecture Clarification**
 - **AI Service**: Python + FastAPI project (Port 8005), NOT on Railway
 - **ML Models**: Stored in S3 (model files, weights), NOT executed on AWS
 - **AI Inference**: Happens in our Python service locally
-- **Data Flow**: AI Service downloads models from S3, runs inference locally, stores results in Neon
+- **Data Flow**: AI Service downloads models from S3, runs inference locally, stores results in Supabase
 
 ## 🏗️ **Infrastructure Architecture**
 
@@ -45,7 +53,7 @@
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────┐ │
-│  │   Railway       │    │   Neon          │    │   AWS       │ │
+│  │   Railway       │    │   Supabase      │    │   AWS       │ │
 │  │   (Java Apps)   │    │   (Database)    │    │   (Storage) │ │
 │  │                 │    │                 │    │             │ │
 │  │ • Gateway       │    │ • PostgreSQL    │    │ • S3        │ │
@@ -61,21 +69,21 @@
 │  │  • Healthcare AI & Analytics                                │ │
 │  │  • Runs Locally (Not on Railway)                            │ │
 │  └─────────────────────────────────────────────────────────────┘ │
-│                                                                 │
+│                                                                  │
 │  ┌─────────────────────────────────────────────────────────────┐ │
-│  │                    Security Layer                          │ │
-│  │  • IAM Roles & Policies                                    │ │
-│  │  • SSL/TLS Encryption                                      │ │
-│  │  • Access Control                                          │ │
-│  │  • Audit Logging                                           │ │
+│  │                    Security Layer                           │ │
+│  │  • IAM Roles & Policies                                     │ │
+│  │  • SSL/TLS Encryption                                       │ │
+│  │  • Access Control                                           │ │
+│  │  • Audit Logging                                            │ │
 │  └─────────────────────────────────────────────────────────────┘ │
-│                                                                 │
+│                                                                  │
 │  ┌─────────────────────────────────────────────────────────────┐ │
-│  │                  Monitoring Layer                          │ │
-│  │  • Health Checks                                           │ │
-│  │  • Log Collection                                          │ │
-│  │  • Basic Metrics                                           │ │
-│  │  • Alert System                                            │ │
+│  │                  Monitoring Layer                           │ │
+│  │  • Health Checks                                            │ │
+│  │  • Log Collection                                           │ │
+│  │  • Basic Metrics                                            │ │
+│  │  • Alert System                                             │ │
 │  └─────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -93,13 +101,13 @@
 
 ### **Phase 1: Foundation Services (Gateway + Auth + Patient)**
 **Infrastructure Requirements**:
-- ✅ **Neon Database**: 6 core tables, basic connectivity
+- ✅ **Supabase Database**: 6 core tables, basic connectivity
 - ✅ **Basic Security**: Simple IAM roles for 3 services
 - ✅ **No S3 Yet**: Keep it simple for learning
 - ✅ **Basic Monitoring**: Simple health checks
 
 **Infrastructure Design Decisions**:
-- **Database**: Start with small Neon instance (free tier if possible)
+- **Database**: Start with small Supabase instance (free tier with 500MB storage)
 - **Security**: Basic dev permissions, not production-grade
 - **Monitoring**: Basic health endpoints only
 - **Complexity**: Minimal, learning-focused
@@ -158,7 +166,7 @@ healthcare-infra/
 │   │   ├── dev/                       # Development environment
 │   │   └── prod/                      # Future production
 │   ├── modules/                       # Reusable modules
-│   │   ├── neon-database/             # Neon PostgreSQL module
+│   │   ├── supabase-database/         # Supabase PostgreSQL module
 │   │   ├── aws-s3/                    # AWS S3 module
 │   │   ├── security/                  # Security module
 │   │   └── monitoring/                # Monitoring module
@@ -174,7 +182,7 @@ healthcare-infra/
 │   ├── dev.tfvars                     # Dev variables
 │   └── prod.tfvars                    # Future production variables
 └── docs/                               # Infrastructure documentation
-    ├── neon-setup.md                  # Neon database setup guide
+    ├── supabase-setup.md              # Supabase database setup guide
     ├── aws-setup.md                   # AWS setup guide
     ├── security-guide.md              # Security configuration guide
     └── monitoring-guide.md            # Monitoring setup guide
@@ -267,7 +275,7 @@ healthcare-infra/
 ## 📋 **Design Status**
 
 ### **Current Focus**
-- **Infrastructure Architecture**: Multi-cloud setup with Neon, AWS S3, Railway
+- **Infrastructure Architecture**: Multi-cloud setup with Supabase, AWS S3, Railway
 - **Service Support**: Infrastructure requirements for all service phases
 - **Security Design**: HIPAA-compliant security architecture
 - **Monitoring Design**: Basic observability and health checks
@@ -283,7 +291,7 @@ healthcare-infra/
 ## ❓ **Key Design Questions**
 
 ### **Infrastructure Design**
-1. **Database**: How does Neon schema evolve with service phases?
+1. **Database**: How does Supabase schema evolve with service phases?
 2. **Storage**: How does S3 handle different medical data types?
 3. **Security**: How do IAM roles scale with service complexity?
 4. **Monitoring**: How does observability grow with services?

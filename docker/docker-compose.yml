@@ -1,6 +1,62 @@
 # Healthcare AI Microservices - Docker Compose
 # Local development environment
 
+# =============================================================================
+# DATABASE CONNECTION ATTEMPTS - DO NOT REPEAT THESE TESTS
+# =============================================================================
+#
+# ATTEMPT 1: Port 5432 (Standard PostgreSQL)
+# - URL: jdbc:postgresql://vohmpqlyiqysdtvzccnz.supabase.co:5432/postgres?sslmode=require
+# - Result: Connection refused (port not accessible)
+# - Test: nc -zv vohmpqlyiqysdtvzccnz.supabase.co 5432 → TIMEOUT
+#
+# ATTEMPT 2: Port 6543 (Supabase Connection Pooler)
+# - URL: jdbc:postgresql://vohmpqlyiqysdtvzccnz.supabase.co:6543/postgres?sslmode=require
+# - Result: Connection refused (port not accessible)
+# - Test: nc -zv vohmpqlyiqysdtvzccnz.supabase.co 6543 → TIMEOUT
+#
+# ATTEMPT 3: Port 443 (HTTPS Port)
+# - URL: jdbc:postgresql://vohmpqlyiqysdtvzccnz.supabase.co:443/postgres?sslmode=require
+# - Result: SSL connection error (wrong protocol)
+# - Test: nc -zv vohmpqlyiqysdtvzccnz.supabase.co 443 → SUCCESS (but wrong protocol)
+#
+# ATTEMPT 4: Correct Supabase DB Hostname + Port 5432
+# - URL: jdbc:postgresql://db.vohmpqlyiqysdtvzccnz.supabase.co:5432/postgres?sslmode=require
+# - Result: Network unreachable (Docker networking issue)
+# - Test: nc -zv db.vohmpqlyiqysdtvzccnz.supabase.co 5432 → SUCCESS from host, FAIL from container
+#
+# ATTEMPT 5: Correct Supabase DB Hostname + Port 443 + Host Networking
+# - URL: jdbc:postgresql://db.vohmpqlyiqysdtvzccnz.supabase.co:443/postgres?sslmode=require
+# - Result: SSL connection error (wrong protocol - HTTPS vs PostgreSQL)
+# - Test: nc -zv db.vohmpqlyiqysdtvzccnz.supabase.co 443 → SUCCESS (but wrong protocol)
+#
+# ATTEMPT 6: Supabase Connection Pooler (Supavisor) + Port 5432
+# - URL: jdbc:postgresql://aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require
+# - Username: postgres.vohmpqlyiqysdtvzccnz
+# - Password: cloudP2025@yf
+# - Network: host (bypasses Docker network isolation)
+# - Result: FATAL: Tenant or user not found (connection pooler working, but user format incorrect)
+# - Status: Application starts but database operations fail
+#
+# ATTEMPT 7: Direct Supabase DB Connection + Host Networking
+# - URL: jdbc:postgresql://db.vohmpqlyiqysdtvzccnz.supabase.co:5432/postgres?sslmode=require
+# - Username: postgres
+# - Password: cloudP2025@yf
+# - Network: host (bypasses Docker network isolation)
+# - Result: SUCCESS! Database connection established, data processing works
+# - Issue: Database schema mismatch - gender column expects enum type, not string
+# - Status: Database connection working, need to fix data type mapping
+#
+# =============================================================================
+# KNOWN ISSUES:
+# - Port 5432: IPv6 only, causes "Network unreachable" in IPv4 environments
+# - Port 6543: Connection refused (not accessible)
+# - Port 443: Accessible but wrong protocol (HTTPS vs PostgreSQL)
+# - Docker container cannot reach external databases due to network isolation
+# - Supabase requires specific connection pooler format with project-ref in username
+# - Current approach: Using Supavisor connection pooler with host networking
+# =============================================================================
+
 version: '3.8'
 
 services:
@@ -10,15 +66,12 @@ services:
       context: ../
       dockerfile: services/patient-service/Dockerfile
     container_name: healthcare-patient-service
+    network_mode: host
     environment:
-      SPRING_DATASOURCE_URL: "jdbc:postgresql://ep-rough-sun-a5xq8x2p.us-east-2.aws.neon.tech:5432/neondb?sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.DefaultJavaSSLFactory"
-      SPRING_DATASOURCE_USERNAME: neondb_owner
-      SPRING_DATASOURCE_PASSWORD: pg_mNa1rdsbhP7V
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://db.vohmpqlyiqysdtvzccnz.supabase.co:5432/postgres?sslmode=require&connectTimeout=60000&socketTimeout=60000&loginTimeout=60000"
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: cloudP2025@yf
       SPRING_JPA_HIBERNATE_DDL_AUTO: none
-    ports:
-      - "8080:8080"
-    networks:
-      - healthcare-network
 
 networks:
   healthcare-network:

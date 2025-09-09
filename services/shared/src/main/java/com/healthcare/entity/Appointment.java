@@ -55,7 +55,7 @@ public class Appointment extends BaseEntity {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = DatabaseConstants.COL_APPOINTMENT_STATUS, nullable = false)
+    @Column(name = DatabaseConstants.COL_APPOINTMENT_STATUS, nullable = false, columnDefinition = "VARCHAR(20) CHECK (status IN ('AVAILABLE', 'SCHEDULED', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW'))")
     private AppointmentStatus status = AppointmentStatus.AVAILABLE;
 
     @NotNull
