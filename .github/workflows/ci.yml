@@ -73,10 +73,10 @@ jobs:
           exit 1
         fi
 
-        if [ -f "services/shared/dev.sh" ]; then
-          echo "✅ services/shared/dev.sh exists"
+        if [ -f "services/dev.sh" ]; then
+          echo "✅ services/dev.sh exists"
         else
-          echo "❌ services/shared/dev.sh missing"
+          echo "❌ services/dev.sh missing"
           exit 1
         fi
 
