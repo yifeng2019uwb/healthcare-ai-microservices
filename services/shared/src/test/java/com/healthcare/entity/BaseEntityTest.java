@@ -1,0 +1,207 @@
+package com.healthcare.entity;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
+import com.healthcare.exception.ValidationException;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+/**
+ * Unit tests for BaseEntity and AuditListener
+ */
+class BaseEntityTest {
+
+    private TestEntity testEntity;
+
+    @BeforeEach
+    void setUp() {
+        testEntity = new TestEntity();
+    }
+
+    @AfterEach
+    void tearDown() {
+        testEntity = null;
+    }
+
+    @Test
+    void testUpdatedByField() {
+        // Test initial state
+        assertThat(testEntity.getUpdatedBy()).isNull();
+
+        // Test setting valid updatedBy
+        String testUserId = "user-123";
+        testEntity.setUpdatedBy(testUserId);
+        assertThat(testEntity.getUpdatedBy()).isEqualTo(testUserId);
+
+        // Test setting trimmed updatedBy
+        testEntity.setUpdatedBy("  user-456  ");
+        assertThat(testEntity.getUpdatedBy()).isEqualTo("user-456");
+
+        // Test setting another value
+        String anotherUserId = "user-789";
+        testEntity.setUpdatedBy(anotherUserId);
+        assertThat(testEntity.getUpdatedBy()).isEqualTo(anotherUserId);
+
+        // Test setting null - should throw ValidationException
+        assertThatThrownBy(() -> testEntity.setUpdatedBy(null))
+            .isInstanceOf(ValidationException.class)
+            .hasMessageContaining("Updated by cannot be null");
+
+        // Test setting empty string - should throw ValidationException
+        assertThatThrownBy(() -> testEntity.setUpdatedBy(""))
+            .isInstanceOf(ValidationException.class)
+            .hasMessageContaining("Updated by cannot be null or empty");
+
+        // Test setting whitespace only - should throw ValidationException
+        assertThatThrownBy(() -> testEntity.setUpdatedBy("   "))
+            .isInstanceOf(ValidationException.class)
+            .hasMessageContaining("Updated by cannot be null or empty");
+
+        // Test setting updatedBy exceeding 100 characters - should throw ValidationException
+        String longUserId = "a".repeat(101);
+        assertThatThrownBy(() -> testEntity.setUpdatedBy(longUserId))
+            .isInstanceOf(ValidationException.class)
+            .hasMessageContaining("Updated by cannot exceed 100 characters");
+
+        // Test setting updatedBy exactly 100 characters - should be valid
+        String exactlyMaxUserId = "a".repeat(100);
+        testEntity.setUpdatedBy(exactlyMaxUserId);
+        assertThat(testEntity.getUpdatedBy()).isEqualTo(exactlyMaxUserId);
+    }
+
+    @Test
+    void testAuditListenerPrePersist() {
+        // Create a new AuditListener instance
+        BaseEntity.AuditListener auditListener = new BaseEntity.AuditListener();
+
+        // Test prePersist method
+        auditListener.prePersist(testEntity);
+
+        // Should set updatedBy to "system" (fallback value)
+        assertThat(testEntity.getUpdatedBy()).isEqualTo("system");
+    }
+
+    @Test
+    void testAuditListenerPreUpdate() {
+        // Create a new AuditListener instance
+        BaseEntity.AuditListener auditListener = new BaseEntity.AuditListener();
+
+        // Test preUpdate method
+        auditListener.preUpdate(testEntity);
+
+        // Should set updatedBy to "system" (fallback value)
+        assertThat(testEntity.getUpdatedBy()).isEqualTo("system");
+    }
+
+    @Test
+    void testAuditListenerWithExistingUpdatedBy() {
+        // Create a new AuditListener instance
+        BaseEntity.AuditListener auditListener = new BaseEntity.AuditListener();
+
+        // Set existing updatedBy
+        String existingUserId = "existing-user-456";
+        testEntity.setUpdatedBy(existingUserId);
+
+        // Test prePersist method
+        auditListener.prePersist(testEntity);
+
+        // Should update to "system" (fallback value)
+        assertThat(testEntity.getUpdatedBy()).isEqualTo("system");
+    }
+
+    @Test
+    void testAuditListenerMultipleCalls() {
+        // Create a new AuditListener instance
+        BaseEntity.AuditListener auditListener = new BaseEntity.AuditListener();
+
+        // Test multiple prePersist calls
+        auditListener.prePersist(testEntity);
+        assertThat(testEntity.getUpdatedBy()).isEqualTo("system");
+        assertThat(testEntity.getUpdatedBy()).isNotNull(); // Ensure non-null
+
+        // Test multiple preUpdate calls
+        auditListener.preUpdate(testEntity);
+        assertThat(testEntity.getUpdatedBy()).isEqualTo("system");
+        assertThat(testEntity.getUpdatedBy()).isNotNull(); // Ensure non-null
+
+        // Test mixed calls
+        testEntity.setUpdatedBy("user-789");
+        auditListener.prePersist(testEntity);
+        assertThat(testEntity.getUpdatedBy()).isEqualTo("system");
+        assertThat(testEntity.getUpdatedBy()).isNotNull(); // Ensure non-null
+    }
+
+    @Test
+    void testAuditListenerEnsuresNonNullUpdatedBy() {
+        // Create a new AuditListener instance
+        BaseEntity.AuditListener auditListener = new BaseEntity.AuditListener();
+
+        // Test that AuditListener always sets a non-null value
+        assertThat(testEntity.getUpdatedBy()).isNull(); // Initially null
+
+        auditListener.prePersist(testEntity);
+        assertThat(testEntity.getUpdatedBy()).isNotNull();
+        assertThat(testEntity.getUpdatedBy()).isEqualTo("system");
+
+        // Reset to null and test preUpdate - should throw validation exception
+        assertThatThrownBy(() -> testEntity.setUpdatedBy(null))
+            .isInstanceOf(ValidationException.class)
+            .hasMessageContaining("Updated by cannot be null");
+
+        auditListener.preUpdate(testEntity);
+        assertThat(testEntity.getUpdatedBy()).isNotNull();
+        assertThat(testEntity.getUpdatedBy()).isEqualTo("system");
+    }
+
+    @Test
+    void testBaseEntityInheritance() {
+        // Test that TestEntity properly inherits from BaseEntity
+        assertThat(testEntity).isInstanceOf(BaseEntity.class);
+
+        // Test that we can access BaseEntity methods
+        assertThat(testEntity.getId()).isNull();
+        assertThat(testEntity.getCreatedAt()).isNull();
+        assertThat(testEntity.getUpdatedAt()).isNull();
+        assertThat(testEntity.getUpdatedBy()).isNull();
+    }
+
+    @Test
+    void testBaseEntityToString() {
+        // Test toString method (inherited from Object)
+        String toString = testEntity.toString();
+        assertThat(toString).isNotNull();
+        assertThat(toString).contains("TestEntity");
+    }
+
+    @Test
+    void testBaseEntityEqualsAndHashCode() {
+        // Test equals method (inherited from Object)
+        TestEntity anotherEntity = new TestEntity();
+        assertThat(testEntity).isNotEqualTo(anotherEntity);
+        assertThat(testEntity).isEqualTo(testEntity);
+
+        // Test hashCode method (inherited from Object)
+        assertThat(testEntity.hashCode()).isNotEqualTo(anotherEntity.hashCode());
+        assertThat(testEntity.hashCode()).isEqualTo(testEntity.hashCode());
+    }
+
+    @Test
+    void testIsActive() {
+        // Test that BaseEntity isActive() returns true by default
+        assertThat(testEntity.isActive()).isTrue();
+    }
+
+    /**
+     * Test implementation of BaseEntity for testing purposes
+     */
+    private static class TestEntity extends BaseEntity {
+        // This class inherits all BaseEntity functionality
+        // No additional fields needed for testing
+    }
+}
