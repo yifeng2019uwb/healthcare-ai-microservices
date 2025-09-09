@@ -111,8 +111,12 @@ docker/patient/
 # Service Resource Packages (may contain credentials)
 services/*/src/main/resources/application-local.yml
 services/*/src/main/resources/application-*.yml
+services/*/src/main/resources/*.properties
+services/*/src/main/resources/*.env
+services/*/src/main/resources/config/
 !services/*/src/main/resources/application-example.yml
 !services/*/src/main/resources/application.yml
+!services/*/src/main/resources/application-example.properties
 
 # Config Directory - Completely Ignored
 healthcare-infra/config/
