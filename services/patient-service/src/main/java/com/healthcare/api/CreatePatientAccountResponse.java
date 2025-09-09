@@ -3,6 +3,7 @@ package com.healthcare.api;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.healthcare.constants.PatientServiceConstants;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
@@ -16,8 +17,8 @@ import lombok.AllArgsConstructor;
  * @since 2025-01-09
  */
 @Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class CreatePatientAccountResponse {
 
     @JsonProperty(PatientServiceConstants.JSON_FIELD_SUCCESS)
@@ -25,6 +26,12 @@ public class CreatePatientAccountResponse {
 
     @JsonProperty(PatientServiceConstants.JSON_FIELD_MESSAGE)
     private String message;
+
+    // Manual constructor for compatibility
+    public CreatePatientAccountResponse(boolean success, String message) {
+        this.success = success;
+        this.message = message;
+    }
 
     // Lombok generates: @NoArgsConstructor, @AllArgsConstructor, and all getters
 }

@@ -122,6 +122,17 @@ if command -v java &> /dev/null && command -v mvn &> /dev/null; then
     # Navigate to services directory
     cd services
 
+    # Install parent POM and shared module first (exactly like CI workflow)
+    echo "📦 Installing parent POM and shared module..."
+
+    # Install parent POM first
+    mvn clean install -N
+
+    # Install shared module (needed by other services)
+    cd shared
+    mvn clean install
+    cd ..
+
     # Test all services (exactly like CI workflow)
     echo "🔨 Building all services..."
     if ./dev.sh all build; then

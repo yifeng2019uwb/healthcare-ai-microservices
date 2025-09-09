@@ -7,13 +7,10 @@ import com.healthcare.api.GetPatientProfileResponse;
 import com.healthcare.entity.User;
 import com.healthcare.enums.Gender;
 import com.healthcare.enums.UserRole;
-import com.healthcare.enums.UserStatus;
 import com.healthcare.service.PatientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.UUID;
 
 /**
  * REST Controller for Patient operations.
