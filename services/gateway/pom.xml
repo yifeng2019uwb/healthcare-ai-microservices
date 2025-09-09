@@ -19,11 +19,7 @@
     <description>API Gateway for Healthcare AI Microservices</description>
 
     <dependencies>
-        <!-- Spring Boot Starter Web -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
+        <!-- Note: Gateway uses reactive web, not MVC web -->
 
         <!-- Spring Cloud Gateway -->
         <dependency>
@@ -49,12 +45,7 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
-        <!-- Shared module -->
-        <dependency>
-            <groupId>com.healthcare</groupId>
-            <artifactId>shared</artifactId>
-            <version>1.0.0</version>
-        </dependency>
+        <!-- Note: Gateway service doesn't need shared module as it doesn't use database -->
 
         <!-- Test dependencies -->
         <dependency>

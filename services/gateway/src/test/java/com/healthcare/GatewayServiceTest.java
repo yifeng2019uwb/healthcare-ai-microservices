@@ -2,22 +2,19 @@ package com.healthcare;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.ActiveProfiles;
 
 /**
  * Gateway Service Integration Tests
+ * Uses test profile to avoid database connections
  */
 @SpringBootTest
-@TestPropertySource(properties = {
-    "spring.cloud.gateway.routes[0].uri=http://localhost:8081",
-    "spring.cloud.gateway.routes[1].uri=http://localhost:8082",
-    "spring.cloud.gateway.routes[2].uri=http://localhost:8083",
-    "spring.cloud.gateway.routes[3].uri=http://localhost:8084"
-})
+@ActiveProfiles("test")
 class GatewayServiceTest {
 
     @Test
     void contextLoads() {
         // Test that the application context loads successfully
+        // This test verifies that the gateway service can start without database dependencies
     }
 }
