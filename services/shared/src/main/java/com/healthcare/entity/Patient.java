@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,6 +25,27 @@ import com.fasterxml.jackson.databind.JsonNode;
            @Index(name = DatabaseConstants.INDEX_PATIENTS_USER_ID_UNIQUE, columnList = DatabaseConstants.COL_USER_ID),
            @Index(name = DatabaseConstants.INDEX_PATIENTS_PATIENT_NUMBER_UNIQUE, columnList = DatabaseConstants.COL_PATIENT_NUMBER)
        })
+@NamedEntityGraphs({
+    @NamedEntityGraph(
+        name = DatabaseConstants.ENTITY_GRAPH_PATIENT_WITH_USER,
+        attributeNodes = {
+            @NamedAttributeNode(DatabaseConstants.ATTR_USER)
+        }
+    ),
+    @NamedEntityGraph(
+        name = DatabaseConstants.ENTITY_GRAPH_PATIENT_WITH_APPOINTMENTS,
+        attributeNodes = {
+            @NamedAttributeNode(DatabaseConstants.ATTR_APPOINTMENTS)
+        }
+    ),
+    @NamedEntityGraph(
+        name = DatabaseConstants.ENTITY_GRAPH_PATIENT_FULL_DETAILS,
+        attributeNodes = {
+            @NamedAttributeNode(DatabaseConstants.ATTR_USER),
+            @NamedAttributeNode(DatabaseConstants.ATTR_APPOINTMENTS)
+        }
+    )
+})
 public class Patient extends BaseEntity {
 
     /**
@@ -89,18 +111,67 @@ public class Patient extends BaseEntity {
     /**
      * One-to-many relationship with Appointments
      * A patient can have multiple appointments
+     *
+     * Performance optimization:
+     * - LAZY loading prevents unnecessary data fetching
+     * - @BatchSize reduces N+1 query problems by batching related entity loads
+     * - orphanRemoval ensures clean deletion of appointments
      */
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = DatabaseConstants.ATTR_PATIENT,
+               cascade = CascadeType.ALL,
+               fetch = FetchType.LAZY,
+               orphanRemoval = true)
+    @BatchSize(size = 20)
     private java.util.List<Appointment> appointments = new java.util.ArrayList<>();
 
-    // Constructors
-    public Patient() {}
+    // ==================== CONSTRUCTORS ====================
 
-    // Constructor for service layer (with user ID only)
+    /**
+     * Private constructor for JPA only.
+     */
+    @SuppressWarnings("unused")
+    private Patient() {}
+
+    /**
+     * Simple constructor for required fields only.
+     * Use setters for optional fields.
+     *
+     * @param userId The ID of the user this patient belongs to
+     * @param patientNumber The unique patient number (format: PAT-XXXXXXXX)
+     */
     public Patient(UUID userId, String patientNumber) {
+        if (userId == null) {
+            throw new ValidationException("User ID is required");
+        }
+        if (patientNumber == null || patientNumber.trim().isEmpty()) {
+            throw new ValidationException("Patient number is required");
+        }
+
         this.userId = userId;
         this.patientNumber = patientNumber;
     }
+
+
+    // ==================== BUSINESS LOGIC METHODS ====================
+
+    /**
+     * Validates that the patient object is in a valid state.
+     * This should be called after object creation to ensure all required fields are set.
+     *
+     * @throws ValidationException if the patient is in an invalid state
+     */
+    public void validateState() {
+        if (userId == null) {
+            throw new ValidationException("User ID is required");
+        }
+        if (patientNumber == null || patientNumber.trim().isEmpty()) {
+            throw new ValidationException("Patient number is required");
+        }
+        if (!patientNumber.matches(ValidationPatterns.PATIENT_NUMBER)) {
+            throw new ValidationException("Patient number must be in format PAT-XXXXXXXX");
+        }
+    }
+
 
     // Getters and Setters
 
@@ -108,9 +179,13 @@ public class Patient extends BaseEntity {
         return userId;
     }
 
+    // Note: userId is immutable after creation - use factory methods to create new patients
+
     public String getPatientNumber() {
         return patientNumber;
     }
+
+    // Note: patientNumber is immutable after creation - use factory methods to create new patients
 
     public JsonNode getMedicalHistory() {
         return medicalHistory;

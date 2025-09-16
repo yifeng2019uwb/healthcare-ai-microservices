@@ -84,14 +84,16 @@ public class PatientController {
 
         User user = new User(
             request.getExternalUserId().trim(),
-            request.getFirstName().trim(),
-            request.getLastName().trim(),
             request.getEmail().trim(),
-            request.getPhone().trim(),
-            request.getDateOfBirth(),
-            gender,
             UserRole.PATIENT
         );
+
+        // Set optional fields
+        user.setFirstName(request.getFirstName().trim());
+        user.setLastName(request.getLastName().trim());
+        user.setPhone(request.getPhone().trim());
+        user.setDateOfBirth(request.getDateOfBirth());
+        user.setGender(gender);
         return user;
     }
 

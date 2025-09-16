@@ -3,13 +3,13 @@ package com.healthcare.entity;
 import com.healthcare.enums.AppointmentStatus;
 import com.healthcare.enums.AppointmentType;
 import com.healthcare.exception.ValidationException;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -28,20 +28,9 @@ class AppointmentEntityTest {
     // ==================== CONSTRUCTOR TESTS ====================
 
     @Test
-    void testAppointmentConstructors() {
-        // Test default constructor
-        Appointment appointment = new Appointment();
-        assertThat(appointment.getProviderId()).isNull();
-        assertThat(appointment.getScheduledAt()).isNull();
-        assertThat(appointment.getAppointmentType()).isNull();
-        assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.AVAILABLE); // Default value
-        assertThat(appointment.getPatientId()).isNull();
-        assertThat(appointment.getNotes()).isNull();
-        assertThat(appointment.getCustomData()).isNull();
-        assertThat(appointment.getCheckinTime()).isNull();
-
-        // Test parameterized constructor
-        appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+    void testAppointmentFactoryMethods() {
+        // Test simple constructor
+        Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
         assertThat(appointment.getProviderId()).isEqualTo(testProviderId);
         assertThat(appointment.getScheduledAt()).isEqualTo(testScheduledAt);
         assertThat(appointment.getAppointmentType()).isEqualTo(testAppointmentType);
@@ -50,79 +39,103 @@ class AppointmentEntityTest {
         assertThat(appointment.getNotes()).isNull();
         assertThat(appointment.getCustomData()).isNull();
         assertThat(appointment.getCheckinTime()).isNull();
+
+        // Test creating appointment for patient
+        appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        appointment.setPatientId(testPatientId);
+        appointment.setStatus(AppointmentStatus.SCHEDULED);
+        assertThat(appointment.getProviderId()).isEqualTo(testProviderId);
+        assertThat(appointment.getScheduledAt()).isEqualTo(testScheduledAt);
+        assertThat(appointment.getAppointmentType()).isEqualTo(testAppointmentType);
+        assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
+        assertThat(appointment.getPatientId()).isEqualTo(testPatientId);
+        assertThat(appointment.getNotes()).isNull();
+
+        // Test creating confirmed appointment
+        appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        appointment.setPatientId(testPatientId);
+        appointment.setStatus(AppointmentStatus.CONFIRMED);
+        assertThat(appointment.getProviderId()).isEqualTo(testProviderId);
+        assertThat(appointment.getScheduledAt()).isEqualTo(testScheduledAt);
+        assertThat(appointment.getAppointmentType()).isEqualTo(testAppointmentType);
+        assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.CONFIRMED);
+        assertThat(appointment.getPatientId()).isEqualTo(testPatientId);
+        assertThat(appointment.getCustomData()).isNull();
+        assertThat(appointment.getCheckinTime()).isNull();
     }
 
     // ==================== FIELD TESTS ====================
 
     @Test
     void testPatientIdField() {
-        Appointment appointment = new Appointment();
-
-        // Test initial state
+        // Test available slot (no patient)
+        Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
         assertThat(appointment.getPatientId()).isNull();
 
-        // Test setter
+        // Test patient appointment
+        appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
         appointment.setPatientId(testPatientId);
         assertThat(appointment.getPatientId()).isEqualTo(testPatientId);
-
-        // Test setter with null
-        appointment.setPatientId(null);
-        assertThat(appointment.getPatientId()).isNull();
     }
 
     @Test
     void testProviderIdField() {
-        Appointment appointment = new Appointment();
+        // Test that providerId is set correctly in factory methods
+        Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        assertThat(appointment.getProviderId()).isEqualTo(testProviderId);
+
         UUID newProviderId = UUID.randomUUID();
-
-        // Test initial state
-        assertThat(appointment.getProviderId()).isNull();
-
-        // Test setter
-        appointment.setProviderId(newProviderId);
+        appointment = new Appointment(newProviderId, testScheduledAt, testAppointmentType);
         assertThat(appointment.getProviderId()).isEqualTo(newProviderId);
-
-        // Test setter with null (should throw ValidationException)
-        assertThatThrownBy(() -> appointment.setProviderId(null))
-                .isInstanceOf(ValidationException.class)
-                .hasMessage("Provider ID cannot be null");
     }
 
     @Test
     void testScheduledAtField() {
-        Appointment appointment = new Appointment();
-        OffsetDateTime validScheduledAt = OffsetDateTime.now().plusDays(2);
+        // Test that scheduledAt is set correctly in factory methods
+        Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        assertThat(appointment.getScheduledAt()).isEqualTo(testScheduledAt);
 
-        // Test initial state
-        assertThat(appointment.getScheduledAt()).isNull();
+        OffsetDateTime newScheduledAt = OffsetDateTime.now().plusDays(3);
+        appointment = new Appointment(testProviderId, newScheduledAt, testAppointmentType);
+        assertThat(appointment.getScheduledAt()).isEqualTo(newScheduledAt);
 
-        // Test setter with valid time (more than 1 day in advance)
-        appointment.setScheduledAt(validScheduledAt);
-        assertThat(appointment.getScheduledAt()).isEqualTo(validScheduledAt);
-
-        // Test setter with null (should throw ValidationException)
-        assertThatThrownBy(() -> appointment.setScheduledAt(null))
+        // Test constructor with null scheduledAt (should throw ValidationException)
+        assertThatThrownBy(() -> new Appointment(testProviderId, null, testAppointmentType))
                 .isInstanceOf(ValidationException.class)
-                .hasMessage("Scheduled time cannot be null");
+                .hasMessage("Scheduled time is required");
 
-        // Test setter with time less than 1 day in advance (should throw ValidationException)
+        // Test constructor with time less than 1 day in advance (should throw ValidationException)
         OffsetDateTime invalidScheduledAt = OffsetDateTime.now().plusHours(12);
-        assertThatThrownBy(() -> appointment.setScheduledAt(invalidScheduledAt))
+        assertThatThrownBy(() -> new Appointment(testProviderId, invalidScheduledAt, testAppointmentType))
                 .isInstanceOf(ValidationException.class)
                 .hasMessage("Appointment must be scheduled at least 1 day in advance");
 
-        // Test setter with past time (should throw ValidationException)
+        // Test constructor with past time (should throw ValidationException)
         OffsetDateTime pastTime = OffsetDateTime.now().minusDays(1);
-        assertThatThrownBy(() -> appointment.setScheduledAt(pastTime))
+        assertThatThrownBy(() -> new Appointment(testProviderId, pastTime, testAppointmentType))
                 .isInstanceOf(ValidationException.class)
                 .hasMessage("Appointment must be scheduled at least 1 day in advance");
     }
 
     @Test
+    void testConstructorValidation() {
+        // Test constructor with null providerId (should throw ValidationException)
+        assertThatThrownBy(() -> new Appointment(null, testScheduledAt, testAppointmentType))
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("Provider ID is required");
+
+        // Test constructor with null appointmentType (should throw ValidationException)
+        assertThatThrownBy(() -> new Appointment(testProviderId, testScheduledAt, null))
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("Appointment type is required");
+    }
+
+    @Test
     void testCheckinTimeField() {
-        Appointment appointment = new Appointment();
         OffsetDateTime scheduledAt = OffsetDateTime.now().plusDays(2);
         OffsetDateTime validCheckinTime = scheduledAt.minusMinutes(30);
+
+        Appointment appointment = new Appointment(testProviderId, scheduledAt, testAppointmentType);
 
         // Test initial state
         assertThat(appointment.getCheckinTime()).isNull();
@@ -130,14 +143,6 @@ class AppointmentEntityTest {
         // Test setter with null (should be allowed)
         appointment.setCheckinTime(null);
         assertThat(appointment.getCheckinTime()).isNull();
-
-        // Test setter with valid checkin time (no scheduledAt set yet - should be allowed)
-        OffsetDateTime checkinTime = OffsetDateTime.now();
-        appointment.setCheckinTime(checkinTime);
-        assertThat(appointment.getCheckinTime()).isEqualTo(checkinTime);
-
-        // Set scheduledAt first
-        appointment.setScheduledAt(scheduledAt);
 
         // Test setter with valid checkin time (within 2 hours of scheduled time)
         appointment.setCheckinTime(validCheckinTime);
@@ -158,12 +163,22 @@ class AppointmentEntityTest {
 
     @Test
     void testStatusField() {
-        Appointment appointment = new Appointment();
+        // Test factory methods set correct default statuses
+        Appointment availableAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        assertThat(availableAppointment.getStatus()).isEqualTo(AppointmentStatus.AVAILABLE);
 
-        // Test initial state (defaults to AVAILABLE)
-        assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.AVAILABLE);
+        Appointment scheduledAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        scheduledAppointment.setPatientId(testPatientId);
+        scheduledAppointment.setStatus(AppointmentStatus.SCHEDULED);
+        assertThat(scheduledAppointment.getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
 
-        // Test setter with each status
+        Appointment confirmedAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        confirmedAppointment.setPatientId(testPatientId);
+        confirmedAppointment.setStatus(AppointmentStatus.CONFIRMED);
+        assertThat(confirmedAppointment.getStatus()).isEqualTo(AppointmentStatus.CONFIRMED);
+
+        // Test setter with each status (for status transitions)
+        Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
         for (AppointmentStatus status : AppointmentStatus.values()) {
             appointment.setStatus(status);
             assertThat(appointment.getStatus()).isEqualTo(status);
@@ -177,26 +192,21 @@ class AppointmentEntityTest {
 
     @Test
     void testAppointmentTypeField() {
-        Appointment appointment = new Appointment();
-
-        // Test initial state
-        assertThat(appointment.getAppointmentType()).isNull();
-
-        // Test setter with each type
+        // Test that each appointment type is set correctly in factory methods
         for (AppointmentType type : AppointmentType.values()) {
-            appointment.setAppointmentType(type);
+            Appointment appointment = new Appointment(testProviderId, testScheduledAt, type);
             assertThat(appointment.getAppointmentType()).isEqualTo(type);
         }
 
-        // Test setter with null (should throw ValidationException)
-        assertThatThrownBy(() -> appointment.setAppointmentType(null))
+        // Test constructor with null (should throw ValidationException)
+        assertThatThrownBy(() -> new Appointment(testProviderId, testScheduledAt, null))
                 .isInstanceOf(ValidationException.class)
-                .hasMessage("Appointment type cannot be null");
+                .hasMessage("Appointment type is required");
     }
 
     @Test
     void testNotesField() {
-        Appointment appointment = new Appointment();
+        Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
         String testNotes = "Patient has allergies";
 
         // Test initial state
@@ -236,7 +246,7 @@ class AppointmentEntityTest {
 
     @Test
     void testCustomDataField() {
-        Appointment appointment = new Appointment();
+        Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
 
         // Test initial state
         assertThat(appointment.getCustomData()).isNull();
@@ -253,27 +263,37 @@ class AppointmentEntityTest {
 
     @Test
     void testIsScheduledInFutureMethod() {
-        Appointment appointment = new Appointment();
+        Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
 
-        // Test with null scheduledAt
+        // Test with null scheduledAt (use reflection to test edge case)
+        try {
+            java.lang.reflect.Field scheduledAtField = Appointment.class.getDeclaredField("scheduledAt");
+            scheduledAtField.setAccessible(true);
+            scheduledAtField.set(appointment, null);
+        } catch (Exception e) {
+            fail("Failed to set scheduledAt field via reflection: " + e.getMessage());
+        }
         assertThat(appointment.isScheduledInFuture()).isFalse();
 
         // Test with future time (valid - more than 1 day in advance)
-        appointment.setScheduledAt(OffsetDateTime.now().plusDays(2));
+        appointment = new Appointment(testProviderId, OffsetDateTime.now().plusDays(2), testAppointmentType);
         assertThat(appointment.isScheduledInFuture()).isTrue();
 
-        // Test with past time - need to use reflection or create appointment with past time
-        // Since setScheduledAt now validates, we'll test the method logic differently
-        // Create appointment with past time using constructor (which doesn't validate)
-        Appointment pastAppointment = new Appointment();
-        // We can't set past time directly due to validation, so we'll test the method logic
-        // by checking what happens when scheduledAt is null vs future
+        // Test with past time - use reflection to set past time for testing
+        Appointment pastAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        try {
+            java.lang.reflect.Field scheduledAtField = Appointment.class.getDeclaredField("scheduledAt");
+            scheduledAtField.setAccessible(true);
+            scheduledAtField.set(pastAppointment, OffsetDateTime.now().minusDays(1));
+        } catch (Exception e) {
+            fail("Failed to set scheduledAt field via reflection: " + e.getMessage());
+        }
         assertThat(pastAppointment.isScheduledInFuture()).isFalse();
     }
 
     @Test
     void testHasPatientMethod() {
-        Appointment appointment = new Appointment();
+        Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
 
         // Test with null patientId
         assertThat(appointment.hasPatient()).isFalse();
@@ -290,7 +310,7 @@ class AppointmentEntityTest {
 
     @Test
     void testIsReadyForMedicalRecordsMethod() {
-        Appointment appointment = new Appointment();
+        Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
 
         // Test with no patient
         assertThat(appointment.isReadyForMedicalRecords()).isFalse();
@@ -315,13 +335,13 @@ class AppointmentEntityTest {
 
     @Test
     void testHasExpiredMethod() {
-        Appointment appointment = new Appointment();
+        Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
 
         // Test with null scheduledAt
         assertThat(appointment.hasExpired()).isFalse();
 
         // Test with future time and AVAILABLE status (should not expire)
-        appointment.setScheduledAt(OffsetDateTime.now().plusDays(2));
+        appointment = new Appointment(testProviderId, OffsetDateTime.now().plusDays(2), testAppointmentType);
         appointment.setStatus(AppointmentStatus.AVAILABLE);
         assertThat(appointment.hasExpired()).isFalse();
 
@@ -344,7 +364,7 @@ class AppointmentEntityTest {
 
     @Test
     void testIsInvalidForBookingMethod() {
-        Appointment appointment = new Appointment();
+        Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
 
         // Test with null scheduledAt and AVAILABLE status (should be valid for booking)
         appointment.setStatus(AppointmentStatus.AVAILABLE);
@@ -372,14 +392,14 @@ class AppointmentEntityTest {
     @Test
     void testGetPatient() {
         UUID testProviderId = UUID.randomUUID();
-        OffsetDateTime testScheduledAt = OffsetDateTime.now().plusDays(1);
+        OffsetDateTime testScheduledAt = OffsetDateTime.now().plusDays(2);
         Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
 
         // Initially should be null
         assertThat(appointment.getPatient()).isNull();
 
         // Create a patient and set it (using reflection since there's no setter)
-        Patient patient = new Patient();
+        Patient patient = new Patient(UUID.randomUUID(), "PAT-123456");
         try {
             java.lang.reflect.Field patientField = Appointment.class.getDeclaredField("patient");
             patientField.setAccessible(true);
@@ -395,14 +415,14 @@ class AppointmentEntityTest {
     @Test
     void testGetProvider() {
         UUID testProviderId = UUID.randomUUID();
-        OffsetDateTime testScheduledAt = OffsetDateTime.now().plusDays(1);
+        OffsetDateTime testScheduledAt = OffsetDateTime.now().plusDays(2);
         Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
 
         // Initially should be null
         assertThat(appointment.getProvider()).isNull();
 
         // Create a provider and set it (using reflection since there's no setter)
-        Provider provider = new Provider();
+        Provider provider = new Provider(UUID.randomUUID(), "1234567890");
         try {
             java.lang.reflect.Field providerField = Appointment.class.getDeclaredField("provider");
             providerField.setAccessible(true);
@@ -418,7 +438,7 @@ class AppointmentEntityTest {
     @Test
     void testGetMedicalRecords() {
         UUID testProviderId = UUID.randomUUID();
-        OffsetDateTime testScheduledAt = OffsetDateTime.now().plusDays(1);
+        OffsetDateTime testScheduledAt = OffsetDateTime.now().plusDays(2);
         Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
 
         // Initially should return empty list (not null)
@@ -426,11 +446,185 @@ class AppointmentEntityTest {
         assertThat(appointment.getMedicalRecords()).isEmpty();
 
         // Create a medical record and add it to the list
-        MedicalRecord medicalRecord = new MedicalRecord();
+        MedicalRecord medicalRecord = new MedicalRecord(UUID.randomUUID(), com.healthcare.enums.MedicalRecordType.DIAGNOSIS, "Test medical record content");
         appointment.getMedicalRecords().add(medicalRecord);
 
         // Now should contain the medical record
         assertThat(appointment.getMedicalRecords()).hasSize(1);
         assertThat(appointment.getMedicalRecords()).contains(medicalRecord);
+    }
+
+    // ==================== BUSINESS LOGIC TESTS ====================
+
+    @Test
+    void testValidateState() {
+        // Test valid appointment - should not throw exception
+        Appointment validAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        assertThatCode(() -> validAppointment.validateState()).doesNotThrowAnyException();
+
+        // Test with null providerId - should throw ValidationException
+        Appointment appointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        try {
+            java.lang.reflect.Field providerIdField = Appointment.class.getDeclaredField("providerId");
+            providerIdField.setAccessible(true);
+            providerIdField.set(appointment, null);
+        } catch (Exception e) {
+            fail("Failed to set providerId field via reflection: " + e.getMessage());
+        }
+        assertThatThrownBy(() -> appointment.validateState())
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("Provider ID is required");
+
+        // Test with null scheduledAt - should throw ValidationException
+        Appointment appointmentWithNullScheduledAt = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        try {
+            java.lang.reflect.Field scheduledAtField = Appointment.class.getDeclaredField("scheduledAt");
+            scheduledAtField.setAccessible(true);
+            scheduledAtField.set(appointmentWithNullScheduledAt, null);
+        } catch (Exception e) {
+            fail("Failed to set scheduledAt field via reflection: " + e.getMessage());
+        }
+        assertThatThrownBy(() -> appointmentWithNullScheduledAt.validateState())
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("Scheduled time is required");
+
+        // Test with null appointmentType - should throw ValidationException
+        Appointment appointmentWithNullType = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        try {
+            java.lang.reflect.Field appointmentTypeField = Appointment.class.getDeclaredField("appointmentType");
+            appointmentTypeField.setAccessible(true);
+            appointmentTypeField.set(appointmentWithNullType, null);
+        } catch (Exception e) {
+            fail("Failed to set appointmentType field via reflection: " + e.getMessage());
+        }
+        assertThatThrownBy(() -> appointmentWithNullType.validateState())
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("Appointment type is required");
+    }
+
+    @Test
+    void testValidateStateWithNullStatus() {
+        // Test data variables
+        UUID testProviderId = UUID.randomUUID();
+        OffsetDateTime testScheduledAt = OffsetDateTime.now().plusDays(2);
+        AppointmentType testAppointmentType = AppointmentType.REGULAR_CONSULTATION;
+
+        // Create appointment with null status
+        Appointment appointmentWithNullStatus = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        try {
+            java.lang.reflect.Field statusField = Appointment.class.getDeclaredField("status");
+            statusField.setAccessible(true);
+            statusField.set(appointmentWithNullStatus, null);
+        } catch (Exception e) {
+            fail("Failed to set status field via reflection: " + e.getMessage());
+        }
+        assertThatThrownBy(() -> appointmentWithNullStatus.validateState())
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("Appointment status is required");
+    }
+
+    @Test
+    void testCanBeBooked() {
+        // Test data variables
+        UUID testProviderId = UUID.randomUUID();
+        OffsetDateTime testScheduledAt = OffsetDateTime.now().plusDays(2);
+        AppointmentType testAppointmentType = AppointmentType.REGULAR_CONSULTATION;
+
+        // Test available appointment without patient - should be bookable
+        Appointment availableAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        availableAppointment.setStatus(AppointmentStatus.AVAILABLE);
+        assertThat(availableAppointment.canBeBooked()).isTrue();
+
+        // Test available appointment with patient - should not be bookable
+        Appointment bookedAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        bookedAppointment.setStatus(AppointmentStatus.AVAILABLE);
+        bookedAppointment.setPatientId(UUID.randomUUID());
+        assertThat(bookedAppointment.canBeBooked()).isFalse();
+
+        // Test scheduled appointment without patient - should not be bookable
+        Appointment scheduledAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        scheduledAppointment.setStatus(AppointmentStatus.SCHEDULED);
+        assertThat(scheduledAppointment.canBeBooked()).isFalse();
+
+        // Test confirmed appointment without patient - should not be bookable
+        Appointment confirmedAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        confirmedAppointment.setStatus(AppointmentStatus.CONFIRMED);
+        assertThat(confirmedAppointment.canBeBooked()).isFalse();
+    }
+
+    @Test
+    void testCanBeCancelled() {
+        // Test data variables
+        UUID testProviderId = UUID.randomUUID();
+        OffsetDateTime testScheduledAt = OffsetDateTime.now().plusDays(2);
+        AppointmentType testAppointmentType = AppointmentType.REGULAR_CONSULTATION;
+
+        // Test scheduled appointment - should be cancellable
+        Appointment scheduledAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        scheduledAppointment.setStatus(AppointmentStatus.SCHEDULED);
+        assertThat(scheduledAppointment.canBeCancelled()).isTrue();
+
+        // Test confirmed appointment - should be cancellable
+        Appointment confirmedAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        confirmedAppointment.setStatus(AppointmentStatus.CONFIRMED);
+        assertThat(confirmedAppointment.canBeCancelled()).isTrue();
+
+        // Test available appointment - should be cancellable
+        Appointment availableAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        availableAppointment.setStatus(AppointmentStatus.AVAILABLE);
+        assertThat(availableAppointment.canBeCancelled()).isTrue();
+
+        // Test in-progress appointment - should not be cancellable
+        Appointment inProgressAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        inProgressAppointment.setStatus(AppointmentStatus.IN_PROGRESS);
+        assertThat(inProgressAppointment.canBeCancelled()).isFalse();
+
+        // Test completed appointment - should not be cancellable
+        Appointment completedAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        completedAppointment.setStatus(AppointmentStatus.COMPLETED);
+        assertThat(completedAppointment.canBeCancelled()).isFalse();
+
+        // Test cancelled appointment - should not be cancellable
+        Appointment cancelledAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        cancelledAppointment.setStatus(AppointmentStatus.CANCELLED);
+        assertThat(cancelledAppointment.canBeCancelled()).isFalse();
+    }
+
+    @Test
+    void testCanBeCompleted() {
+        // Test data variables
+        UUID testProviderId = UUID.randomUUID();
+        OffsetDateTime testScheduledAt = OffsetDateTime.now().plusDays(2);
+        AppointmentType testAppointmentType = AppointmentType.REGULAR_CONSULTATION;
+
+        // Test in-progress appointment - should be completable
+        Appointment inProgressAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        inProgressAppointment.setStatus(AppointmentStatus.IN_PROGRESS);
+        assertThat(inProgressAppointment.canBeCompleted()).isTrue();
+
+        // Test scheduled appointment - should not be completable
+        Appointment scheduledAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        scheduledAppointment.setStatus(AppointmentStatus.SCHEDULED);
+        assertThat(scheduledAppointment.canBeCompleted()).isFalse();
+
+        // Test confirmed appointment - should not be completable
+        Appointment confirmedAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        confirmedAppointment.setStatus(AppointmentStatus.CONFIRMED);
+        assertThat(confirmedAppointment.canBeCompleted()).isFalse();
+
+        // Test available appointment - should not be completable
+        Appointment availableAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        availableAppointment.setStatus(AppointmentStatus.AVAILABLE);
+        assertThat(availableAppointment.canBeCompleted()).isFalse();
+
+        // Test completed appointment - should not be completable
+        Appointment completedAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        completedAppointment.setStatus(AppointmentStatus.COMPLETED);
+        assertThat(completedAppointment.canBeCompleted()).isFalse();
+
+        // Test cancelled appointment - should not be completable
+        Appointment cancelledAppointment = new Appointment(testProviderId, testScheduledAt, testAppointmentType);
+        cancelledAppointment.setStatus(AppointmentStatus.CANCELLED);
+        assertThat(cancelledAppointment.canBeCompleted()).isFalse();
     }
 }

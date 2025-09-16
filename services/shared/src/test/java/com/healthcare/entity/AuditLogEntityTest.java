@@ -15,7 +15,9 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit tests for AuditLog entity
@@ -32,7 +34,8 @@ class AuditLogEntityTest {
         Outcome testInitialOutcome = Outcome.SUCCESS;
         Outcome testUpdatedOutcome = Outcome.FAILURE;
 
-        AuditLog auditLog = new AuditLog(testUserId, testActionType, testResourceType, testResourceId, testInitialOutcome);
+        AuditLog auditLog = new AuditLog(testUserId, testActionType, testResourceType, testInitialOutcome);
+        auditLog.setResourceId(testResourceId);
 
         // Test basic properties
         assertThat(auditLog.getUserId()).isEqualTo(testUserId);
@@ -54,7 +57,8 @@ class AuditLogEntityTest {
         ResourceType testResourceType = ResourceType.APPOINTMENT;
         Outcome testInitialOutcome = Outcome.SUCCESS;
 
-        AuditLog auditLog = new AuditLog(testUserId, testActionType, testResourceType, testResourceId, testInitialOutcome);
+        AuditLog auditLog = new AuditLog(testUserId, testActionType, testResourceType, testInitialOutcome);
+        auditLog.setResourceId(testResourceId);
 
         // Test basic field access
         assertThat(auditLog.getUserId()).isEqualTo(testUserId);
@@ -64,7 +68,8 @@ class AuditLogEntityTest {
         assertThat(auditLog.getOutcome()).isEqualTo(Outcome.SUCCESS);
 
         // Test FAILURE outcome with a separate audit log
-        AuditLog failureLog = new AuditLog(testUserId, ActionType.UPDATE, ResourceType.PATIENT_PROFILE, testResourceId, Outcome.FAILURE);
+        AuditLog failureLog = new AuditLog(testUserId, ActionType.UPDATE, ResourceType.PATIENT_PROFILE, Outcome.FAILURE);
+        failureLog.setResourceId(testResourceId);
         assertThat(failureLog.getOutcome()).isEqualTo(Outcome.FAILURE);
 
         // Test source IP (audit logs are immutable, so we can't set these after creation)
@@ -85,10 +90,14 @@ class AuditLogEntityTest {
         Outcome testOutcome = Outcome.SUCCESS;
 
         // Test different action types
-        AuditLog createLog = new AuditLog(testUserId, ActionType.CREATE, ResourceType.PATIENT_PROFILE, testResourceId, testOutcome);
-        AuditLog readLog = new AuditLog(testUserId, ActionType.READ, ResourceType.APPOINTMENT, testResourceId, testOutcome);
-        AuditLog updateLog = new AuditLog(testUserId, ActionType.UPDATE, ResourceType.MEDICAL_RECORD, testResourceId, testOutcome);
-        AuditLog deleteLog = new AuditLog(testUserId, ActionType.DELETE, ResourceType.USER_PROFILE, testResourceId, testOutcome);
+        AuditLog createLog = new AuditLog(testUserId, ActionType.CREATE, ResourceType.PATIENT_PROFILE, testOutcome);
+        createLog.setResourceId(testResourceId);
+        AuditLog readLog = new AuditLog(testUserId, ActionType.READ, ResourceType.APPOINTMENT, testOutcome);
+        readLog.setResourceId(testResourceId);
+        AuditLog updateLog = new AuditLog(testUserId, ActionType.UPDATE, ResourceType.MEDICAL_RECORD, testOutcome);
+        updateLog.setResourceId(testResourceId);
+        AuditLog deleteLog = new AuditLog(testUserId, ActionType.DELETE, ResourceType.USER_PROFILE, testOutcome);
+        deleteLog.setResourceId(testResourceId);
 
         assertThat(createLog.getActionType()).isEqualTo(ActionType.CREATE);
         assertThat(readLog.getActionType()).isEqualTo(ActionType.READ);
@@ -105,11 +114,16 @@ class AuditLogEntityTest {
         Outcome testOutcome = Outcome.SUCCESS;
 
         // Test different resource types
-        AuditLog userLog = new AuditLog(testUserId, testActionType, ResourceType.USER_PROFILE, testResourceId, testOutcome);
-        AuditLog patientLog = new AuditLog(testUserId, testActionType, ResourceType.PATIENT_PROFILE, testResourceId, testOutcome);
-        AuditLog providerLog = new AuditLog(testUserId, testActionType, ResourceType.PROVIDER_PROFILE, testResourceId, testOutcome);
-        AuditLog appointmentLog = new AuditLog(testUserId, testActionType, ResourceType.APPOINTMENT, testResourceId, testOutcome);
-        AuditLog medicalRecordLog = new AuditLog(testUserId, testActionType, ResourceType.MEDICAL_RECORD, testResourceId, testOutcome);
+        AuditLog userLog = new AuditLog(testUserId, testActionType, ResourceType.USER_PROFILE, testOutcome);
+        userLog.setResourceId(testResourceId);
+        AuditLog patientLog = new AuditLog(testUserId, testActionType, ResourceType.PATIENT_PROFILE, testOutcome);
+        patientLog.setResourceId(testResourceId);
+        AuditLog providerLog = new AuditLog(testUserId, testActionType, ResourceType.PROVIDER_PROFILE, testOutcome);
+        providerLog.setResourceId(testResourceId);
+        AuditLog appointmentLog = new AuditLog(testUserId, testActionType, ResourceType.APPOINTMENT, testOutcome);
+        appointmentLog.setResourceId(testResourceId);
+        AuditLog medicalRecordLog = new AuditLog(testUserId, testActionType, ResourceType.MEDICAL_RECORD, testOutcome);
+        medicalRecordLog.setResourceId(testResourceId);
 
         assertThat(userLog.getResourceType()).isEqualTo(ResourceType.USER_PROFILE);
         assertThat(patientLog.getResourceType()).isEqualTo(ResourceType.PATIENT_PROFILE);
@@ -131,9 +145,12 @@ class AuditLogEntityTest {
         InetAddress testSourceIp = InetAddress.getByName("192.168.1.100");
         String testUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
 
-        // Test full constructor with all fields
-        AuditLog auditLog = new AuditLog(testUserId, testActionType, testResourceType, testResourceId,
-                                       testOutcome, testDetails, testSourceIp, testUserAgent);
+        // Test simple constructor and set optional fields
+        AuditLog auditLog = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        auditLog.setResourceId(testResourceId);
+        auditLog.setDetails(testDetails);
+        auditLog.setSourceIp(testSourceIp);
+        auditLog.setUserAgent(testUserAgent);
 
         // Verify all fields are set correctly
         assertThat(auditLog.getUserId()).isEqualTo(testUserId);
@@ -154,9 +171,8 @@ class AuditLogEntityTest {
         ResourceType testResourceType = ResourceType.USER_PROFILE;
         Outcome testOutcome = Outcome.SUCCESS;
 
-        // Test full constructor with null optional fields
-        AuditLog auditLog = new AuditLog(testUserId, testActionType, testResourceType, null,
-                                       testOutcome, null, null, null);
+        // Test simple constructor with null optional fields
+        AuditLog auditLog = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
 
         // Verify required fields are set correctly
         assertThat(auditLog.getUserId()).isEqualTo(testUserId);
@@ -180,37 +196,43 @@ class AuditLogEntityTest {
 
         // Test valid user agent
         String validUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
-        AuditLog auditLog = new AuditLog(testUserId, testActionType, testResourceType, null,
-                                       testOutcome, null, testSourceIp, validUserAgent);
+        AuditLog auditLog = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        auditLog.setSourceIp(testSourceIp);
+        auditLog.setUserAgent(validUserAgent);
         assertThat(auditLog.getUserAgent()).isEqualTo(validUserAgent);
 
         // Test trimmed user agent
         String trimmedUserAgent = "  Mozilla/5.0  ";
-        AuditLog trimmedLog = new AuditLog(testUserId, testActionType, testResourceType, null,
-                                         testOutcome, null, testSourceIp, trimmedUserAgent);
+        AuditLog trimmedLog = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        trimmedLog.setSourceIp(testSourceIp);
+        trimmedLog.setUserAgent(trimmedUserAgent);
         assertThat(trimmedLog.getUserAgent()).isEqualTo("Mozilla/5.0");
 
         // Test empty user agent (should be normalized to null)
-        AuditLog emptyLog = new AuditLog(testUserId, testActionType, testResourceType, null,
-                                       testOutcome, null, testSourceIp, "");
+        AuditLog emptyLog = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        emptyLog.setSourceIp(testSourceIp);
+        emptyLog.setUserAgent("");
         assertThat(emptyLog.getUserAgent()).isNull();
 
         // Test whitespace user agent (should be normalized to null)
-        AuditLog whitespaceLog = new AuditLog(testUserId, testActionType, testResourceType, null,
-                                            testOutcome, null, testSourceIp, "   ");
+        AuditLog whitespaceLog = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        whitespaceLog.setSourceIp(testSourceIp);
+        whitespaceLog.setUserAgent("   ");
         assertThat(whitespaceLog.getUserAgent()).isNull();
 
         // Test user agent exceeding 500 characters - should throw ValidationException
         String longUserAgent = "a".repeat(501);
-        assertThatThrownBy(() -> new AuditLog(testUserId, testActionType, testResourceType, null,
-                                            testOutcome, null, testSourceIp, longUserAgent))
+        AuditLog testLog = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        testLog.setSourceIp(testSourceIp);
+        assertThatThrownBy(() -> testLog.setUserAgent(longUserAgent))
             .isInstanceOf(ValidationException.class)
             .hasMessageContaining("User agent cannot exceed 500 characters");
 
         // Test user agent exactly 500 characters - should be valid
         String exactlyMaxUserAgent = "a".repeat(500);
-        AuditLog maxLog = new AuditLog(testUserId, testActionType, testResourceType, null,
-                                     testOutcome, null, testSourceIp, exactlyMaxUserAgent);
+        AuditLog maxLog = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        maxLog.setSourceIp(testSourceIp);
+        maxLog.setUserAgent(exactlyMaxUserAgent);
         assertThat(maxLog.getUserAgent()).isEqualTo(exactlyMaxUserAgent);
     }
 
@@ -224,38 +246,180 @@ class AuditLogEntityTest {
 
         // Test valid IP address
         InetAddress validIp = InetAddress.getByName("192.168.1.100");
-        AuditLog auditLog = new AuditLog(testUserId, testActionType, testResourceType, null,
-                                       testOutcome, null, validIp, null);
+        AuditLog auditLog = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        auditLog.setSourceIp(validIp);
         assertThat(auditLog.getSourceIp()).isEqualTo(validIp);
 
         // Test null IP address (should be allowed)
-        AuditLog nullIpLog = new AuditLog(testUserId, testActionType, testResourceType, null,
-                                        testOutcome, null, null, null);
+        AuditLog nullIpLog = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
         assertThat(nullIpLog.getSourceIp()).isNull();
 
         // Test loopback IP address - should be allowed (valid for development/testing)
         InetAddress loopbackIp = InetAddress.getByName("127.0.0.1");
-        AuditLog loopbackLog = new AuditLog(testUserId, testActionType, testResourceType, null,
-                                          testOutcome, null, loopbackIp, null);
+        AuditLog loopbackLog = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        loopbackLog.setSourceIp(loopbackIp);
         assertThat(loopbackLog.getSourceIp()).isEqualTo(loopbackIp);
 
         // Test multicast IP address - should throw ValidationException
         InetAddress multicastIp = InetAddress.getByName("224.0.0.1");
-        assertThatThrownBy(() -> new AuditLog(testUserId, testActionType, testResourceType, null,
-                                            testOutcome, null, multicastIp, null))
+        AuditLog multicastTestLog = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        assertThatThrownBy(() -> multicastTestLog.setSourceIp(multicastIp))
             .isInstanceOf(ValidationException.class)
             .hasMessageContaining("Source IP cannot be a multicast address");
 
         // Test valid public IP address
         InetAddress publicIp = InetAddress.getByName("8.8.8.8");
-        AuditLog publicIpLog = new AuditLog(testUserId, testActionType, testResourceType, null,
-                                          testOutcome, null, publicIp, null);
+        AuditLog publicIpLog = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        publicIpLog.setSourceIp(publicIp);
         assertThat(publicIpLog.getSourceIp()).isEqualTo(publicIp);
 
         // Test valid private IP address
         InetAddress privateIp = InetAddress.getByName("10.0.0.1");
-        AuditLog privateIpLog = new AuditLog(testUserId, testActionType, testResourceType, null,
-                                           testOutcome, null, privateIp, null);
+        AuditLog privateIpLog = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        privateIpLog.setSourceIp(privateIp);
         assertThat(privateIpLog.getSourceIp()).isEqualTo(privateIp);
+    }
+
+    @Test
+    void testConstructorValidation() {
+        // Test data variables
+        UUID testUserId = UUID.randomUUID();
+        ActionType testActionType = ActionType.CREATE;
+        ResourceType testResourceType = ResourceType.APPOINTMENT;
+        Outcome testOutcome = Outcome.SUCCESS;
+
+        // Test null userId
+        assertThatThrownBy(() -> new AuditLog(null, testActionType, testResourceType, testOutcome))
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("User ID is required");
+
+        // Test null actionType
+        assertThatThrownBy(() -> new AuditLog(testUserId, null, testResourceType, testOutcome))
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("Action type is required");
+
+        // Test null resourceType
+        assertThatThrownBy(() -> new AuditLog(testUserId, testActionType, null, testOutcome))
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("Resource type is required");
+
+        // Test null outcome
+        assertThatThrownBy(() -> new AuditLog(testUserId, testActionType, testResourceType, null))
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("Outcome is required");
+    }
+
+    @Test
+    void testValidateState() {
+        // Test data variables
+        UUID testUserId = UUID.randomUUID();
+        ActionType testActionType = ActionType.CREATE;
+        ResourceType testResourceType = ResourceType.APPOINTMENT;
+        Outcome testOutcome = Outcome.SUCCESS;
+
+        // Test valid audit log - should not throw exception
+        AuditLog validLog = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        assertThatCode(() -> validLog.validateState()).doesNotThrowAnyException();
+
+        // Test with null userId
+        final AuditLog log1 = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        try {
+            java.lang.reflect.Field field = AuditLog.class.getDeclaredField("userId");
+            field.setAccessible(true);
+            field.set(log1, null);
+        } catch (Exception e) {
+            fail("Failed to set userId field via reflection: " + e.getMessage());
+        }
+        assertThatThrownBy(() -> log1.validateState())
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("User ID is required");
+
+        // Test with null actionType
+        final AuditLog log2 = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        try {
+            java.lang.reflect.Field field = AuditLog.class.getDeclaredField("actionType");
+            field.setAccessible(true);
+            field.set(log2, null);
+        } catch (Exception e) {
+            fail("Failed to set actionType field via reflection: " + e.getMessage());
+        }
+        assertThatThrownBy(() -> log2.validateState())
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("Action type is required");
+
+        // Test with null resourceType
+        final AuditLog log3 = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        try {
+            java.lang.reflect.Field field = AuditLog.class.getDeclaredField("resourceType");
+            field.setAccessible(true);
+            field.set(log3, null);
+        } catch (Exception e) {
+            fail("Failed to set resourceType field via reflection: " + e.getMessage());
+        }
+        assertThatThrownBy(() -> log3.validateState())
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("Resource type is required");
+
+        // Test with null outcome
+        final AuditLog log4 = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        try {
+            java.lang.reflect.Field field = AuditLog.class.getDeclaredField("outcome");
+            field.setAccessible(true);
+            field.set(log4, null);
+        } catch (Exception e) {
+            fail("Failed to set outcome field via reflection: " + e.getMessage());
+        }
+        assertThatThrownBy(() -> log4.validateState())
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("Outcome is required");
+    }
+
+    @Test
+    void testHasSecurityDetails() {
+        // Test data variables
+        UUID testUserId = UUID.randomUUID();
+        ActionType testActionType = ActionType.CREATE;
+        ResourceType testResourceType = ResourceType.APPOINTMENT;
+        Outcome testOutcome = Outcome.SUCCESS;
+
+        // Test audit log with no security details - should return false
+        AuditLog log = new AuditLog(testUserId, testActionType, testResourceType, testOutcome);
+        assertThat(log.hasSecurityDetails()).isFalse();
+
+        // Test audit log with only source IP - should return false
+        try {
+            InetAddress testIp = InetAddress.getByName("192.168.1.1");
+            log.setSourceIp(testIp);
+        } catch (Exception e) {
+            fail("Failed to set source IP: " + e.getMessage());
+        }
+        assertThat(log.hasSecurityDetails()).isFalse();
+
+        // Test audit log with only user agent - should return false
+        log.setSourceIp(null);
+        log.setUserAgent("Mozilla/5.0");
+        assertThat(log.hasSecurityDetails()).isFalse();
+
+        // Test audit log with both source IP and user agent - should return true
+        try {
+            InetAddress testIp = InetAddress.getByName("192.168.1.1");
+            log.setSourceIp(testIp);
+        } catch (Exception e) {
+            fail("Failed to set source IP: " + e.getMessage());
+        }
+        log.setUserAgent("Mozilla/5.0");
+        assertThat(log.hasSecurityDetails()).isTrue();
+
+        // Test audit log with source IP and empty user agent - should return false
+        log.setUserAgent("");
+        assertThat(log.hasSecurityDetails()).isFalse();
+
+        // Test audit log with source IP and whitespace user agent - should return false
+        log.setUserAgent("   ");
+        assertThat(log.hasSecurityDetails()).isFalse();
+
+        // Test audit log with source IP and null user agent - should return false
+        log.setUserAgent(null);
+        assertThat(log.hasSecurityDetails()).isFalse();
     }
 }

@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,6 +27,27 @@ import com.fasterxml.jackson.databind.JsonNode;
            @Index(name = DatabaseConstants.INDEX_PROVIDERS_NPI_NUMBER_UNIQUE, columnList = DatabaseConstants.COL_NPI_NUMBER),
            @Index(name = DatabaseConstants.INDEX_PROVIDERS_SPECIALTY, columnList = DatabaseConstants.COL_SPECIALTY)
        })
+@NamedEntityGraphs({
+    @NamedEntityGraph(
+        name = DatabaseConstants.ENTITY_GRAPH_PROVIDER_WITH_USER,
+        attributeNodes = {
+            @NamedAttributeNode(DatabaseConstants.ATTR_USER)
+        }
+    ),
+    @NamedEntityGraph(
+        name = DatabaseConstants.ENTITY_GRAPH_PROVIDER_WITH_APPOINTMENTS,
+        attributeNodes = {
+            @NamedAttributeNode(DatabaseConstants.ATTR_APPOINTMENTS)
+        }
+    ),
+    @NamedEntityGraph(
+        name = DatabaseConstants.ENTITY_GRAPH_PROVIDER_FULL_DETAILS,
+        attributeNodes = {
+            @NamedAttributeNode(DatabaseConstants.ATTR_USER),
+            @NamedAttributeNode(DatabaseConstants.ATTR_APPOINTMENTS)
+        }
+    )
+})
 public class Provider extends BaseEntity {
 
     /**
@@ -77,17 +99,75 @@ public class Provider extends BaseEntity {
     /**
      * One-to-many relationship with Appointments
      * A provider can have multiple appointments
+     *
+     * Performance optimization:
+     * - LAZY loading prevents unnecessary data fetching
+     * - @BatchSize reduces N+1 query problems by batching related entity loads
+     * - orphanRemoval ensures clean deletion of appointments
      */
-    @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = DatabaseConstants.ATTR_PROVIDER,
+               cascade = CascadeType.ALL,
+               fetch = FetchType.LAZY,
+               orphanRemoval = true)
+    @BatchSize(size = 20)
     private java.util.List<Appointment> appointments = new java.util.ArrayList<>();
 
-    // Constructors
-    public Provider() {}
+    // ==================== CONSTRUCTORS ====================
 
-    // Constructor for service layer (with user ID only)
+    /**
+     * Private constructor for JPA only.
+     */
+    @SuppressWarnings("unused")
+    private Provider() {}
+
+    /**
+     * Simple constructor for required fields only.
+     * Use setters for optional fields.
+     *
+     * @param userId The ID of the user this provider belongs to
+     * @param npiNumber The National Provider Identifier (10 digits)
+     */
     public Provider(UUID userId, String npiNumber) {
+        if (userId == null) {
+            throw new ValidationException("User ID is required");
+        }
+        if (npiNumber == null || npiNumber.trim().isEmpty()) {
+            throw new ValidationException("NPI number is required");
+        }
+
         this.userId = userId;
         this.npiNumber = npiNumber;
+    }
+
+    // ==================== BUSINESS LOGIC METHODS ====================
+
+    /**
+     * Validates that the provider object is in a valid state.
+     * This should be called after object creation to ensure all required fields are set.
+     *
+     * @throws ValidationException if the provider is in an invalid state
+     */
+    public void validateState() {
+        if (userId == null) {
+            throw new ValidationException("User ID is required");
+        }
+        if (npiNumber == null || npiNumber.trim().isEmpty()) {
+            throw new ValidationException("NPI number is required");
+        }
+        if (!npiNumber.matches(ValidationPatterns.NPI)) {
+            throw new ValidationException("NPI number must be exactly 10 digits");
+        }
+    }
+
+    /**
+     * Checks if this provider has complete professional credentials.
+     *
+     * @return true if provider has specialty, license numbers, and qualifications
+     */
+    public boolean hasCompleteCredentials() {
+        return specialty != null && !specialty.trim().isEmpty() &&
+               licenseNumbers != null && !licenseNumbers.trim().isEmpty() &&
+               qualifications != null && !qualifications.trim().isEmpty();
     }
 
     // Getters and Setters
@@ -95,6 +175,8 @@ public class Provider extends BaseEntity {
     public UUID getUserId() {
         return userId;
     }
+
+    // Note: userId is immutable after creation - use factory methods to create new providers
 
     public String getLicenseNumbers() {
         return licenseNumbers;
@@ -112,15 +194,8 @@ public class Provider extends BaseEntity {
         return npiNumber;
     }
 
-    public void setNpiNumber(String npiNumber) {
-        this.npiNumber = ValidationUtils.validateRequiredString(
-            npiNumber,
-            "NPI number",
-            10,
-            ValidationPatterns.NPI,
-            "NPI number must be exactly 10 digits"
-        );
-    }
+    // Note: npiNumber is immutable after creation - use factory methods to create new providers
+
 
     public String getSpecialty() {
         return specialty;

@@ -7,6 +7,7 @@ import com.healthcare.exception.ValidationException;
 import com.healthcare.utils.ValidationUtils;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import jakarta.validation.constraints.Size;
@@ -24,8 +25,31 @@ import com.fasterxml.jackson.databind.JsonNode;
 @Table(name = DatabaseConstants.TABLE_APPOINTMENTS,
        indexes = {
            @Index(name = DatabaseConstants.INDEX_APPOINTMENTS_PROVIDER_SCHEDULE, columnList = DatabaseConstants.COL_PROVIDER_ID + "," + DatabaseConstants.COL_STATUS + "," + DatabaseConstants.COL_SCHEDULED_AT),
-           @Index(name = DatabaseConstants.INDEX_APPOINTMENTS_PATIENT_SCHEDULE, columnList = DatabaseConstants.COL_PATIENT_ID + "," + DatabaseConstants.COL_SCHEDULED_AT)
+           @Index(name = DatabaseConstants.INDEX_APPOINTMENTS_PATIENT_SCHEDULE, columnList = DatabaseConstants.COL_PATIENT_ID + "," + DatabaseConstants.COL_SCHEDULED_AT + " DESC")
        })
+@NamedEntityGraphs({
+    @NamedEntityGraph(
+        name = DatabaseConstants.ENTITY_GRAPH_APPOINTMENT_WITH_PATIENT_AND_PROVIDER,
+        attributeNodes = {
+            @NamedAttributeNode(DatabaseConstants.ATTR_PATIENT),
+            @NamedAttributeNode(DatabaseConstants.ATTR_PROVIDER)
+        }
+    ),
+    @NamedEntityGraph(
+        name = DatabaseConstants.ENTITY_GRAPH_APPOINTMENT_WITH_MEDICAL_RECORDS,
+        attributeNodes = {
+            @NamedAttributeNode(DatabaseConstants.ATTR_MEDICAL_RECORDS)
+        }
+    ),
+    @NamedEntityGraph(
+        name = DatabaseConstants.ENTITY_GRAPH_APPOINTMENT_FULL_DETAILS,
+        attributeNodes = {
+            @NamedAttributeNode(DatabaseConstants.ATTR_PATIENT),
+            @NamedAttributeNode(DatabaseConstants.ATTR_PROVIDER),
+            @NamedAttributeNode(DatabaseConstants.ATTR_MEDICAL_RECORDS)
+        }
+    )
+})
 public class Appointment extends BaseEntity {
 
     /**
@@ -55,7 +79,7 @@ public class Appointment extends BaseEntity {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = DatabaseConstants.COL_APPOINTMENT_STATUS, nullable = false, columnDefinition = "VARCHAR(20) CHECK (status IN ('AVAILABLE', 'SCHEDULED', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW'))")
+    @Column(name = DatabaseConstants.COL_APPOINTMENT_STATUS, nullable = false, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_APPOINTMENT_STATUS_WITH_CHECK)
     private AppointmentStatus status = AppointmentStatus.AVAILABLE;
 
     @NotNull
@@ -92,19 +116,105 @@ public class Appointment extends BaseEntity {
     /**
      * One-to-many relationship with MedicalRecords
      * An appointment can have multiple medical records
+     *
+     * Performance optimization:
+     * - LAZY loading prevents unnecessary data fetching
+     * - @BatchSize reduces N+1 query problems by batching related entity loads
+     * - orphanRemoval ensures clean deletion of medical records
      */
-    @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = DatabaseConstants.ATTR_APPOINTMENT,
+               cascade = CascadeType.ALL,
+               fetch = FetchType.LAZY,
+               orphanRemoval = true)
+    @BatchSize(size = 20)
     private java.util.List<MedicalRecord> medicalRecords = new java.util.ArrayList<>();
 
-    // Constructors
-    public Appointment() {}
+    // ==================== CONSTRUCTORS ====================
 
-    // Constructor for provider slot creation (no patient yet)
+    /**
+     * Private constructor for JPA only.
+     */
+    @SuppressWarnings("unused")
+    private Appointment() {}
+
+    /**
+     * Simple constructor for required fields only.
+     * Use setters for optional fields like patientId, notes, etc.
+     *
+     * @param providerId The ID of the provider
+     * @param scheduledAt The date and time of the appointment
+     * @param appointmentType The type of appointment
+     */
     public Appointment(UUID providerId, OffsetDateTime scheduledAt, AppointmentType appointmentType) {
+        if (providerId == null) {
+            throw new ValidationException("Provider ID is required");
+        }
+        if (scheduledAt == null) {
+            throw new ValidationException("Scheduled time is required");
+        }
+        if (appointmentType == null) {
+            throw new ValidationException("Appointment type is required");
+        }
+        if (scheduledAt.isBefore(OffsetDateTime.now().plusDays(1))) {
+            throw new ValidationException("Appointment must be scheduled at least 1 day in advance");
+        }
+
         this.providerId = providerId;
         this.scheduledAt = scheduledAt;
         this.appointmentType = appointmentType;
         this.status = AppointmentStatus.AVAILABLE;
+    }
+
+    // ==================== BUSINESS LOGIC METHODS ====================
+
+    /**
+     * Validates that the appointment object is in a valid state.
+     * This should be called after object creation to ensure all required fields are set.
+     *
+     * @throws ValidationException if the appointment is in an invalid state
+     */
+    public void validateState() {
+        if (providerId == null) {
+            throw new ValidationException("Provider ID is required");
+        }
+        if (scheduledAt == null) {
+            throw new ValidationException("Scheduled time is required");
+        }
+        if (appointmentType == null) {
+            throw new ValidationException("Appointment type is required");
+        }
+        if (status == null) {
+            throw new ValidationException("Appointment status is required");
+        }
+    }
+
+    /**
+     * Checks if this appointment can be booked by a patient.
+     *
+     * @return true if the appointment is available for booking
+     */
+    public boolean canBeBooked() {
+        return status == AppointmentStatus.AVAILABLE && patientId == null;
+    }
+
+    /**
+     * Checks if this appointment can be cancelled.
+     *
+     * @return true if the appointment can be cancelled
+     */
+    public boolean canBeCancelled() {
+        return status == AppointmentStatus.SCHEDULED ||
+               status == AppointmentStatus.CONFIRMED ||
+               status == AppointmentStatus.AVAILABLE;
+    }
+
+    /**
+     * Checks if this appointment can be completed.
+     *
+     * @return true if the appointment can be marked as completed
+     */
+    public boolean canBeCompleted() {
+        return status == AppointmentStatus.IN_PROGRESS;
     }
 
     // Getters and Setters
@@ -121,30 +231,13 @@ public class Appointment extends BaseEntity {
         return providerId;
     }
 
-    public void setProviderId(UUID providerId) {
-        if (providerId == null) {
-            throw new ValidationException("Provider ID cannot be null");
-        }
-        this.providerId = providerId;
-    }
+    // Note: providerId is immutable after creation - use factory methods to create new appointments
 
     public OffsetDateTime getScheduledAt() {
         return scheduledAt;
     }
 
-    public void setScheduledAt(OffsetDateTime scheduledAt) {
-        if (scheduledAt == null) {
-            throw new ValidationException("Scheduled time cannot be null");
-        }
-
-        // Validate that appointment is scheduled at least 1 day in advance
-        OffsetDateTime oneDayFromNow = OffsetDateTime.now().plusDays(1);
-        if (scheduledAt.isBefore(oneDayFromNow)) {
-            throw new ValidationException("Appointment must be scheduled at least 1 day in advance");
-        }
-
-        this.scheduledAt = scheduledAt;
-    }
+    // Note: scheduledAt is immutable after creation - use factory methods to create new appointments
 
     public OffsetDateTime getCheckinTime() {
         return checkinTime;
@@ -186,12 +279,7 @@ public class Appointment extends BaseEntity {
         return appointmentType;
     }
 
-    public void setAppointmentType(AppointmentType appointmentType) {
-        if (appointmentType == null) {
-            throw new ValidationException("Appointment type cannot be null");
-        }
-        this.appointmentType = appointmentType;
-    }
+    // Note: appointmentType is immutable after creation - use factory methods to create new appointments
 
     public String getNotes() {
         return notes;

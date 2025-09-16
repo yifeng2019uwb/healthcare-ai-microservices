@@ -111,8 +111,8 @@ class BaseEntityTest {
         // Test prePersist method
         auditListener.prePersist(testEntity);
 
-        // Should update to "system" (fallback value)
-        assertThat(testEntity.getUpdatedBy()).isEqualTo("system");
+        // Should keep existing value since it's not null/empty
+        assertThat(testEntity.getUpdatedBy()).isEqualTo(existingUserId);
     }
 
     @Test
@@ -131,9 +131,10 @@ class BaseEntityTest {
         assertThat(testEntity.getUpdatedBy()).isNotNull(); // Ensure non-null
 
         // Test mixed calls
-        testEntity.setUpdatedBy("user-789");
+        String userId = "user-789";
+        testEntity.setUpdatedBy(userId);
         auditListener.prePersist(testEntity);
-        assertThat(testEntity.getUpdatedBy()).isEqualTo("system");
+        assertThat(testEntity.getUpdatedBy()).isEqualTo(userId);
         assertThat(testEntity.getUpdatedBy()).isNotNull(); // Ensure non-null
     }
 
@@ -189,12 +190,6 @@ class BaseEntityTest {
         // Test hashCode method (inherited from Object)
         assertThat(testEntity.hashCode()).isNotEqualTo(anotherEntity.hashCode());
         assertThat(testEntity.hashCode()).isEqualTo(testEntity.hashCode());
-    }
-
-    @Test
-    void testIsActive() {
-        // Test that BaseEntity isActive() returns true by default
-        assertThat(testEntity.isActive()).isTrue();
     }
 
     /**

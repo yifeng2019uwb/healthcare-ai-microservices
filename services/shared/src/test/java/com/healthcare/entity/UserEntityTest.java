@@ -35,26 +35,37 @@ class UserEntityTest {
 
     @Test
     void testUserConstructor() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
 
         assertThat(user.getExternalAuthId()).isEqualTo(testExternalAuthId);
+        assertThat(user.getEmail()).isEqualTo(testEmail);
+        assertThat(user.getRole()).isEqualTo(testRole);
+        assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE); // Default value
+
+        // Set optional fields
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
+
         assertThat(user.getFirstName()).isEqualTo(testFirstName);
         assertThat(user.getLastName()).isEqualTo(testLastName);
-        assertThat(user.getEmail()).isEqualTo(testEmail);
         assertThat(user.getPhone()).isEqualTo(testPhone);
         assertThat(user.getDateOfBirth()).isEqualTo(testDateOfBirth);
         assertThat(user.getGender()).isEqualTo(testGender);
-        assertThat(user.getRole()).isEqualTo(testRole);
-        assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE); // Default value
     }
 
     // ==================== FIELD TESTS (with getter/setter) ====================
 
     @Test
     void testFirstNameField() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test getter (field access)
         assertThat(user.getFirstName()).isEqualTo(testFirstName);
@@ -98,8 +109,12 @@ class UserEntityTest {
 
     @Test
     void testLastNameField() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test getter (field access)
         assertThat(user.getLastName()).isEqualTo(testLastName);
@@ -143,8 +158,12 @@ class UserEntityTest {
 
     @Test
     void testEmailField() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test getter (field access)
         assertThat(user.getEmail()).isEqualTo(testEmail);
@@ -178,8 +197,12 @@ class UserEntityTest {
 
     @Test
     void testPhoneField() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test getter (field access)
         assertThat(user.getPhone()).isEqualTo(testPhone);
@@ -213,8 +236,12 @@ class UserEntityTest {
 
     @Test
     void testDateOfBirthField() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test getter (field access)
         assertThat(user.getDateOfBirth()).isEqualTo(testDateOfBirth);
@@ -238,8 +265,12 @@ class UserEntityTest {
 
     @Test
     void testGenderField() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test getter (field access)
         assertThat(user.getGender()).isEqualTo(testGender);
@@ -256,8 +287,12 @@ class UserEntityTest {
 
     @Test
     void testStatusField() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test getter (field access) - default value
         assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE);
@@ -276,8 +311,12 @@ class UserEntityTest {
 
     @Test
     void testStreetAddressField() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test setter with valid value
         String testStreetAddress = "123 Main St";
@@ -296,8 +335,12 @@ class UserEntityTest {
 
     @Test
     void testCityField() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test setter with valid value
         String testCity = "New York";
@@ -322,8 +365,12 @@ class UserEntityTest {
 
     @Test
     void testStateField() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test setter with valid value
         String testState = "NY";
@@ -348,8 +395,12 @@ class UserEntityTest {
 
     @Test
     void testPostalCodeField() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test setter with valid value
         String testPostalCode = "10001";
@@ -378,8 +429,12 @@ class UserEntityTest {
 
     @Test
     void testCountryField() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test setter with valid value
         String testCountry = "USA";
@@ -404,8 +459,12 @@ class UserEntityTest {
 
     @Test
     void testCustomDataField() throws IOException {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test setter with valid value
         ObjectMapper mapper = new ObjectMapper();
@@ -422,8 +481,12 @@ class UserEntityTest {
 
     @Test
     void testIsAdultMethod() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test with adult date of birth
         assertThat(user.isAdult()).isTrue();
@@ -436,8 +499,12 @@ class UserEntityTest {
 
     @Test
     void testHasCompleteAddressMethod() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test with no address - should be false
         assertThat(user.hasCompleteAddress()).isFalse();
@@ -469,8 +536,12 @@ class UserEntityTest {
 
     @Test
     void testHasCompleteAddressWithWhitespace() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test with whitespace-only values - should be false (trimmed to empty)
         user.setStreetAddress("   ");
@@ -495,8 +566,12 @@ class UserEntityTest {
 
     @Test
     void testHasCompleteAddressWithNullValues() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test with null values - should be false
         assertThat(user.hasCompleteAddress()).isFalse();
@@ -512,8 +587,12 @@ class UserEntityTest {
 
     @Test
     void testIsActiveMethod() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test with ACTIVE status
         user.setStatus(UserStatus.ACTIVE);
@@ -531,8 +610,12 @@ class UserEntityTest {
 
     @Test
     void testGetFullNameMethod() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Test full name generation
         String expectedFullName = testFirstName + " " + testLastName;
@@ -548,14 +631,18 @@ class UserEntityTest {
 
     @Test
     void testGetPatient() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Initially should be null
         assertThat(user.getPatient()).isNull();
 
         // Create a patient and set it (using reflection since there's no setter)
-        Patient patient = new Patient();
+        Patient patient = new Patient(java.util.UUID.randomUUID(), "PAT-123456");
         try {
             java.lang.reflect.Field patientField = User.class.getDeclaredField("patient");
             patientField.setAccessible(true);
@@ -570,14 +657,18 @@ class UserEntityTest {
 
     @Test
     void testGetProvider() {
-        User user = new User(testExternalAuthId, testFirstName, testLastName, testEmail,
-                           testPhone, testDateOfBirth, testGender, testRole);
+        User user = new User(testExternalAuthId, testEmail, testRole);
+        user.setFirstName(testFirstName);
+        user.setLastName(testLastName);
+        user.setPhone(testPhone);
+        user.setDateOfBirth(testDateOfBirth);
+        user.setGender(testGender);
 
         // Initially should be null
         assertThat(user.getProvider()).isNull();
 
         // Create a provider and set it (using reflection since there's no setter)
-        Provider provider = new Provider();
+        Provider provider = new Provider(java.util.UUID.randomUUID(), "1234567890");
         try {
             java.lang.reflect.Field providerField = User.class.getDeclaredField("provider");
             providerField.setAccessible(true);

@@ -5,12 +5,10 @@ import com.healthcare.enums.ActionType;
 import com.healthcare.enums.Outcome;
 import com.healthcare.enums.ResourceType;
 import com.healthcare.exception.ValidationException;
-import com.healthcare.utils.ValidationUtils;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import jakarta.validation.constraints.Size;
 
 import java.net.InetAddress;
 import java.util.UUID;
@@ -65,36 +63,51 @@ public class AuditLog extends BaseEntity {
     @Column(name = DatabaseConstants.COL_USER_AGENT, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TEXT)
     private String userAgent;
 
-    // Constructors
-    public AuditLog() {}
+    // ==================== CONSTRUCTORS ====================
 
-    // Constructor for service layer (with user ID only)
-    public AuditLog(UUID userId, ActionType actionType, ResourceType resourceType, UUID resourceId, Outcome outcome) {
+    /**
+     * Private constructor for JPA only.
+     */
+    @SuppressWarnings("unused")
+    private AuditLog() {}
+
+    /**
+     * Simple constructor for required fields only.
+     * Use setters for optional fields.
+     *
+     * @param userId The ID of the user performing the action
+     * @param actionType The type of action performed
+     * @param resourceType The type of resource affected
+     * @param outcome The outcome of the action
+     */
+    public AuditLog(UUID userId, ActionType actionType, ResourceType resourceType, Outcome outcome) {
+        if (userId == null) {
+            throw new ValidationException("User ID is required");
+        }
+        if (actionType == null) {
+            throw new ValidationException("Action type is required");
+        }
+        if (resourceType == null) {
+            throw new ValidationException("Resource type is required");
+        }
+        if (outcome == null) {
+            throw new ValidationException("Outcome is required");
+        }
+
         this.userId = userId;
         this.actionType = actionType;
         this.resourceType = resourceType;
-        this.resourceId = resourceId;
         this.outcome = outcome;
     }
 
-    // Full constructor for complete audit log creation
-    public AuditLog(UUID userId, ActionType actionType, ResourceType resourceType, UUID resourceId,
-                   Outcome outcome, JsonNode details, InetAddress sourceIp, String userAgent) {
-        this.userId = userId;
-        this.actionType = actionType;
-        this.resourceType = resourceType;
-        this.resourceId = resourceId;
-        this.outcome = outcome;
-        this.details = details;
-        this.sourceIp = validateSourceIp(sourceIp);
-        this.userAgent = ValidationUtils.validateAndNormalizeString(userAgent, "User agent", 500);
-    }
 
     // Getters and Setters
 
     public UUID getUserId() {
         return userId;
     }
+
+    // Note: userId is immutable after creation - use factory methods to create new audit logs
 
     public ActionType getActionType() {
         return actionType;
@@ -128,9 +141,21 @@ public class AuditLog extends BaseEntity {
         return sourceIp;
     }
 
+    public void setSourceIp(InetAddress sourceIp) {
+        this.sourceIp = validateSourceIp(sourceIp);
+    }
+
+    public void setResourceId(UUID resourceId) {
+        this.resourceId = resourceId;
+    }
+
 
     public String getUserAgent() {
         return userAgent;
+    }
+
+    public void setUserAgent(String userAgent) {
+        this.userAgent = this.validateUserAgent(userAgent);
     }
 
     // ==================== VALIDATION METHODS ====================
@@ -157,6 +182,51 @@ public class AuditLog extends BaseEntity {
         }
 
         return sourceIp;
+    }
+
+    private String validateUserAgent(String userAgent) {
+        if (userAgent == null || userAgent.trim().isEmpty()) {
+            return null;
+        }
+
+        String trimmed = userAgent.trim();
+        if (trimmed.length() > 500) {
+            throw new ValidationException("User agent cannot exceed 500 characters");
+        }
+
+        return trimmed;
+    }
+
+    // ==================== BUSINESS LOGIC METHODS ====================
+
+    /**
+     * Validates that the audit log object is in a valid state.
+     * This should be called after object creation to ensure all required fields are set.
+     *
+     * @throws ValidationException if the audit log is in an invalid state
+     */
+    public void validateState() {
+        if (userId == null) {
+            throw new ValidationException("User ID is required");
+        }
+        if (actionType == null) {
+            throw new ValidationException("Action type is required");
+        }
+        if (resourceType == null) {
+            throw new ValidationException("Resource type is required");
+        }
+        if (outcome == null) {
+            throw new ValidationException("Outcome is required");
+        }
+    }
+
+    /**
+     * Checks if this audit log has security details recorded.
+     *
+     * @return true if both source IP and user agent are recorded
+     */
+    public boolean hasSecurityDetails() {
+        return sourceIp != null && userAgent != null && !userAgent.trim().isEmpty();
     }
 
 }

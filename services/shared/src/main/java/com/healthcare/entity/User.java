@@ -17,9 +17,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
-import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -130,22 +128,35 @@ public class User extends BaseEntity {
 
     // ==================== CONSTRUCTORS ====================
 
-    public User() {}
+    /**
+     * Private constructor for JPA only.
+     */
+    @SuppressWarnings("unused")
+    private User() {}
 
-    public User(String externalAuthId, String firstName, String lastName, String email, String phone,
-                LocalDate dateOfBirth, Gender gender, UserRole role) {
+    /**
+     * Simple constructor for required fields only.
+     * Use setters for optional fields.
+     *
+     * @param externalAuthId The external authentication provider ID
+     * @param email The user's email address
+     * @param role The user's role (PATIENT or PROVIDER)
+     */
+    public User(String externalAuthId, String email, UserRole role) {
+        if (externalAuthId == null || externalAuthId.trim().isEmpty()) {
+            throw new ValidationException("External auth ID is required");
+        }
+        if (email == null || email.trim().isEmpty()) {
+            throw new ValidationException("Email is required");
+        }
+        if (role == null) {
+            throw new ValidationException("Role is required");
+        }
+
         this.externalAuthId = externalAuthId;
+        this.email = email;
         this.role = role;
         this.status = UserStatus.ACTIVE;
-
-        // Use setters to ensure consistent validation
-        this.setFirstName(firstName);
-        this.setLastName(lastName);
-        this.setEmail(email);
-        this.setPhone(phone);
-        this.setDateOfBirth(dateOfBirth);
-        this.setGender(gender);
-
     }
 
     // ==================== GETTERS ====================
@@ -369,6 +380,42 @@ public class User extends BaseEntity {
      */
     public boolean isActive() {
         return status == UserStatus.ACTIVE;
+    }
+
+    /**
+     * Validates that the user object is in a valid state.
+     * This should be called after object creation to ensure all required fields are set.
+     *
+     * @throws ValidationException if the user is in an invalid state
+     */
+    public void validateState() {
+        if (externalAuthId == null || externalAuthId.trim().isEmpty()) {
+            throw new ValidationException("External auth ID is required");
+        }
+        if (firstName == null || firstName.trim().isEmpty()) {
+            throw new ValidationException("First name is required");
+        }
+        if (lastName == null || lastName.trim().isEmpty()) {
+            throw new ValidationException("Last name is required");
+        }
+        if (email == null || email.trim().isEmpty()) {
+            throw new ValidationException("Email is required");
+        }
+        if (phone == null || phone.trim().isEmpty()) {
+            throw new ValidationException("Phone is required");
+        }
+        if (dateOfBirth == null) {
+            throw new ValidationException("Date of birth is required");
+        }
+        if (gender == null) {
+            throw new ValidationException("Gender is required");
+        }
+        if (role == null) {
+            throw new ValidationException("Role is required");
+        }
+        if (status == null) {
+            throw new ValidationException("Status is required");
+        }
     }
 
 }

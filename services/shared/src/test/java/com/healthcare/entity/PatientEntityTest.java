@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -383,7 +384,7 @@ class PatientEntityTest {
         assertThat(patient.getUser()).isNull();
 
         // Create a user and set it (using reflection since there's no setter)
-        User user = new User();
+        User user = new User("auth_123", "test@example.com", UserRole.PATIENT);
         try {
             java.lang.reflect.Field userField = Patient.class.getDeclaredField("user");
             userField.setAccessible(true);
@@ -407,11 +408,101 @@ class PatientEntityTest {
         assertThat(patient.getAppointments()).isEmpty();
 
         // Create an appointment and add it to the list
-        Appointment appointment = new Appointment();
+        Appointment appointment = new Appointment(UUID.randomUUID(), java.time.OffsetDateTime.now().plusDays(2), com.healthcare.enums.AppointmentType.REGULAR_CONSULTATION);
         patient.getAppointments().add(appointment);
 
         // Now should contain the appointment
         assertThat(patient.getAppointments()).hasSize(1);
         assertThat(patient.getAppointments()).contains(appointment);
+    }
+
+    @Test
+    void testConstructorValidation() {
+        // Test data variables
+        UUID testUserId = UUID.randomUUID();
+        String testPatientNumber = "PAT-12345678";
+
+        // Test null userId
+        assertThatThrownBy(() -> new Patient(null, testPatientNumber))
+            .isInstanceOf(ValidationException.class)
+            .hasMessage("User ID is required");
+
+        // Test null patientNumber
+        assertThatThrownBy(() -> new Patient(testUserId, null))
+            .isInstanceOf(ValidationException.class)
+            .hasMessage("Patient number is required");
+
+        // Test empty patientNumber
+        assertThatThrownBy(() -> new Patient(testUserId, ""))
+            .isInstanceOf(ValidationException.class)
+            .hasMessage("Patient number is required");
+
+        // Test whitespace patientNumber
+        assertThatThrownBy(() -> new Patient(testUserId, "   "))
+            .isInstanceOf(ValidationException.class)
+            .hasMessage("Patient number is required");
+    }
+
+    @Test
+    void testValidateState() {
+        // Test data variables
+        UUID testUserId = UUID.randomUUID();
+        String testPatientNumber = "PAT-12345678";
+
+        // Test valid patient - should not throw exception
+        Patient validPatient = new Patient(testUserId, testPatientNumber);
+        assertThatCode(() -> validPatient.validateState()).doesNotThrowAnyException();
+
+        // Test with null userId
+        final Patient patient1 = new Patient(testUserId, testPatientNumber);
+        try {
+            java.lang.reflect.Field field = Patient.class.getDeclaredField("userId");
+            field.setAccessible(true);
+            field.set(patient1, null);
+        } catch (Exception e) {
+            fail("Failed to set userId field via reflection: " + e.getMessage());
+        }
+        assertThatThrownBy(() -> patient1.validateState())
+            .isInstanceOf(ValidationException.class)
+            .hasMessage("User ID is required");
+
+        // Test with null patientNumber
+        final Patient patient2 = new Patient(testUserId, testPatientNumber);
+        try {
+            java.lang.reflect.Field field = Patient.class.getDeclaredField("patientNumber");
+            field.setAccessible(true);
+            field.set(patient2, null);
+        } catch (Exception e) {
+            fail("Failed to set patientNumber field via reflection: " + e.getMessage());
+        }
+        assertThatThrownBy(() -> patient2.validateState())
+            .isInstanceOf(ValidationException.class)
+            .hasMessage("Patient number is required");
+
+        // Test with empty patientNumber
+        final Patient patient3 = new Patient(testUserId, testPatientNumber);
+        try {
+            java.lang.reflect.Field field = Patient.class.getDeclaredField("patientNumber");
+            field.setAccessible(true);
+            field.set(patient3, "");
+        } catch (Exception e) {
+            fail("Failed to set patientNumber field via reflection: " + e.getMessage());
+        }
+        assertThatThrownBy(() -> patient3.validateState())
+            .isInstanceOf(ValidationException.class)
+            .hasMessage("Patient number is required");
+
+        // Test with invalid patientNumber format (too short)
+        final Patient patient4 = new Patient(testUserId, testPatientNumber);
+        try {
+            java.lang.reflect.Field field = Patient.class.getDeclaredField("patientNumber");
+            field.setAccessible(true);
+            field.set(patient4, "123");
+        } catch (Exception e) {
+            fail("Failed to set patientNumber field via reflection: " + e.getMessage());
+        }
+        assertThatThrownBy(() -> patient4.validateState())
+            .isInstanceOf(ValidationException.class)
+            .hasMessage("Patient number must be in format PAT-XXXXXXXX");
     }
 }

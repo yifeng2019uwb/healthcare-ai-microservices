@@ -1,15 +1,13 @@
 package com.healthcare.entity;
 
-import com.healthcare.enums.Gender;
-import com.healthcare.enums.UserRole;
 import com.healthcare.exception.ValidationException;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -122,31 +120,8 @@ class ProviderEntityTest {
         String testNpiNumber = "1234567890";
         Provider provider = new Provider(testUserId, testNpiNumber);
 
-        // Test setter with valid value
-        String newNpiNumber = "9876543210";
-        provider.setNpiNumber(newNpiNumber);
-        assertThat(provider.getNpiNumber()).isEqualTo(newNpiNumber);
-
-        // Test setter validation - null value
-        assertThatThrownBy(() -> provider.setNpiNumber(null))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("NPI number cannot be null or empty");
-
-        // Test setter validation - empty value
-        assertThatThrownBy(() -> provider.setNpiNumber(""))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("NPI number cannot be null or empty");
-
-        // Test setter validation - too long
-        String longNpiNumber = "12345678901";
-        assertThatThrownBy(() -> provider.setNpiNumber(longNpiNumber))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("NPI number cannot exceed 10 characters");
-
-        // Test setter validation - invalid format
-        assertThatThrownBy(() -> provider.setNpiNumber("123456789a"))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("NPI number must be exactly 10 digits");
+        // Test getter - npiNumber is immutable after creation
+        assertThat(provider.getNpiNumber()).isEqualTo(testNpiNumber);
     }
 
     @Test
@@ -270,7 +245,7 @@ class ProviderEntityTest {
         assertThat(provider.getUser()).isNull();
 
         // Create a user and set it (using reflection since there's no setter)
-        User user = new User();
+        User user = new User("auth_123", "test@example.com", com.healthcare.enums.UserRole.PROVIDER);
         try {
             java.lang.reflect.Field userField = Provider.class.getDeclaredField("user");
             userField.setAccessible(true);
@@ -294,11 +269,144 @@ class ProviderEntityTest {
         assertThat(provider.getAppointments()).isEmpty();
 
         // Create an appointment and add it to the list
-        Appointment appointment = new Appointment();
+        Appointment appointment = new Appointment(UUID.randomUUID(), java.time.OffsetDateTime.now().plusDays(2), com.healthcare.enums.AppointmentType.REGULAR_CONSULTATION);
         provider.getAppointments().add(appointment);
 
         // Now should contain the appointment
         assertThat(provider.getAppointments()).hasSize(1);
         assertThat(provider.getAppointments()).contains(appointment);
+    }
+
+    @Test
+    void testConstructorValidation() {
+        // Test data variables
+        UUID testUserId = UUID.randomUUID();
+        String testNpiNumber = "1234567890";
+
+        // Test null userId
+        assertThatThrownBy(() -> new Provider(null, testNpiNumber))
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("User ID is required");
+
+        // Test null npiNumber
+        assertThatThrownBy(() -> new Provider(testUserId, null))
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("NPI number is required");
+
+        // Test empty npiNumber
+        assertThatThrownBy(() -> new Provider(testUserId, ""))
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("NPI number is required");
+
+        // Test whitespace npiNumber
+        assertThatThrownBy(() -> new Provider(testUserId, "   "))
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("NPI number is required");
+    }
+
+    @Test
+    void testValidateState() {
+        // Test data variables
+        UUID testUserId = UUID.randomUUID();
+        String testNpiNumber = "1234567890";
+
+        // Test valid provider - should not throw exception
+        Provider validProvider = new Provider(testUserId, testNpiNumber);
+        assertThatCode(() -> validProvider.validateState()).doesNotThrowAnyException();
+
+        // Test with null userId
+        final Provider provider1 = new Provider(testUserId, testNpiNumber);
+        try {
+            java.lang.reflect.Field field = Provider.class.getDeclaredField("userId");
+            field.setAccessible(true);
+            field.set(provider1, null);
+        } catch (Exception e) {
+            fail("Failed to set userId field via reflection: " + e.getMessage());
+        }
+        assertThatThrownBy(() -> provider1.validateState())
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("User ID is required");
+
+        // Test with null npiNumber
+        final Provider provider2 = new Provider(testUserId, testNpiNumber);
+        try {
+            java.lang.reflect.Field field = Provider.class.getDeclaredField("npiNumber");
+            field.setAccessible(true);
+            field.set(provider2, null);
+        } catch (Exception e) {
+            fail("Failed to set npiNumber field via reflection: " + e.getMessage());
+        }
+        assertThatThrownBy(() -> provider2.validateState())
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("NPI number is required");
+
+        // Test with empty npiNumber
+        final Provider provider3 = new Provider(testUserId, testNpiNumber);
+        try {
+            java.lang.reflect.Field field = Provider.class.getDeclaredField("npiNumber");
+            field.setAccessible(true);
+            field.set(provider3, "");
+        } catch (Exception e) {
+            fail("Failed to set npiNumber field via reflection: " + e.getMessage());
+        }
+        assertThatThrownBy(() -> provider3.validateState())
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("NPI number is required");
+
+        // Test with invalid npiNumber format (too short)
+        final Provider provider4 = new Provider(testUserId, testNpiNumber);
+        try {
+            java.lang.reflect.Field field = Provider.class.getDeclaredField("npiNumber");
+            field.setAccessible(true);
+            field.set(provider4, "123"); // "123" is too short for NPI pattern
+        } catch (Exception e) {
+            fail("Failed to set npiNumber field via reflection: " + e.getMessage());
+        }
+        assertThatThrownBy(() -> provider4.validateState())
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("NPI number must be exactly 10 digits");
+    }
+
+    @Test
+    void testHasCompleteCredentials() {
+        // Test data variables
+        UUID testUserId = UUID.randomUUID();
+        String testNpiNumber = "1234567890";
+
+        // Test provider with no credentials - should return false
+        Provider provider = new Provider(testUserId, testNpiNumber);
+        assertThat(provider.hasCompleteCredentials()).isFalse();
+
+        // Test provider with only specialty - should return false
+        provider.setSpecialty("Cardiology");
+        assertThat(provider.hasCompleteCredentials()).isFalse();
+
+        // Test provider with specialty and license numbers - should return false
+        provider.setLicenseNumbers("MD123456");
+        assertThat(provider.hasCompleteCredentials()).isFalse();
+
+        // Test provider with specialty, license numbers, and qualifications - should return true
+        provider.setQualifications("Board Certified Cardiologist");
+        assertThat(provider.hasCompleteCredentials()).isTrue();
+
+        // Test provider with empty specialty - should return false
+        provider.setSpecialty("");
+        assertThat(provider.hasCompleteCredentials()).isFalse();
+
+        // Test provider with empty license numbers - should return false
+        provider.setSpecialty("Cardiology");
+        provider.setLicenseNumbers("");
+        assertThat(provider.hasCompleteCredentials()).isFalse();
+
+        // Test provider with empty qualifications - should return false
+        provider.setLicenseNumbers("MD123456");
+        provider.setQualifications("");
+        assertThat(provider.hasCompleteCredentials()).isFalse();
+
+        // Test provider with whitespace-only credentials - should return false
+        provider.setSpecialty("   ");
+        provider.setLicenseNumbers("   ");
+        provider.setQualifications("   ");
+        assertThat(provider.hasCompleteCredentials()).isFalse();
     }
 }

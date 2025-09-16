@@ -151,76 +151,36 @@ public abstract class BaseEntity {
         );
     }
 
-    // ==================== ENTITY METHODS ====================
-
-    /**
-     * Checks if this entity is active.
-     * Default implementation returns true. Override in subclasses that have status fields.
-     *
-     * @return true if entity is active, false otherwise
-     */
-    public boolean isActive() {
-        return true;
-    }
-
     // ==================== AUDIT LISTENER ====================
 
     /**
      * JPA Entity Listener for automatic audit field population.
-     * Automatically sets updatedBy from JWT context on entity creation and updates.
+     * Automatically sets updatedBy on entity creation and updates.
+     * The updatedBy field should be set by the service layer before saving.
      */
     public static class AuditListener {
 
         /**
          * Automatically populate updatedBy before entity creation.
          * Called by JPA before INSERT operations.
+         * If updatedBy is not already set, defaults to "system".
          */
         @PrePersist
         public void prePersist(BaseEntity entity) {
-            String currentUserId = getCurrentUserIdFromJWT();
-            entity.setUpdatedBy(currentUserId);
+            if (entity.getUpdatedBy() == null || entity.getUpdatedBy().trim().isEmpty()) {
+                entity.setUpdatedBy("system");
+            }
         }
 
         /**
          * Automatically populate updatedBy before entity update.
          * Called by JPA before UPDATE operations.
+         * If updatedBy is not already set, defaults to "system".
          */
         @PreUpdate
         public void preUpdate(BaseEntity entity) {
-            String currentUserId = getCurrentUserIdFromJWT();
-            entity.setUpdatedBy(currentUserId);
-        }
-
-        /**
-         * Extract current user ID from JWT context.
-         * This method should be implemented to integrate with your authentication system.
-         *
-         * @return the current user ID from JWT token, or null if not available
-         */
-        private String getCurrentUserIdFromJWT() {
-            try {
-                // TODO: Implement JWT context extraction
-                // This is a placeholder - replace with actual JWT integration
-                // Example implementations:
-
-                // Option 1: Spring Security Context
-                // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-                // if (auth != null && auth.getPrincipal() instanceof JwtAuthenticationToken) {
-                //     JwtAuthenticationToken jwtToken = (JwtAuthenticationToken) auth.getPrincipal();
-                //     return jwtToken.getToken().getClaimAsString("sub");
-                // }
-
-                // Option 2: Custom JWT Service
-                // return jwtContextService.getCurrentUserId();
-
-                // Option 3: Request Context
-                // return requestContextHolder.getCurrentUserId();
-
-                return "system"; // Fallback for now
-            } catch (Exception e) {
-                // Log error but don't fail the operation
-                // logger.warn("Failed to extract user ID from JWT context", e);
-                return "system";
+            if (entity.getUpdatedBy() == null || entity.getUpdatedBy().trim().isEmpty()) {
+                entity.setUpdatedBy("system");
             }
         }
     }

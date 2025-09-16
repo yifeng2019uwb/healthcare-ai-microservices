@@ -139,6 +139,43 @@ public final class DatabaseConstants {
     public static final String COLUMN_DEFINITION_ROLE_ENUM = "role_enum";
     public static final String COLUMN_DEFINITION_APPOINTMENT_STATUS_ENUM = "appointment_status_enum";
 
+    // Column Definitions with Constraints
+    public static final String COLUMN_DEFINITION_APPOINTMENT_STATUS_WITH_CHECK = "VARCHAR(20) CHECK (status IN ('AVAILABLE', 'SCHEDULED', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW'))";
+
+
+    // ==================== ENTITY GRAPH NAMES ====================
+
+    // Appointment Entity Graphs
+    public static final String ENTITY_GRAPH_APPOINTMENT_WITH_PATIENT_AND_PROVIDER = "Appointment.withPatientAndProvider";
+    public static final String ENTITY_GRAPH_APPOINTMENT_WITH_MEDICAL_RECORDS = "Appointment.withMedicalRecords";
+    public static final String ENTITY_GRAPH_APPOINTMENT_FULL_DETAILS = "Appointment.fullDetails";
+
+    // Patient Entity Graphs
+    public static final String ENTITY_GRAPH_PATIENT_WITH_USER = "Patient.withUser";
+    public static final String ENTITY_GRAPH_PATIENT_WITH_APPOINTMENTS = "Patient.withAppointments";
+    public static final String ENTITY_GRAPH_PATIENT_FULL_DETAILS = "Patient.fullDetails";
+
+    // Provider Entity Graphs
+    public static final String ENTITY_GRAPH_PROVIDER_WITH_USER = "Provider.withUser";
+    public static final String ENTITY_GRAPH_PROVIDER_WITH_APPOINTMENTS = "Provider.withAppointments";
+    public static final String ENTITY_GRAPH_PROVIDER_FULL_DETAILS = "Provider.fullDetails";
+
+    // Medical Record Entity Graphs
+    public static final String ENTITY_GRAPH_MEDICAL_RECORD_WITH_APPOINTMENT = "MedicalRecord.withAppointment";
+    public static final String ENTITY_GRAPH_MEDICAL_RECORD_FULL_DETAILS = "MedicalRecord.fullDetails";
+
+    // ==================== ENTITY ATTRIBUTE NAMES ====================
+
+    // Common attribute names
+    public static final String ATTR_PATIENT = "patient";
+    public static final String ATTR_PROVIDER = "provider";
+    public static final String ATTR_APPOINTMENT = "appointment";
+    public static final String ATTR_MEDICAL_RECORDS = "medicalRecords";
+    public static final String ATTR_APPOINTMENTS = "appointments";
+    public static final String ATTR_USER = "user";
+    public static final String ATTR_AUDIT_LOGS = "auditLogs";
+
+
     private DatabaseConstants() {
         // Utility class
     }
