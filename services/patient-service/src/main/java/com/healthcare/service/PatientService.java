@@ -1,5 +1,6 @@
 package com.healthcare.service;
 
+import com.healthcare.entity.Patient;
 import com.healthcare.entity.User;
 
 import java.util.UUID;
@@ -30,4 +31,28 @@ public interface PatientService {
      * @return the user entity
      */
     User getUserById(UUID userId);
+
+    /**
+     * Get patient by user ID.
+     *
+     * @param userId the user ID
+     * @return the patient entity
+     */
+    Patient getPatientByUserId(UUID userId);
+
+    /**
+     * Get patient by patient number.
+     *
+     * @param patientNumber the patient number
+     * @return the patient entity
+     */
+    Patient getPatientByNumber(String patientNumber);
+
+    /**
+     * Update patient information.
+     *
+     * @param patient the patient entity to update
+     * @return the updated patient entity
+     */
+    Patient updatePatient(Patient patient);
 }

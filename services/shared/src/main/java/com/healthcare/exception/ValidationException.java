@@ -48,38 +48,4 @@ public class ValidationException extends HealthcareException {
         super(ERROR_CODE, message, messageArgs);
     }
 
-
-    /**
-     * Creates a validation exception for a required field that is missing.
-     *
-     * @param fieldName the name of the required field
-     * @return a new ValidationException
-     */
-    public static ValidationException requiredField(String fieldName) {
-        return new ValidationException("Required field '{}' is missing", fieldName);
-    }
-
-    /**
-     * Creates a validation exception for an invalid field value.
-     *
-     * @param fieldName the name of the field
-     * @param value the invalid value
-     * @return a new ValidationException
-     */
-    public static ValidationException invalidValue(String fieldName, Object value) {
-        return new ValidationException("Invalid value '{}' for field '{}'", value, fieldName);
-    }
-
-    /**
-     * Creates a validation exception for a field that exceeds maximum length.
-     *
-     * @param fieldName the name of the field
-     * @param maxLength the maximum allowed length
-     * @param actualLength the actual length
-     * @return a new ValidationException
-     */
-    public static ValidationException maxLengthExceeded(String fieldName, int maxLength, int actualLength) {
-        return new ValidationException("Field '{}' exceeds maximum length of {} characters (actual: {})",
-            fieldName, maxLength, actualLength);
-    }
 }

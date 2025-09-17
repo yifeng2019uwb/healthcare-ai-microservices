@@ -47,9 +47,10 @@ class ValidationExceptionTest {
 
     @Test
     void testValidationExceptionRequiredField() {
+        String template = "Required field '{}' is missing";
         String fieldName = "email";
 
-        ValidationException exception = ValidationException.requiredField(fieldName);
+        ValidationException exception = new ValidationException(template, fieldName);
 
         assertThat(exception.getErrorCode()).isEqualTo("VALIDATION_ERROR");
         assertThat(exception.getMessage()).isEqualTo("Required field 'email' is missing");
@@ -57,10 +58,11 @@ class ValidationExceptionTest {
 
     @Test
     void testValidationExceptionInvalidValue() {
+        String template = "Invalid value '{}' for field '{}'";
         String fieldName = "age";
         Object value = -5;
 
-        ValidationException exception = ValidationException.invalidValue(fieldName, value);
+        ValidationException exception = new ValidationException(template, value, fieldName);
 
         assertThat(exception.getErrorCode()).isEqualTo("VALIDATION_ERROR");
         assertThat(exception.getMessage()).isEqualTo("Invalid value '-5' for field 'age'");
@@ -68,11 +70,12 @@ class ValidationExceptionTest {
 
     @Test
     void testValidationExceptionMaxLengthExceeded() {
+        String template = "Field '{}' exceeds maximum length of {} characters (actual: {})";
         String fieldName = "description";
         int maxLength = 100;
         int actualLength = 150;
 
-        ValidationException exception = ValidationException.maxLengthExceeded(fieldName, maxLength, actualLength);
+        ValidationException exception = new ValidationException(template, fieldName, maxLength, actualLength);
 
         assertThat(exception.getErrorCode()).isEqualTo("VALIDATION_ERROR");
         assertThat(exception.getMessage()).isEqualTo("Field 'description' exceeds maximum length of 100 characters (actual: 150)");

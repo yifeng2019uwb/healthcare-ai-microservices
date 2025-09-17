@@ -4,13 +4,20 @@ import com.healthcare.api.CreatePatientAccountRequest;
 import com.healthcare.api.CreatePatientAccountResponse;
 import com.healthcare.api.GetPatientProfileRequest;
 import com.healthcare.api.GetPatientProfileResponse;
+import com.healthcare.entity.Patient;
 import com.healthcare.entity.User;
 import com.healthcare.enums.Gender;
 import com.healthcare.enums.UserRole;
+import com.healthcare.exception.ConflictException;
+import com.healthcare.exception.ResourceNotFoundException;
+import com.healthcare.exception.ValidationException;
 import com.healthcare.service.PatientService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 /**
  * REST Controller for Patient operations.
@@ -37,17 +44,26 @@ public class PatientController {
      */
     @PostMapping
     public ResponseEntity<CreatePatientAccountResponse> createPatient(@RequestBody CreatePatientAccountRequest request) {
-        // Build User entity from request
-        User user = buildUserFromRequest(request);
+        try {
+            // Build User entity from request
+            User user = buildUserFromRequest(request);
 
-        // Call service with User entity
-        User savedUser = patientService.createPatient(user);
+            // Call service with User entity
+            patientService.createPatient(user);
 
-        // Build success response according to design doc
-        CreatePatientAccountResponse response = new CreatePatientAccountResponse(true, "Account created successfully");
-        return ResponseEntity.status(201).body(response);
-
-        // TODO: Exception handling - ValidationException (400), BusinessLogicException (409), SystemException (500)
+            // Build success response
+            CreatePatientAccountResponse response = new CreatePatientAccountResponse(true, "Account created successfully");
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (ValidationException e) {
+            CreatePatientAccountResponse response = new CreatePatientAccountResponse(false, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (ConflictException e) {
+            CreatePatientAccountResponse response = new CreatePatientAccountResponse(false, e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        } catch (Exception e) {
+            CreatePatientAccountResponse response = new CreatePatientAccountResponse(false, "System error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     /**
@@ -59,14 +75,33 @@ public class PatientController {
      */
     @GetMapping("/profile")
     public ResponseEntity<GetPatientProfileResponse> getPatientProfile(GetPatientProfileRequest request) {
-        // TODO: Extract userId from JWT token in request
-        // For now, we'll need to get userId from somewhere
-        // User user = patientService.getUserById(userId);
+        try {
+            // TODO: Extract userId from JWT token in request
+            // For now, we'll use a placeholder - this should be replaced with JWT extraction
+            UUID userId = extractUserIdFromRequest(request);
 
-        // Build response from user
-        GetPatientProfileResponse response = buildPatientProfileResponse(null);
-        return ResponseEntity.ok(response);
-        // TODO: Exception handling - ValidationException (400), ResourceNotFoundException (404), SystemException (500)
+            if (userId == null) {
+                GetPatientProfileResponse response = new GetPatientProfileResponse();
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+
+            // Get user and patient data
+            User user = patientService.getUserById(userId);
+            Patient patient = patientService.getPatientByUserId(userId);
+
+            // Build response from user and patient
+            GetPatientProfileResponse response = buildPatientProfileResponse(user, patient);
+            return ResponseEntity.ok(response);
+        } catch (ValidationException e) {
+            GetPatientProfileResponse response = new GetPatientProfileResponse();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (ResourceNotFoundException e) {
+            GetPatientProfileResponse response = new GetPatientProfileResponse();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (Exception e) {
+            GetPatientProfileResponse response = new GetPatientProfileResponse();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
 
@@ -98,15 +133,31 @@ public class PatientController {
     }
 
     /**
-     * Build patient profile response from user entity.
+     * Extract user ID from request (placeholder for JWT extraction).
+     * TODO: Replace with proper JWT token extraction
+     *
+     * @param request the request
+     * @return the user ID or null if not found
+     */
+    private UUID extractUserIdFromRequest(GetPatientProfileRequest request) {
+        // TODO: Extract from JWT token in Authorization header
+        // For now, return null to trigger error handling
+        return null;
+    }
+
+    /**
+     * Build patient profile response from user and patient entities.
      *
      * @param user the user entity
+     * @param patient the patient entity
      * @return the patient profile response
      */
-    private GetPatientProfileResponse buildPatientProfileResponse(User user) {
-        // Simple response for now - just return basic user info
+    private GetPatientProfileResponse buildPatientProfileResponse(User user, Patient patient) {
         GetPatientProfileResponse response = new GetPatientProfileResponse();
+
         // TODO: Build proper response with userProfile and patientProfile
+        // This should populate the response DTOs according to the API design
+
         return response;
     }
 }

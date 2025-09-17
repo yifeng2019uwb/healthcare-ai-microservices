@@ -134,7 +134,12 @@
   - **Dependencies**: Database schema deployed
   - **Completed**: Created all DAO interfaces, removed useless unit tests, established proper testing strategy
 
-- [📋] **SHARED-004: Implement Service Layer** - Create BaseService class and entity services
+- [✅] **SHARED-004: Exception Handling Refactor** - Simplify and standardize exception hierarchy ✅ COMPLETED
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: None
+  - **Completed**: Removed BusinessLogicException, renamed SystemException to InternalException, added ConflictException, updated all unit tests
+
+- [📋] **SHARED-005: Implement Service Layer** - Create BaseService class and entity services
   - **Reference**: [Implementation Plan Phase 1.4](../docs/IMPLEMENTATION_PLAN.md#phase-1-core-entity-structure)
   - **Priority**: 🟡 MEDIUM
   - **Dependencies**: Repository layer complete
@@ -196,10 +201,11 @@
 - [✅] Patient Service design (COMPLETED)
 
 **Detailed Tasks** (from Implementation Plan Phase 4):
-- [📋] **PATIENT-001: Implement Patient CRUD** - Create, read, update, delete patient profiles
+- [🔄] **PATIENT-001: Implement Patient CRUD** - Create, read, update, delete patient profiles ⚡ IN PROGRESS
   - **Reference**: [Implementation Plan Phase 4.3](../docs/IMPLEMENTATION_PLAN.md#phase-4-business-logic-implementation)
   - **Priority**: 🟡 MEDIUM
   - **Dependencies**: Authentication working
+  - **Progress**: Service layer implemented with proper validation and exception handling, controller updated with error handling
 
 - [📋] **PATIENT-002: Patient Profile Management** - Complete patient information management
   - **Reference**: [Implementation Plan Phase 4.3](../docs/IMPLEMENTATION_PLAN.md#phase-4-business-logic-implementation)
@@ -215,6 +221,25 @@
   - **Reference**: [Implementation Plan Phase 4.3](../docs/IMPLEMENTATION_PLAN.md#phase-4-business-logic-implementation)
   - **Priority**: 🟢 LOW
   - **Dependencies**: Patient Profile Management complete
+
+---
+
+## 📚 **EPIC 3.5: API Documentation & Contracts**
+
+### **Goal**: Comprehensive API documentation using Smithy models
+### **Status**: ✅ COMPLETED
+### **Dependencies**: None
+
+**Completed Tasks**:
+- [✅] **SMITHY-001: Create Smithy Models** - Define API contracts and documentation ✅ COMPLETED
+  - **Priority**: 🟡 MEDIUM
+  - **Dependencies**: None
+  - **Completed**: Created comprehensive Smithy models for all services (1,392 lines), simplified structure, proper build integration
+
+- [✅] **SMITHY-002: Simplify Structure** - Remove complex code generation, focus on documentation ✅ COMPLETED
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: Smithy models created
+  - **Completed**: Removed unnecessary Java code generation, simplified to documentation-focused approach, integrated with dev.sh build script
 
 ---
 

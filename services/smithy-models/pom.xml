@@ -34,6 +34,7 @@
         </dependency>
 
 
+
         <!-- Jackson for JSON serialization -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -70,27 +71,8 @@
                 </configuration>
             </plugin>
 
-            <!-- Smithy Maven Plugin - Commented out until we find working version -->
-            <!--
-            <plugin>
-                <groupId>software.amazon.smithy</groupId>
-                <artifactId>smithy-maven-plugin</artifactId>
-                <version>1.0.0</version>
-                <configuration>
-                    <smithyBuildConfigs>
-                        <smithyBuildConfig>smithy-build.json</smithyBuildConfig>
-                    </smithyBuildConfigs>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>build</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            -->
+            <!-- Smithy Maven Plugin - Not available for v1.45, using manual build -->
+            <!-- For now, we'll build manually using smithy-build.json -->
 
             <!-- Source Plugin to include generated sources -->
             <plugin>

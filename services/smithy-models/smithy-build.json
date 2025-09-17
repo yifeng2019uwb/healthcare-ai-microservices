@@ -1,15 +1,7 @@
 {
     "version": "1.0",
-    "sources": ["src/main/smithy"],
+    "sources": ["."],
     "plugins": {
-        "java-codegen": {
-            "service": "com.healthcare#PatientService",
-            "package": "com.healthcare.generated"
-        }
-    },
-    "maven": {
-        "dependencies": [
-            "software.amazon.smithy:smithy-java-codegen:1.45.0"
-        ]
+        "build-info": {}
     }
 }

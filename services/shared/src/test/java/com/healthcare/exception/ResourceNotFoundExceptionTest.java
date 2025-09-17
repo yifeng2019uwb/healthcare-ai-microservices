@@ -46,11 +46,12 @@ class ResourceNotFoundExceptionTest {
     }
 
     @Test
-    void testResourceNotFoundExceptionEntityNotFound() {
+    void testResourceNotFoundExceptionWithMessageTemplate() {
+        String template = "{} with ID '{}' not found";
         String entityType = "Patient";
         Object entityId = "456";
 
-        ResourceNotFoundException exception = ResourceNotFoundException.entityNotFound(entityType, entityId);
+        ResourceNotFoundException exception = new ResourceNotFoundException(template, entityType, entityId);
 
         assertThat(exception.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
         assertThat(exception.getMessage()).isEqualTo("Patient with ID '456' not found");
@@ -58,9 +59,10 @@ class ResourceNotFoundExceptionTest {
 
     @Test
     void testResourceNotFoundExceptionUserNotFound() {
+        String template = "User with ID '{}' not found";
         Object userId = "user-123";
 
-        ResourceNotFoundException exception = ResourceNotFoundException.userNotFound(userId);
+        ResourceNotFoundException exception = new ResourceNotFoundException(template, userId);
 
         assertThat(exception.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
         assertThat(exception.getMessage()).isEqualTo("User with ID 'user-123' not found");
@@ -68,9 +70,10 @@ class ResourceNotFoundExceptionTest {
 
     @Test
     void testResourceNotFoundExceptionPatientNotFound() {
+        String template = "Patient with ID '{}' not found";
         Object patientId = "patient-456";
 
-        ResourceNotFoundException exception = ResourceNotFoundException.patientNotFound(patientId);
+        ResourceNotFoundException exception = new ResourceNotFoundException(template, patientId);
 
         assertThat(exception.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
         assertThat(exception.getMessage()).isEqualTo("Patient with ID 'patient-456' not found");
@@ -78,9 +81,10 @@ class ResourceNotFoundExceptionTest {
 
     @Test
     void testResourceNotFoundExceptionProviderNotFound() {
+        String template = "Provider with ID '{}' not found";
         Object providerId = "provider-789";
 
-        ResourceNotFoundException exception = ResourceNotFoundException.providerNotFound(providerId);
+        ResourceNotFoundException exception = new ResourceNotFoundException(template, providerId);
 
         assertThat(exception.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
         assertThat(exception.getMessage()).isEqualTo("Provider with ID 'provider-789' not found");
@@ -88,9 +92,10 @@ class ResourceNotFoundExceptionTest {
 
     @Test
     void testResourceNotFoundExceptionAppointmentNotFound() {
+        String template = "Appointment with ID '{}' not found";
         Object appointmentId = "appointment-101";
 
-        ResourceNotFoundException exception = ResourceNotFoundException.appointmentNotFound(appointmentId);
+        ResourceNotFoundException exception = new ResourceNotFoundException(template, appointmentId);
 
         assertThat(exception.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
         assertThat(exception.getMessage()).isEqualTo("Appointment with ID 'appointment-101' not found");
@@ -98,9 +103,10 @@ class ResourceNotFoundExceptionTest {
 
     @Test
     void testResourceNotFoundExceptionMedicalRecordNotFound() {
+        String template = "Medical Record with ID '{}' not found";
         Object recordId = "record-202";
 
-        ResourceNotFoundException exception = ResourceNotFoundException.medicalRecordNotFound(recordId);
+        ResourceNotFoundException exception = new ResourceNotFoundException(template, recordId);
 
         assertThat(exception.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
         assertThat(exception.getMessage()).isEqualTo("Medical Record with ID 'record-202' not found");
