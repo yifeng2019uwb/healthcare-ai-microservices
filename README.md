@@ -10,7 +10,7 @@ A comprehensive healthcare AI microservices platform designed for learning Sprin
 - **🔐 Authentication**: JWT-based authentication with Supabase Auth
 - **🏥 Healthcare Services**: Patient, Provider, and Appointment management
 - **🤖 AI Integration**: Healthcare analytics and clinical insights
-- **📊 Data Management**: Supabase PostgreSQL with AWS S3 file storage
+- **📊 Data Management**: Supabase PostgreSQL (file storage under research)
 - **🚀 Microservices**: Spring Boot services with API Gateway
 
 ## 🏗️ **Project Structure**
@@ -123,11 +123,11 @@ git push
                              │
          ┌───────────────────┼───────────────────┐
          │                   │                   │
-    ┌────▼────┐   ┌─────────▼────────┐   ┌──────▼────┐
-    │ Supabase │   │   S3             │   │   Shared  │
-    │(PostgreSQL)│   │(File Storage)   │   │   Data    │
-    │            │   │                 │   │   Layer   │
-    └───────────┘   └─────────────────┘   └───────────┘
+    ┌────▼────┐   ┌──────▼────┐
+    │ Supabase │   │   Shared  │
+    │(PostgreSQL)│   │   Data    │
+    │            │   │   Layer   │
+    └───────────┘   └───────────┘
 ```
 
 ### **Service Architecture**

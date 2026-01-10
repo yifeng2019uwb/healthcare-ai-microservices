@@ -227,6 +227,9 @@ Patient → Gateway → Auth → Provider Service → Database
 
 ## 🛠️ **Detailed API Design**
 
+> **Error Responses**: All APIs follow the [Standard Error Responses](exception-handling-design.md) format. Each endpoint lists only the exception names it can throw, not the full response format.
+> **Authentication**: Authentication/authorization errors (401/403) are handled by the authentication layer and are not listed in individual endpoint error sections.
+
 ### **1. Provider Registration API**
 
 #### **Endpoint**: `POST /api/providers`
@@ -291,26 +294,11 @@ Patient → Gateway → Auth → Provider Service → Database
 }
 ```
 
-#### **Error Responses**:
-```json
-// 400 Bad Request
-{
-  "error": "BAD_REQUEST",
-  "message": "Invalid request data: NPI number must be 10 digits"
-}
+#### **Throws**:
+- `ValidationException` (400) - Invalid request data: NPI number must be 10 digits
+- `ConflictException` (409) - Provider already exists with this NPI number
+- `InternalException` (500) - Server error
 
-// 409 Conflict
-{
-  "error": "CONFLICT",
-  "message": "Provider already exists with this NPI number"
-}
-
-// 500 Internal Server Error
-{
-  "error": "INTERNAL_ERROR",
-  "message": "An unexpected error occurred"
-}
-```
 
 #### **Future Feature: Provider Credential Validation**
 
@@ -388,32 +376,10 @@ Patient → Gateway → Auth → Provider Service → Database
 }
 ```
 
-#### **Error Responses**:
-```json
-// 401 Unauthorized
-{
-  "error": "UNAUTHORIZED",
-  "message": "Invalid or missing JWT token"
-}
+#### **Throws**:
+- `ResourceNotFoundException` (404) - Provider profile not found
+- `InternalException` (500) - Server error
 
-// 403 Forbidden
-{
-  "error": "FORBIDDEN",
-  "message": "Account suspended. Contact support"
-}
-
-// 404 Not Found
-{
-  "error": "NOT_FOUND",
-  "message": "Provider profile not found"
-}
-
-// 500 Internal Server Error
-{
-  "error": "INTERNAL_ERROR",
-  "message": "An unexpected error occurred"
-}
-```
 
 ### **3. Update Provider Personal Profile API**
 
@@ -467,32 +433,11 @@ Patient → Gateway → Auth → Provider Service → Database
 }
 ```
 
-#### **Error Responses**:
-```json
-// 400 Bad Request
-{
-  "error": "BAD_REQUEST",
-  "message": "Invalid request data: Phone number format invalid"
-}
+#### **Throws**:
+- `ValidationException` (400) - Invalid request data: Phone number format invalid
+- `ResourceNotFoundException` (404) - Provider profile not found
+- `InternalException` (500) - Server error
 
-// 401 Unauthorized
-{
-  "error": "UNAUTHORIZED",
-  "message": "Invalid or missing JWT token"
-}
-
-// 404 Not Found
-{
-  "error": "NOT_FOUND",
-  "message": "Provider profile not found"
-}
-
-// 500 Internal Server Error
-{
-  "error": "INTERNAL_ERROR",
-  "message": "An unexpected error occurred"
-}
-```
 
 ### **4. Update Provider Professional Information API**
 
@@ -541,44 +486,12 @@ Patient → Gateway → Auth → Provider Service → Database
 }
 ```
 
-#### **Error Responses**:
-```json
-// 400 Bad Request
-{
-  "error": "BAD_REQUEST",
-  "message": "Invalid request data: NPI number must be 10 digits"
-}
+#### **Throws**:
+- `ValidationException` (400) - Invalid request data: NPI number must be 10 digits
+- `ResourceNotFoundException` (404) - Provider profile not found
+- `ConflictException` (409) - NPI number already exists
+- `InternalException` (500) - Server error
 
-// 401 Unauthorized
-{
-  "error": "UNAUTHORIZED",
-  "message": "Invalid or missing JWT token"
-}
-
-// 403 Forbidden
-{
-  "error": "FORBIDDEN",
-  "message": "Insufficient permissions to update professional information"
-}
-
-// 404 Not Found
-{
-  "error": "NOT_FOUND",
-  "message": "Provider profile not found"
-}
-
-// 409 Conflict
-{
-  "error": "CONFLICT",
-  "message": "NPI number already exists"
-}
-
-// 500 Internal Server Error
-{
-  "error": "INTERNAL_ERROR",
-  "message": "An unexpected error occurred"
-}
-```
 
 ### **5. Provider Search API**
 
@@ -641,26 +554,10 @@ GET /api/providers/search?specialty=Cardiology&city=Boston&limit=10
 }
 ```
 
-#### **Error Responses**:
-```json
-// 400 Bad Request
-{
-  "error": "BAD_REQUEST",
-  "message": "Invalid query parameters: limit must be between 1 and 100"
-}
+#### **Throws**:
+- `ValidationException` (400) - Invalid query parameters: limit must be between 1 and 100
+- `InternalException` (500) - Server error
 
-// 401 Unauthorized
-{
-  "error": "UNAUTHORIZED",
-  "message": "Invalid or missing JWT token"
-}
-
-// 500 Internal Server Error
-{
-  "error": "INTERNAL_ERROR",
-  "message": "An unexpected error occurred"
-}
-```
 
 ### **6. Create Medical Record API**
 
@@ -727,38 +624,11 @@ GET /api/providers/search?specialty=Cardiology&city=Boston&limit=10
 }
 ```
 
-#### **Error Responses**:
-```json
-// 400 Bad Request
-{
-  "error": "BAD_REQUEST",
-  "message": "Invalid request data: Record type must be valid ENUM value"
-}
+#### **Throws**:
+- `ValidationException` (400) - Invalid request data: Record type must be valid ENUM value
+- `ResourceNotFoundException` (404) - Appointment not found or not accessible
+- `InternalException` (500) - Server error
 
-// 401 Unauthorized
-{
-  "error": "UNAUTHORIZED",
-  "message": "Invalid or missing JWT token"
-}
-
-// 403 Forbidden
-{
-  "error": "FORBIDDEN",
-  "message": "Insufficient permissions. Provider role required"
-}
-
-// 404 Not Found
-{
-  "error": "NOT_FOUND",
-  "message": "Appointment not found or not accessible"
-}
-
-// 500 Internal Server Error
-{
-  "error": "INTERNAL_ERROR",
-  "message": "An unexpected error occurred"
-}
-```
 
 ### **7. Update Medical Record API**
 
@@ -838,20 +708,9 @@ GET /api/providers/search?specialty=Cardiology&city=Boston&limit=10
 }
 ```
 
-#### **Error Responses**:
-```json
-// 404 Not Found
-{
-  "error": "NOT_FOUND",
-  "message": "Medical record not found"
-}
-
-// 403 Forbidden
-{
-  "error": "FORBIDDEN",
-  "message": "Access denied to this medical record"
-}
-```
+#### **Throws**:
+- `ResourceNotFoundException` (404) - Medical record not found
+- `InternalException` (500) - Server error
 
 ### **9. Get Patient Medical Records API**
 

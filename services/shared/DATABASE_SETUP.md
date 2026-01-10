@@ -1,5 +1,9 @@
 # Database Setup Guide
 
+> **⚠️ NOTE: This document describes a generic PostgreSQL setup. For actual Supabase local restore setup, refer to your Supabase documentation.**
+>
+> **Current Implementation**: Uses Supabase PostgreSQL restored locally on `localhost:54322` with database `postgres`, user `postgres`. See `application.yml` files for actual configuration.
+
 ## Overview
 
 This project uses PostgreSQL for both development and production, ensuring consistency between test and production environments. H2 is no longer used to avoid enum handling differences.

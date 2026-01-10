@@ -345,6 +345,8 @@ public static class AuditListener {
 ## 🧪 **Testing Strategy**
 
 ### **Unit Tests**
+Test entities, services, and utilities in isolation (no database).
+
 ```java
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -374,24 +376,29 @@ class UserServiceTest {
 }
 ```
 
-### **Integration Tests**
+### **Repository Tests (Data Access Layer)**
+Test DAO/repository layer against actual database.
+
+**Note**: Shared module is **internal** (no exposed HTTP endpoints), so these are database access tests, **not API integration tests**. API integration tests belong in individual service modules (patient-service, provider-service, etc.) where the HTTP endpoints are exposed.
+
 ```java
 @SpringBootTest
 @Transactional
-class UserRepositoryIntegrationTest {
+@ActiveProfiles("test")
+class UserDaoTest {
 
     @Autowired
-    private UserRepository userRepository;
+    private UserDao userDao;
 
     @Test
-    void testFindByExternalAuthId() {
+    void testFindByExternalUserId() {
         // Given
         User user = new User("auth-123", "John", "Doe", "john@example.com",
                            "123-456-7890", LocalDate.of(1990, 1, 1), Gender.MALE, UserRole.PATIENT);
-        userRepository.save(user);
+        userDao.save(user);
 
         // When
-        Optional<User> result = userRepository.findByExternalAuthId("auth-123");
+        Optional<User> result = userDao.findByExternalUserId("auth-123");
 
         // Then
         assertThat(result).isPresent();
@@ -409,10 +416,12 @@ class UserRepositoryIntegrationTest {
 - [ ] Implement entity repositories
 - [ ] Implement BaseService class
 - [ ] Implement entity services
-- [ ] Write unit tests for repositories
-- [ ] Write unit tests for services
-- [ ] Write integration tests
+- [ ] Write unit tests for repositories (mock database)
+- [ ] Write unit tests for services (mock repositories)
+- [ ] Write repository tests (test DAO layer against actual database)
 - [ ] Verify all tests pass
+
+**Note**: Shared module has no HTTP endpoints. API integration tests (testing exposed REST endpoints) belong in service modules, not here.
 
 ### **Phase 2: Authentication Integration**
 - [ ] Implement JwtContextService

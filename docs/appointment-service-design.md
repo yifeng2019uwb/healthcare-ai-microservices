@@ -174,6 +174,9 @@ Provider → Gateway → Auth → Appointment Service → Database
 
 ## 🛠️ **Detailed API Design**
 
+> **Error Responses**: All APIs follow the [Standard Error Responses](exception-handling-design.md) format. Each endpoint lists only the exception names it can throw, not the full response format.
+> **Authentication**: Authentication/authorization errors (401/403) are handled by the authentication layer and are not listed in individual endpoint error sections.
+
 ### **1. Book Appointment API**
 
 #### **Endpoint**: `PUT /api/appointments/{id}`
@@ -212,38 +215,11 @@ Provider → Gateway → Auth → Appointment Service → Database
 }
 ```
 
-#### **Error Responses**:
-```json
-// 400 Bad Request
-{
-  "error": "BAD_REQUEST",
-  "message": "Invalid request data: Appointment slot is no longer available"
-}
+#### **Throws**:
+- `ValidationException` (400) - Invalid request data or appointment slot no longer available
+- `ConflictException` (409) - Time slot is no longer available
+- `InternalException` (500) - Server error
 
-// 401 Unauthorized
-{
-  "error": "UNAUTHORIZED",
-  "message": "Invalid or missing JWT token"
-}
-
-// 403 Forbidden
-{
-  "error": "FORBIDDEN",
-  "message": "Insufficient permissions. Patient role required"
-}
-
-// 409 Conflict
-{
-  "error": "CONFLICT",
-  "message": "Time slot is no longer available"
-}
-
-// 500 Internal Server Error
-{
-  "error": "INTERNAL_ERROR",
-  "message": "An unexpected error occurred"
-}
-```
 
 ### **2. Search Available Slots API**
 
@@ -541,20 +517,11 @@ Provider → Gateway → Auth → Appointment Service → Database
 }
 ```
 
-#### **Error Responses**:
-```json
-// 400 Bad Request
-{
-  "error": "BAD_REQUEST",
-  "message": "Invalid time range: endTime must be after startTime"
-}
+#### **Throws**:
+- `ValidationException` (400) - Invalid time range: endTime must be after startTime
+- `ConflictException` (409) - Availability already exists for this date and time range
+- `InternalException` (500) - Server error
 
-// 409 Conflict
-{
-  "error": "CONFLICT",
-  "message": "Availability already exists for this date and time range"
-}
-```
 
 ### **9. Health Check API**
 

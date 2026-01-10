@@ -57,8 +57,9 @@ This module is imported as a dependency by individual services (Patient, Provide
 - **176 Unit Tests** with 100% code coverage
 - **PostgreSQL Test Database** for consistent enum handling
 - **Healthcare Validation Patterns** for real-world compatibility
-- **Integration tests** with Testcontainers (planned)
-- **Repository tests** with @DataJpaTest (planned)
+- **Repository tests** with @DataJpaTest (test DAO layer against database) - planned
+
+**Note**: Shared module is **internal** (no HTTP endpoints). API integration tests belong in service modules, not here.
 
 ## 🎯 Recent Updates
 - **H2 to PostgreSQL Migration**: Consistent enum handling across all environments

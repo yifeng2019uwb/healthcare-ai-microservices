@@ -1,64 +1,142 @@
-# Healthcare AI Microservices - Exception Handling Design
+# Healthcare AI Microservices - Standard Error Responses
 
-> **Simple, Consistent Exception Handling** - Basic error handling across all services
+> **Standard Error Response Format** - Reference for all API error responses
 
-## 🎯 **Core Principles**
+## 🎯 **Overview**
 
-- **Consistent Error Format**: All services return errors the same way
-- **Proper HTTP Status Codes**: Use correct 4xx and 5xx status codes
-- **Clear Error Messages**: Helpful for both users and developers
-- **Security**: No sensitive information in error responses
+All APIs across all services return errors in a consistent format. This document defines the standard error response structure and exception mappings.
 
-## 🏗️ **Exception Types**
+**For API documentation**: Only list the exception names that each endpoint can throw. Do not repeat the full error response format in each API doc.
 
-### **Client Errors (4xx)**
-- **400 Bad Request**: Invalid input data
-- **401 Unauthorized**: Missing or invalid authentication
-- **403 Forbidden**: Insufficient permissions
-- **404 Not Found**: Resource doesn't exist
-- **409 Conflict**: Business rule violation
+## 🔧 **Standard Error Response Format**
 
-### **Server Errors (5xx)**
-- **500 Internal Server Error**: Something went wrong
-- **502 Bad Gateway**: External service failure
-
-## 🔧 **Standard Error Response**
+All error responses follow this structure:
 
 ```json
 {
-  "status": 400,
-  "error": "Validation Error",
-  "message": "Patient ID is required",
-  "path": "/api/patients"
+  "error": "ERROR_CODE",
+  "message": "Human-readable error message"
 }
 ```
+
+## 📋 **Exception Types and HTTP Status Codes**
+
+### **400 Bad Request** - `ValidationException`
+**Error Code**: `VALIDATION_ERROR`
+**Thrown When**: Invalid input data, missing required fields, format validation fails
+
+**Example Response**:
+```json
+{
+  "error": "VALIDATION_ERROR",
+  "message": "Invalid request data or missing required fields"
+}
+```
+
+### **401 Unauthorized** - Auth Service Error
+**Error Code**: `UNAUTHORIZED`
+**Thrown When**: Missing or invalid JWT token, expired token, invalid authentication
+
+**Example Response**:
+```json
+{
+  "error": "UNAUTHORIZED",
+  "message": "Invalid or expired JWT token"
+}
+```
+
+### **403 Forbidden** - Authorization Error
+**Error Code**: `FORBIDDEN`
+**Thrown When**: Insufficient permissions, account suspended, role not allowed
+
+**Example Response**:
+```json
+{
+  "error": "FORBIDDEN",
+  "message": "Insufficient permissions or account is suspended"
+}
+```
+
+### **404 Not Found** - `ResourceNotFoundException`
+**Error Code**: `RESOURCE_NOT_FOUND`
+**Thrown When**: Requested resource doesn't exist
+
+**Example Response**:
+```json
+{
+  "error": "RESOURCE_NOT_FOUND",
+  "message": "Patient profile not found or account is inactive"
+}
+```
+
+### **409 Conflict** - `ConflictException`
+**Error Code**: `CONFLICT_ERROR`
+**Thrown When**: Business rule violation, resource already exists, duplicate entry
+
+**Example Response**:
+```json
+{
+  "error": "CONFLICT_ERROR",
+  "message": "User or email already exists"
+}
+```
+
+### **500 Internal Server Error** - `InternalException`
+**Error Code**: `INTERNAL_ERROR`
+**Thrown When**: Unexpected server error, database failure, system error
+
+**Example Response**:
+```json
+{
+  "error": "INTERNAL_ERROR",
+  "message": "An unexpected error occurred while processing the request"
+}
+```
+
+## 📝 **Exception Class Mapping**
+
+| Exception Class | Error Code | HTTP Status | Use Case |
+|----------------|------------|-------------|----------|
+| `ValidationException` | `VALIDATION_ERROR` | 400 | Invalid input data |
+| `ConflictException` | `CONFLICT_ERROR` | 409 | Resource conflict, duplicate |
+| `ResourceNotFoundException` | `RESOURCE_NOT_FOUND` | 404 | Resource doesn't exist |
+| `InternalException` | `INTERNAL_ERROR` | 500 | Unexpected server error |
+| Auth Service | `UNAUTHORIZED` | 401 | Authentication failure |
+| Auth Service | `FORBIDDEN` | 403 | Authorization failure |
+
+## 📚 **Usage in API Documentation**
+
+### **Do This** ✅
+In API documentation, simply list which exceptions an endpoint can throw:
+
+```
+**Throws**:
+- `ValidationException` (400) - Invalid request data
+- `ConflictException` (409) - User or email already exists
+- `InternalException` (500) - Server error
+```
+
+### **Don't Do This** ❌
+Do not repeat the full error response format for each endpoint. Reference this document instead.
 
 ## 🚀 **Implementation**
 
 ### **Java Services**
-- Create basic exception classes in shared module
-- Use @ControllerAdvice for global exception handling
-- Return standard error response format
+- Exception classes defined in shared module
+- Global exception handler (`@ControllerAdvice`) maps exceptions to standard format
+- All services use same error response structure
 
 ### **Python AI Service**
-- Create simple exception classes
+- Create matching exception classes
 - Use FastAPI exception handlers
 - Return same error response format
 
 ## 📊 **Logging**
 
-- Log all errors with basic details
-- Include request path and user info
-- No sensitive patient data in logs
-
-## 📋 **Simple Checklist**
-
-- [ ] Basic exception classes
-- [ ] Global exception handler
-- [ ] Standard error response
-- [ ] Error logging
-- [ ] Test error scenarios
+- Log all errors with request path and user info
+- No sensitive patient data in error messages or logs
+- Include exception stack trace in server logs (not in response)
 
 ---
 
-*Keep it simple - focus on consistency and clarity, not complexity.*
+**Reference**: See exception classes in `services/shared/src/main/java/com/healthcare/exception/`

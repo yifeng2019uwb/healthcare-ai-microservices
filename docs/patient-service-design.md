@@ -229,6 +229,8 @@ User → Gateway → Auth → Patient Service → Database
 
 ## 🔌 **API Design**
 
+> **Error Responses**: All APIs follow the [Standard Error Responses](exception-handling-design.md) format. Each endpoint lists only the exception names it can throw, not the full response format.
+
 ### **Endpoints**
 | Method |            Endpoint             | Description                | Auth |
 |--------|---------------------------------|----------------------------|------|
@@ -240,6 +242,9 @@ User → Gateway → Auth → Patient Service → Database
 |  GET   | `/api/patients/medical-history` | Get my medical history     | Yes  |
 
 ## 🔌 **API Documentation**
+
+> **Error Responses**: All APIs follow the [Standard Error Responses](exception-handling-design.md) format. Each endpoint lists only the exception names it can throw, not the full response format.
+> **Authentication**: Authentication/authorization errors (401/403) are handled by the authentication layer and are not listed in individual endpoint error sections.
 
 ### **1. Create Patient Account**
 **Endpoint**: `POST /api/patients`
@@ -312,39 +317,10 @@ User → Gateway → Auth → Patient Service → Database
 - **Future**: New accounts will default to `INACTIVE` until email verification
 - **Authorization**: Status will be checked during login and JWT generation
 
-#### **Error Responses**:
-
-##### **400 Bad Request**:
-```json
-{
-  "error": "BAD_REQUEST",
-  "message": "Invalid request data or missing required fields"
-}
-```
-
-##### **409 Conflict**:
-```json
-{
-  "error": "CONFLICT",
-  "message": "User or email already exists"
-}
-```
-
-##### **401 Unauthorized**:
-```json
-{
-  "error": "UNAUTHORIZED",
-  "message": "Invalid or expired JWT token"
-}
-```
-
-##### **500 Internal Server Error**:
-```json
-{
-  "error": "INTERNAL_SERVER_ERROR",
-  "message": "An unexpected error occurred while creating patient account"
-}
-```
+#### **Throws**:
+- `ValidationException` (400) - Invalid request data or missing required fields
+- `ConflictException` (409) - User or email already exists
+- `InternalException` (500) - Server error
 
 ### **2. Get Patient Profile**
 **Endpoint**: `GET /api/patients/profile`
@@ -395,39 +371,9 @@ User → Gateway → Auth → Patient Service → Database
 }
 ```
 
-#### **Error Responses**:
-
-##### **401 Unauthorized**:
-```json
-{
-  "error": "UNAUTHORIZED",
-  "message": "Invalid or expired JWT token"
-}
-```
-
-##### **403 Forbidden**:
-```json
-{
-  "error": "FORBIDDEN",
-  "message": "Account is suspended"
-}
-```
-
-##### **404 Not Found**:
-```json
-{
-  "error": "NOT_FOUND",
-  "message": "Patient profile not found or account is inactive"
-}
-```
-
-##### **500 Internal Server Error**:
-```json
-{
-  "error": "INTERNAL_SERVER_ERROR",
-  "message": "An unexpected error occurred while retrieving profile"
-}
-```
+#### **Throws**:
+- `ResourceNotFoundException` (404) - Patient profile not found or account is inactive
+- `InternalException` (500) - Server error
 
 ### **3. Update Personal Profile**
 **Endpoint**: `PUT /api/patients/profile`
@@ -498,39 +444,10 @@ User → Gateway → Auth → Patient Service → Database
 | `emergencyContactName` | String | ❌ Optional | 1-100 characters | Emergency contact name |
 | `emergencyContactPhone` | String | ❌ Optional | International format (+1234567890) | Emergency contact phone |
 
-#### **Error Responses**:
-
-##### **400 Bad Request**:
-```json
-{
-  "error": "BAD_REQUEST",
-  "message": "Invalid request data or phone number format is invalid"
-}
-```
-
-##### **401 Unauthorized**:
-```json
-{
-  "error": "UNAUTHORIZED",
-  "message": "Invalid or expired JWT token"
-}
-```
-
-##### **404 Not Found**:
-```json
-{
-  "error": "NOT_FOUND",
-  "message": "Patient profile not found or account is inactive"
-}
-```
-
-##### **500 Internal Server Error**:
-```json
-{
-  "error": "INTERNAL_SERVER_ERROR",
-  "message": "An unexpected error occurred while updating profile"
-}
-```
+#### **Throws**:
+- `ValidationException` (400) - Invalid request data or phone number format is invalid
+- `ResourceNotFoundException` (404) - Patient profile not found or account is inactive
+- `InternalException` (500) - Server error
 
 ---
 
@@ -599,47 +516,10 @@ User → Gateway → Auth → Patient Service → Database
 | `insurancePolicyNumber` | String | ❌ Optional | 1-50 characters | Insurance policy number |
 | `primaryCarePhysician` | String | ❌ Optional | 1-100 characters | Primary care physician name |
 
-#### **Error Responses**:
-
-##### **400 Bad Request**:
-```json
-{
-  "error": "BAD_REQUEST",
-  "message": "Invalid patient info data format"
-}
-```
-
-##### **401 Unauthorized**:
-```json
-{
-  "error": "UNAUTHORIZED",
-  "message": "Invalid or expired JWT token"
-}
-```
-
-##### **403 Forbidden**:
-```json
-{
-  "error": "FORBIDDEN",
-  "message": "Insufficient permissions to update patient information"
-}
-```
-
-##### **404 Not Found**:
-```json
-{
-  "error": "NOT_FOUND",
-  "message": "Patient profile not found or account is inactive"
-}
-```
-
-##### **500 Internal Server Error**:
-```json
-{
-  "error": "INTERNAL_SERVER_ERROR",
-  "message": "An unexpected error occurred while updating patient information"
-}
-```
+#### **Throws**:
+- `ValidationException` (400) - Invalid patient info data format
+- `ResourceNotFoundException` (404) - Patient profile not found or account is inactive
+- `InternalException` (500) - Server error
 
 #### **Access Control for `updatedBy` Field:**
 
@@ -713,26 +593,9 @@ if (userRole == "PROVIDER") {
 }
 ```
 
-#### **Error Responses**:
-```json
-// 401 Unauthorized
-{
-  "error": "UNAUTHORIZED",
-  "message": "Invalid or missing JWT token"
-}
-
-// 403 Forbidden
-{
-  "error": "FORBIDDEN",
-  "message": "Insufficient permissions. Patient role required"
-}
-
-// 500 Internal Server Error
-{
-  "error": "INTERNAL_ERROR",
-  "message": "An unexpected error occurred"
-}
-```
+#### **Throws**:
+- `ResourceNotFoundException` (404) - No medical history found
+- `InternalException` (500) - Server error
 
 #### **Data Access Notes**:
 - **Read-Only Access**: Patients can only view medical records marked as `is_patient_visible: true`

@@ -155,7 +155,7 @@
   - ✅ `user_profiles` + `provider_profiles` management
   - ✅ Provider profile and credentials management
   - ✅ Provider discovery and search functionality
-  - ❌ Medical records management (handled by Appointment Service via appointments)
+  - ✅ Medical records management (providers create/update medical records; appointments link records via appointment_id)
   - ❌ Appointment slots (handled by Appointment Service)
 - **Patient Service**:
   - ✅ `user_profiles` + `patient_profiles` management
@@ -164,8 +164,8 @@
   - ❌ Appointment booking (handled by Appointment Service)
 - **Appointment Service**:
   - ✅ Appointment scheduling and lifecycle management
-  - ✅ Medical records management (via appointments and medical_records)
   - ✅ Provider availability and slot management
+  - ❌ Medical records management (handled by Provider Service; appointments may have medical_records set to null when creating)
   - ❌ Provider/patient profile management (handled by respective services)
 
 ### **Service Ports**
