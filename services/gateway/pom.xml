@@ -45,7 +45,26 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
-        <!-- Note: Gateway service doesn't need shared module as it doesn't use database -->
+        <!-- WebFlux for reactive HTTP client -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
+        <!-- Healthcare Shared Module for DTOs and exceptions -->
+        <dependency>
+            <groupId>com.healthcare</groupId>
+            <artifactId>shared</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
+        <!-- Healthcare Smithy Models -->
+        <dependency>
+            <groupId>com.healthcare</groupId>
+            <artifactId>smithy-models</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
 
         <!-- Test dependencies -->
         <dependency>

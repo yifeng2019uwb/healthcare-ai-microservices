@@ -1,18 +1,27 @@
 # Healthcare AI Microservices - Infrastructure Design
 
-> **🎯 Phase 0: Infrastructure Design & Planning**
+> **⚠️ DEPRECATED: AWS-Based Design - Not Implemented**
 >
-> This document defines the complete infrastructure design for our healthcare AI microservices platform.
-> **Design Philosophy**: Design for evolution, support all service phases, enable future scaling.
+> **Status**: This document contains AWS-based design (S3, IAM, CloudWatch) that is **NOT implemented**.
+> Only Supabase PostgreSQL database is actually configured and deployed.
+>
+> **Current Reality**:
+> - ✅ **Supabase PostgreSQL**: Implemented and configured
+> - ❌ **AWS S3**: Only in design docs, NOT implemented
+> - ❌ **AWS IAM**: Only in design docs, NOT implemented
+> - ❌ **AWS CloudWatch**: Only in design docs, NOT implemented
+>
+> **Future Infrastructure**: Under research and evaluation. No decisions made yet.
+> See `INFRASTRUCTURE_DESIGN_V2.md` for free-tier alternatives being researched.
 
 ## 📋 **Document Information**
 
-- **Document Title**: Infrastructure Design for Healthcare AI Microservices
+- **Document Title**: Infrastructure Design for Healthcare AI Microservices (DEPRECATED)
 - **Version**: 1.0
 - **Date**: 2024-01-15
 - **Author**: Healthcare AI Team
-- **Status**: Design Phase
-- **Phase**: Phase 0 - Infrastructure Design (Before Service Implementation)
+- **Status**: ⚠️ **DEPRECATED** - AWS resources not implemented
+- **Phase**: Design Phase Only - Not Implemented
 
 ## 🎯 **Infrastructure Overview**
 

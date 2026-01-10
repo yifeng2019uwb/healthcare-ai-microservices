@@ -1,4 +1,12 @@
 # Healthcare AI Microservices - .gitignore
+#
+# SECURITY WARNING: This file prevents sensitive credentials from being committed.
+# Never commit files containing:
+# - Database passwords (except localhost defaults for dev)
+# - API keys or tokens
+# - Private keys (.pem, .key files)
+# - Terraform state files (.tfstate)
+# - Environment-specific configuration files
 
 # Java
 *.class
@@ -10,11 +18,12 @@ target/
 !target/*.jar
 !target/*.war
 
-# Spring Boot
+# Spring Boot - Ignore environment-specific configs
 application-*.properties
 application-*.yml
 !application-example.properties
 !application-example.yml
+!application.yml  # Base config allowed (but must use env vars for production)
 
 # Node.js
 node_modules/
@@ -111,12 +120,19 @@ docker/patient/
 # Service Resource Packages (may contain credentials)
 services/*/src/main/resources/application-local.yml
 services/*/src/main/resources/application-*.yml
+services/*/src/main/resources/application-prod.yml
+services/*/src/main/resources/application-production.yml
+services/*/src/main/resources/application-staging.yml
 services/*/src/main/resources/*.properties
 services/*/src/main/resources/*.env
 services/*/src/main/resources/config/
 !services/*/src/main/resources/application-example.yml
-!services/*/src/main/resources/application.yml
+!services/*/src/main/resources/application.yml  # Base config (must use env var overrides)
 !services/*/src/main/resources/application-example.properties
+
+# Maven settings with credentials
+.m2/settings-security.xml
+.m2/settings.xml  # Often contains credentials - commit only .m2/settings-example.xml
 
 # Config Directory - Completely Ignored
 healthcare-infra/config/
@@ -125,3 +141,31 @@ healthcare-infra/terraform/supabase/config/
 # Build artifacts
 bin/
 out/
+
+# Maven/Gradle
+.mvn/wrapper/maven-wrapper.jar
+.gradle/
+**/.gradle/
+gradle-app.setting
+*.zip
+!gradle-wrapper.jar
+!**/gradle/wrapper/gradle-wrapper.jar
+
+# Additional sensitive patterns
+**/secrets/**
+**/credentials/**
+*.secret
+*.credential
+*password*.txt
+*secret*.txt
+*.keystore
+*.truststore
+*.jks
+
+# AWS/Azure/GCP credentials
+.aws/
+.azure/
+.gcloud/
+credentials.json
+service-account*.json
+!service-account*.example.json

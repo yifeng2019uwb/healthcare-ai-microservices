@@ -1,7 +1,13 @@
 {
-    "version": "1.0",
-    "sources": ["."],
-    "plugins": {
-        "build-info": {}
+    "version": "2.0",
+    "sources": ["src/main/smithy"],
+    "projections": {
+        "allServices": {
+            "plugins": {
+                "java-codegen": {
+                    "package": "com.healthcare.api.model"
+                }
+            }
+        }
     }
 }

@@ -143,12 +143,15 @@ git push
 ## 🎯 **Technology Stack**
 
 **Backend**: Spring Boot 3.2+, Java 17
-**Database**: Supabase PostgreSQL
-**File Storage**: AWS S3
-**Frontend**: React 18+ with TypeScript
-**Authentication**: Supabase Auth + JWT
-**Deployment**: Railway
+**Database**: Supabase PostgreSQL (✅ Implemented - Free Tier: 500 MB, 50K MAUs)
+**File Storage**: 🔍 Under research (Azure Blob Storage, Supabase Storage, etc.)
+**Frontend**: React 18+ with TypeScript (⏳ Planned)
+**Authentication**: JWT with external auth provider (⏳ To be implemented)
+**Deployment**: 🔍 Under research (Railway, Docker, Azure App Service, etc.)
+**Monitoring**: 🔍 Under research (Azure Application Insights, Prometheus, etc.)
 **CI/CD**: GitHub Actions
+
+**Note**: Only Supabase PostgreSQL is currently configured. All other infrastructure components are under research and evaluation. See `healthcare-infra/CURRENT_INFRASTRUCTURE.md` for actual status.
 
 ## 🏥 **Planned Features**
 

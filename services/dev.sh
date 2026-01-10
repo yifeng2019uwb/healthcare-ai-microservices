@@ -54,7 +54,7 @@ check_prerequisites() {
 list_services() {
     echo "📋 Available services:"
     for service in */; do
-        if [ -f "${service}pom.xml" ]; then
+        if [ -f "${service}pom.xml" ] || [ -f "${service}build.gradle" ]; then
             echo "  - ${service%/}"
         fi
     done
@@ -76,7 +76,7 @@ validate_service() {
         return 0
     fi
 
-    if [ ! -d "$service" ] || [ ! -f "$service/pom.xml" ]; then
+    if [ ! -d "$service" ] || ([ ! -f "$service/pom.xml" ] && [ ! -f "$service/build.gradle" ]); then
         echo "❌ Service '$service' not found or invalid"
         echo "Available services:"
         list_services
@@ -90,10 +90,68 @@ run_maven() {
     local command=$2
     local extra_args=$3
 
-    echo "🔧 Running in $service service..."
+    echo "🔧 Running Maven in $service service..."
     cd "$service"
     $MAVEN_CMD $command $extra_args
     cd ..
+}
+
+# Function to run Gradle command in service directory
+run_gradle() {
+    local service=$1
+    local command=$2
+    local extra_args=$3
+
+    echo "🔧 Running Gradle in $service service..."
+    cd "$service"
+    ./gradlew $command $extra_args
+    cd ..
+}
+
+# Function to run Smithy CLI commands
+run_smithy_cli() {
+    local service=$1
+    local command=$2
+    local extra_args=$3
+
+    echo "🔧 Running Smithy CLI in $service service..."
+    cd "$service"
+
+    case "$command" in
+        "clean")
+            smithy clean
+            ;;
+        "validate")
+            smithy validate
+            ;;
+        "format")
+            smithy format
+            ;;
+        "build")
+            # For build, we need Gradle because CLI doesn't have Java codegen plugin
+            echo "📝 Note: Using Gradle for build (Smithy CLI doesn't have Java codegen plugin)"
+            ./gradlew clean build publishToMavenLocal
+            ;;
+        *)
+            smithy $command $extra_args
+            ;;
+    esac
+    cd ..
+}
+
+# Function to determine build tool and run appropriate command
+run_build_tool() {
+    local service=$1
+    local command=$2
+    local extra_args=$3
+
+    if [ "$service" = "smithy-models" ]; then
+        run_smithy_cli "$service" "$command" "$extra_args"
+    elif [ -f "$service/build.gradle" ]; then
+        run_gradle "$service" "$command" "$extra_args"
+    else
+        run_maven "$service" "$command" "$extra_args"
+    fi
 }
 
 # Always check prerequisites first
@@ -111,10 +169,17 @@ if [ "$SERVICE" = "all" ]; then
     case "$COMMAND" in
         "build")
             echo "🔄 Building all services..."
-            echo "📋 Available services: shared, gateway, auth-service, patient-service"
+            echo "📋 Available services: smithy-models, shared, gateway, auth-service, patient-service"
             echo ""
 
-            # Build shared first (dependency for others)
+            # Build Smithy models first (dependency for others)
+            echo "🔨 Building smithy-models..."
+            run_smithy_cli "smithy-models" "clean"
+            run_smithy_cli "smithy-models" "build"
+            echo "✅ Smithy models built with CLI"
+            echo ""
+
+            # Build shared second (dependency for others)
             echo "🔨 Building shared module..."
             run_maven "shared" "clean compile"
             echo "✅ Shared module built"
@@ -141,10 +206,16 @@ if [ "$SERVICE" = "all" ]; then
             ;;
         "test")
             echo "🧪 Testing all services..."
-            echo "📋 Available services: shared, gateway, auth-service, patient-service"
+            echo "📋 Available services: smithy-models, shared, gateway, auth-service, patient-service"
             echo ""
 
-            # Test shared first
+            # Test Smithy models first
+            echo "🧪 Testing smithy-models..."
+            run_gradle "smithy-models" "test"
+            echo "✅ Smithy models tests passed"
+            echo ""
+
+            # Test shared second
             echo "🧪 Testing shared module..."
             run_maven "shared" "test"
             echo "✅ Shared module tests passed"
@@ -183,32 +254,52 @@ else
     case "$COMMAND" in
         "clean")
             echo "🧹 Cleaning $SERVICE service..."
-            run_maven "$SERVICE" "clean"
+            run_build_tool "$SERVICE" "clean"
             echo "✅ Clean completed"
             ;;
         "build")
             echo "🔨 Building $SERVICE service..."
-            run_maven "$SERVICE" "compile"
-            echo "✅ Build completed"
+            if [ "$SERVICE" = "smithy-models" ]; then
+                run_gradle "$SERVICE" "clean build publishToMavenLocal"
+                echo "✅ Smithy models built and published to local Maven repository"
+            else
+                run_build_tool "$SERVICE" "compile"
+                echo "✅ Build completed"
+            fi
             ;;
         "test")
             echo "🧪 Running tests for $SERVICE service..."
-            run_maven "$SERVICE" "test"
+            run_build_tool "$SERVICE" "test"
             echo "✅ Tests completed"
             ;;
         "run")
             echo "🚀 Starting $SERVICE service..."
-            run_maven "$SERVICE" "spring-boot:run"
+            if [ -f "$SERVICE/build.gradle" ]; then
+                echo "❌ Gradle services don't support 'run' command yet"
+                echo "Please use: cd $SERVICE && ./gradlew run"
+            else
+                run_maven "$SERVICE" "spring-boot:run"
+            fi
             ;;
         "package")
             echo "📦 Packaging $SERVICE service..."
-            run_maven "$SERVICE" "package"
-            echo "✅ Package completed"
+            if [ "$SERVICE" = "smithy-models" ]; then
+                run_gradle "$SERVICE" "build"
+                echo "✅ Smithy models JAR built"
+            else
+                run_maven "$SERVICE" "package"
+                echo "✅ Package completed"
+            fi
             ;;
         "coverage")
             echo "📊 Running tests with coverage for $SERVICE service..."
-            run_maven "$SERVICE" "clean test jacoco:report"
-            echo "✅ Coverage report generated in $SERVICE/target/site/jacoco/index.html"
+            if [ -f "$SERVICE/build.gradle" ]; then
+                echo "❌ Gradle services don't support 'coverage' command yet"
+                echo "Please use: cd $SERVICE && ./gradlew test jacocoTestReport"
+            else
+                run_maven "$SERVICE" "clean test jacoco:report"
+                echo "✅ Coverage report generated in $SERVICE/target/site/jacoco/index.html"
+            fi
             ;;
         *)
             echo "Usage: $0 <service> [clean|build|test|run|package|coverage]"

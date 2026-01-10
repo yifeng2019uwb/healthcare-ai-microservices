@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -24,14 +23,6 @@ public interface MedicalRecordDao extends JpaRepository<MedicalRecord, UUID> {
      */
     List<MedicalRecord> findByAppointmentId(UUID appointmentId);
 
-    /**
-     * Find medical records by patient ID
-     * Used to get all medical records for a specific patient
-     *
-     * @param patientId The patient ID
-     * @return List of medical records for the patient
-     */
-    List<MedicalRecord> findByPatientId(UUID patientId);
 
     /**
      * Create a new medical record
