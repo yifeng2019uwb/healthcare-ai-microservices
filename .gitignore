@@ -169,6 +169,9 @@ gradle-app.setting
 credentials.json
 service-account*.json
 !service-account*.example.json
+.secrets
+.actrc
+
 
 # Personal knowledge notes (not for git)
 docs/knowledge-notes/
