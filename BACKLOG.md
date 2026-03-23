@@ -8,6 +8,7 @@
 - **Next Step**: Complete design docs for each service
 - **After Design**: Add detailed tasks to each epic
 - **Focus**: Foundation and core services first
+- **Strategic Initiatives**: (1) Azure free tier migration; (2) Data model redesign for MIMIC-IV/Synthea; (3) 8-layer security model with prioritized roadmap (Identity & Auth → RBAC → Gateway → Audit → Input Validation → Data Security → Infra → Security Testing)
 
 ---
 
@@ -94,7 +95,113 @@
 
 ---
 
-## 🏗️ **EPIC 1: Foundation & Infrastructure**
+## 🎯 **Strategic Initiatives**
+
+### **Initiative 1: Azure (Free Tier) Migration**
+**Goal**: Use Azure free tier instead of AWS; AWS free tier already fully used.
+**Status**: 📋 TO DO
+**Dependencies**: None (can run in parallel with other work)
+
+**Tasks**:
+- [📋] **AZURE-001: Azure Free Tier Evaluation** - Document Azure free tier limits (compute, DB, storage) and map current AWS usage to Azure equivalents
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: None
+  - **Acceptance**: One-pager or doc listing Azure services to use (e.g. Azure Database for PostgreSQL, App Service, Blob Storage) and constraints
+
+- [📋] **AZURE-002: Infrastructure Design for Azure** - Redesign Terraform/infra for Azure (resource groups, App Service or Container Apps, Azure PostgreSQL or Cosmos, Blob)
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: AZURE-001
+  - **Acceptance**: Design doc or updated healthcare-infra for Azure; deployment path for dev environment
+
+- [📋] **AZURE-003: Migrate Database to Azure** - Move from current DB (Supabase/Neon) or keep Supabase and only migrate compute/storage to Azure; document decision
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: AZURE-002
+  - **Acceptance**: Clear DB hosting decision; migration or connection steps if applicable
+
+- [📋] **AZURE-004: Update Services for Azure** - Update configs, connection strings, and deployment scripts to target Azure
+  - **Priority**: 🟡 MEDIUM
+  - **Dependencies**: AZURE-002, AZURE-003
+  - **Acceptance**: Services can deploy and run on Azure free tier
+
+---
+
+### **Initiative 2: Real Medical Datasets — Data Model Redesign (MIMIC-IV / Synthea)**
+**Goal**: Use real medical datasets (MIMIC-IV or Synthea); redesign data model to align with their schema and use cases.
+**Status**: 📋 TO DO
+**Dependencies**: None (design can start early)
+
+**Tasks**:
+- [📋] **DATA-001: Dataset Selection & Scope** - Choose primary dataset (MIMIC-IV vs Synthea), document license/access (e.g. MIMIC credentialing), and define scope (which modules/tables we use)
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: None
+  - **Acceptance**: Short doc: chosen dataset, modules, and how it will be used (e.g. demo, analytics, AI training)
+
+- [📋] **DATA-002: Data Model Redesign** - Redesign current schema (user_profiles, patient_profiles, provider_profiles, appointments, medical_records) to align with MIMIC-IV or Synthea entities (patients, encounters, conditions, procedures, etc.)
+  - **Priority**: 🔴 HIGH
+  - **Dependencies**: DATA-001
+  - **Acceptance**: Updated database-design doc; entity-relationship alignment with dataset; mapping from our domain (patient/provider/appointment) to dataset concepts
+
+- [📋] **DATA-003: Migration Plan for Existing Schema** - Plan migration from current schema to new model (migrations, backward compatibility or big-bang, impact on shared module entities)
+  - **Priority**: 🟡 MEDIUM
+  - **Dependencies**: DATA-002
+  - **Acceptance**: Migration strategy doc; list of entity/DAO changes required
+
+- [📋] **DATA-004: Seed/Import from Dataset** - Define how to load MIMIC-IV or Synthea data (subset) into our DB (scripts, one-time import, or sync); ensure patient and provider can create and use data alongside seed data
+  - **Priority**: 🟡 MEDIUM
+  - **Dependencies**: DATA-002
+  - **Acceptance**: Clear approach for loading and refreshing dataset; documented in Data-Layer discussion or BACKLOG
+
+---
+
+### **Initiative 3: Security Layers (8-Layer Model)**
+**Goal**: Implement layered security (Identity & Auth → RBAC → Gateway → Audit → Input Validation → Data Security → Infra → Security Testing) with HIPAA-relevant practices where applicable.
+**Status**: 📋 TO DO
+**Dependencies**: Foundation; aligns with EPIC 2 (Auth & Gateway)
+**Design reference**: [Security Layers Design](docs/guides/Security-Layers-Design.md) — roadmap, Layers 1–8 detail, and related docs.
+
+**Tasks** (phases and acceptance criteria are in the design doc):
+
+- [📋] **SEC-001: Security Layers Design Doc** — Document all 8 layers, responsibilities, and where each is implemented (Auth, Gateway, services, DB, K8s, CI).
+  - **Priority**: 🔴 HIGH | **Dependencies**: None
+  - **Reference**: [Security Layers Design](docs/guides/Security-Layers-Design.md), [RBAC Practice Guide](docs/guides/RBAC-Practice-Guide.md)
+
+- [📋] **SEC-002: Layer 1 — Identity & Authentication** — JWT validation, claims enrichment, token refresh/rotation, blacklisting; optional fingerprinting and MFA.
+  - **Priority**: 🔴 HIGH | **Roadmap**: Phase 1 | **Dependencies**: SEC-001, AUTH-001
+  - **Reference**: [Security Layers Design](docs/guides/Security-Layers-Design.md) § Layer 1
+
+- [📋] **SEC-003: Layer 2 — Authorization & RBAC** — Basic RBAC, resource ownership checks, optional ABAC; document role-to-endpoint matrix.
+  - **Priority**: 🔴 HIGH | **Roadmap**: Phase 1 | **Dependencies**: SEC-001, SEC-002, AUTH-002
+  - **Reference**: [Security Layers Design](docs/guides/Security-Layers-Design.md) § Layer 2
+
+- [📋] **SEC-004: Layer 2 — Row-Level Security (RLS)** — PostgreSQL/Supabase RLS policies; set app.user_id from JWT.
+  - **Priority**: 🟡 MEDIUM | **Roadmap**: Phase 2 | **Dependencies**: SEC-003
+  - **Reference**: [Security Layers Design](docs/guides/Security-Layers-Design.md) § Layer 2
+
+- [📋] **SEC-005: Layer 4 — Audit Logging** — PHI access audit log, immutable store, failed-access logging; optional anomaly hook and break-glass.
+  - **Priority**: 🟡 MEDIUM | **Roadmap**: Phase 3 | **Dependencies**: SEC-002
+  - **Reference**: [Security Layers Design](docs/guides/Security-Layers-Design.md) § Layer 4
+
+- [📋] **SEC-006: Layer 3 — API Gateway Security** — Rate limiting, request validation, CORS, security headers, X-Request-ID; optional IP list.
+  - **Priority**: 🟡 MEDIUM | **Roadmap**: Phase 4 | **Dependencies**: SEC-001, Gateway
+  - **Reference**: [Security Layers Design](docs/guides/Security-Layers-Design.md) § Layer 3
+
+- [📋] **SEC-007: Layer 6 — Data Security** — Field-level encryption, pre-signed URLs, secret management (e.g. Azure Key Vault), data masking.
+  - **Priority**: 🟡 MEDIUM | **Roadmap**: Phase 5 | **Dependencies**: SEC-003, infra
+  - **Reference**: [Security Layers Design](docs/guides/Security-Layers-Design.md) § Layer 6
+
+- [📋] **SEC-008: Layer 7 — Infrastructure & Container Security** — K8s Network Policies, pod security, image scanning (Trivy), resource limits.
+  - **Priority**: 🟡 MEDIUM | **Roadmap**: Phase 6 | **Dependencies**: K8s setup
+  - **Reference**: [Security Layers Design](docs/guides/Security-Layers-Design.md) § Layer 7
+
+- [📋] **SEC-009: Layer 8 — Security Testing** — SAST (SpotBugs + find-sec-bugs), OWASP Dependency Check in CI, negative security tests.
+  - **Priority**: 🟡 MEDIUM | **Roadmap**: Phase 7 | **Dependencies**: SEC-002, SEC-003
+  - **Reference**: [Security Layers Design](docs/guides/Security-Layers-Design.md) § Layer 8
+
+- [📋] **SEC-010: Layer 5 — Input Validation & Injection Prevention** — Bean Validation on DTOs, no entity in request bodies, path/XSS checks, custom validators.
+  - **Priority**: 🟡 MEDIUM | **Dependencies**: None (can run in parallel)
+  - **Reference**: [Security Layers Design](docs/guides/Security-Layers-Design.md) § Layer 5
+
+---
 
 ### **Goal**: Basic project structure and infrastructure working
 ### **Status**: 🚧 IN PROGRESS

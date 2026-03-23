@@ -1,177 +1,74 @@
-# Local CI/CD Testing Scripts
+# Scripts
 
-> **🧪 Test CI/CD Pipeline Locally**
->
-> These scripts help you test and debug the CI/CD pipeline before pushing to GitHub.
+## local-ci.sh — Main CI/CD Script
 
-## 📁 **Available Scripts**
+Single script for all pipeline stages. Run individually depending on what
+you're working on that day.
 
-### **`test-ci.sh` - Full CI Test**
-Simulates the complete GitHub Actions CI pipeline locally.
-
-**Usage:**
 ```bash
-./scripts/test-ci.sh
+chmod +x scripts/local-ci.sh
+./scripts/local-ci.sh          # show help and all options
 ```
 
-**What it does:**
-- ✅ Checks Java version (17+)
-- ✅ Checks Maven availability
-- ✅ Runs unit tests
-- ✅ Builds the application
-- ✅ Verifies JAR artifacts
-- ✅ Checks test reports
+### Stage reference
 
-### **`debug-ci.sh` - Debug CI Issues**
-Helps identify what's failing in the CI pipeline.
+| Stage | Command | When to use |
+|---|---|---|
+| Setup | `--setup` | First time — install Java 17 + Maven |
+| Build | `--build` | Compile changed |
+| Test | `--test` | Unit tests + coverage |
+| Terraform | `--terraform` | Infra changed (plan only, safe) |
+| Terraform apply | `--terraform --apply` | Ready to apply infra changes |
+| Schema | `--schema` | Data model changed |
+| Data | `--data` | Generate + reload Synthea data |
+| Deploy | `--deploy` | Deploy services to Cloud Run |
+| Integration | `--integration` | Test against real Cloud SQL |
+| ZAP | `--zap` | Security scan against Cloud Run |
+| All | `--all` | Full pipeline before pushing |
 
-**Usage:**
+### Day-to-day usage
+
 ```bash
-./scripts/debug-ci.sh
-```
+# Changed Spring Boot code only
+./scripts/local-ci.sh --build --test
 
-**What it does:**
-- 🔍 Checks project structure
-- 🔍 Verifies Java and Maven
-- 🔍 Tests individual Maven commands
-- 🔍 Identifies specific failures
+# Changed Terraform only — check plan, no changes
+./scripts/local-ci.sh --terraform
 
-## 🚀 **Quick Start**
+# Changed Terraform + schema
+./scripts/local-ci.sh --terraform --apply --schema
 
-### **1. Test Before Push**
-```bash
-# Run full CI test
-./scripts/test-ci.sh
+# Changed data model — redeploy schema + reload data
+./scripts/local-ci.sh --schema --data
 
-# If it passes, you're ready to push!
-git add .
-git commit -m "Your changes"
-git push
-```
+# Ready to deploy
+./scripts/local-ci.sh --build --test --deploy
 
-### **2. Debug CI Failures**
-```bash
-# If CI fails on GitHub, run debug locally
-./scripts/debug-ci.sh
+# Full pipeline before pushing to main
+./scripts/local-ci.sh --all --skip-zap
 
-# Fix any issues found
-# Then test again
-./scripts/test-ci.sh
-```
-
-## 🔧 **Requirements**
-
-### **Local Environment**
-- **Java 17+** - Required for building
-- **Maven** - Build tool
-- **Bash** - Script execution
-
-### **Project Structure**
-```
-services/
-├── pom.xml              # Main Maven project
-├── gateway/             # Gateway service
-├── auth/                # Auth service
-├── patient/             # Patient service
-├── provider/            # Provider service
-└── appointment/         # Appointment service
-```
-
-## 📊 **Script Output**
-
-### **Success Output**
-```
-🚀 Starting Local CI/CD Test...
-==================================
-✅ Found project structure
-✅ Java version: openjdk version "17.0.2"
-✅ Maven version: Apache Maven 3.8.6
-✅ Unit tests passed
-✅ Build successful
-✅ Found 5 JAR file(s)
-✅ Local CI/CD test completed successfully!
-```
-
-### **Error Output**
-```
-❌ Java 17+ required. Found: 11
-❌ Unit tests failed
-❌ Build failed
-```
-
-## 🛠️ **Troubleshooting**
-
-### **Common Issues**
-
-1. **Java Version**
-   ```bash
-   # Check Java version
-   java -version
-
-   # Install Java 17 if needed
-   # macOS: brew install openjdk@17
-   # Ubuntu: sudo apt install openjdk-17-jdk
-   ```
-
-2. **Maven Not Found**
-   ```bash
-   # Check Maven
-   mvn -version
-
-   # Install Maven if needed
-   # macOS: brew install maven
-   # Ubuntu: sudo apt install maven
-   ```
-
-3. **Project Structure**
-   ```bash
-   # Make sure you're in the project root
-   ls services/pom.xml
-
-   # Should show: services/pom.xml
-   ```
-
-### **CI-Specific Issues**
-
-1. **Test Failures**
-   - Run `./scripts/debug-ci.sh` to see specific test errors
-   - Check test files in `services/*/src/test/java/`
-
-2. **Build Failures**
-   - Check for compilation errors
-   - Verify all dependencies in `pom.xml`
-
-3. **Missing Artifacts**
-   - Ensure Maven build completes successfully
-   - Check `services/*/target/` directories
-
-## 🎯 **Best Practices**
-
-### **Before Every Push**
-1. Run `./scripts/test-ci.sh`
-2. Fix any issues found
-3. Push only when tests pass
-
-### **When CI Fails**
-1. Run `./scripts/debug-ci.sh`
-2. Identify the specific failure
-3. Fix the issue locally
-4. Test again before pushing
-
-### **Development Workflow**
-```bash
-# Make changes
-# ... edit code ...
-
-# Test locally
-./scripts/test-ci.sh
-
-# If successful, commit and push
-git add .
-git commit -m "Your changes"
-git push
+# Full pipeline including ZAP scan
+./scripts/local-ci.sh --all
 ```
 
 ---
 
-*These scripts help ensure your CI/CD pipeline works correctly before pushing to GitHub.*
+## Other scripts
+
+| Script | Purpose |
+|---|---|
+| `setup-dev.sh` | Install Java + Maven (same as `local-ci.sh --setup`) |
+| `debug-ci.sh` | Debug failing CI issues — check structure, Maven, Java |
+| `test-ci.sh` | **TODO: delete after verifying `local-ci.sh --build --test` produces same results** |
+
+---
+
+## Pre-push checklist
+
+```bash
+# Minimum before every push
+./scripts/local-ci.sh --build --test
+
+# Before merging to main
+./scripts/local-ci.sh --all --skip-zap
+```
