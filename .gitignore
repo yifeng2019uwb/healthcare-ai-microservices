@@ -175,3 +175,4 @@ service-account*.json
 
 # Personal knowledge notes (not for git)
 docs/knowledge-notes/
+SETUP_NOTES.md
