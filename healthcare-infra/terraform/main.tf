@@ -1,15 +1,27 @@
 # Healthcare Infrastructure - Main Configuration
-# This file manages the core infrastructure configuration
+# Declares all providers and backend state configuration
 
 terraform {
+  required_version = ">= 1.5"
+
   required_providers {
     null = {
       source  = "hashicorp/null"
-      version = "3.2.1"
+      version = "~> 3.2"
+    }
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 5.0"
     }
   }
-  required_version = ">= 1.0"
+
+  backend "gcs" {
+    bucket = "healthcare-ai-yifeng-terraform-state"
+    prefix = "dev"
+  }
 }
 
-# Note: Database tables are now managed by Supabase
-# See healthcare-infra/terraform/supabase/ for Supabase-specific configurations
+provider "google" {
+  project = var.project_id
+  region  = var.region
+}

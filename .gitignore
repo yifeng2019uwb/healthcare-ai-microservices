@@ -1,45 +1,80 @@
-# Healthcare AI Microservices - .gitignore
-#
-# SECURITY WARNING: This file prevents sensitive credentials from being committed.
-# Never commit files containing:
-# - Database passwords (except localhost defaults for dev)
-# - API keys or tokens
-# - Private keys (.pem, .key files)
-# - Terraform state files (.tfstate)
-# - Environment-specific configuration files
+# =============================================================================
+# Healthcare AI Platform — .gitignore
+# =============================================================================
 
-# Java
+# Java / Maven
 *.class
 *.jar
 *.war
 *.ear
-*.log
 target/
-!target/*.jar
-!target/*.war
+.mvn/wrapper/maven-wrapper.jar
+.m2/settings.xml
+.m2/settings-security.xml
 
-# Spring Boot - Ignore environment-specific configs
-application-*.properties
-application-*.yml
-!application-example.properties
-!application-example.yml
-!application.yml  # Base config allowed (but must use env vars for production)
-
-# Node.js
+# Node / React
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
 dist/
 build/
+npm-debug.log*
+yarn-debug.log*
 
-# React
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Spring Boot — env-specific configs (base application.yml is safe)
+application-local.yml
+application-prod.yml
+application-production.yml
+application-staging.yml
+services/*/src/main/resources/application-*.yml
+services/*/src/main/resources/application-*.properties
+services/*/src/main/resources/*.env
+services/*/src/main/resources/config/
+
+# Terraform — state and secrets
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+*.tfvars.*
+!*.tfvars.example
+
+# Docker
+docker/patient/
+docker-compose.yml
+docker-compose.*.yml
+!docker-compose.example.yml
+
+# GCP credentials
+*.json
+!package.json
+!package-lock.json
+!**/test-fixtures/*.json
+service-account*.json
+
+# Secrets and credentials
+secrets/
+credentials/
+*.pem
+*.key
+*.crt
+*.keystore
+*.truststore
+*.jks
+*.secret
+*.credential
+*password*.txt
+*secret*.txt
+
+# Infrastructure config dirs
+healthcare-infra/config/
+healthcare-infra/terraform/supabase/config/
+
+# Synthea generated data
+data/synthea/output/
+
+# Local notes
+SETUP_NOTES.md
+docs/knowledge-notes/
+docs/backup/
 
 # IDE
 .idea/
@@ -47,132 +82,23 @@ build/
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
 Thumbs.db
-
-# Docker
-.dockerignore
-
-# Terraform
-*.tfstate
-*.tfstate.*
-.terraform/
-.terraform.lock.hcl
-terraform.tfvars
-terraform.tfvars.*
-!terraform.tfvars.example
-
-# Kubernetes
-*.kubeconfig
 
 # Logs
 logs/
 *.log
-
-# Temporary files
 *.tmp
 *.temp
 
-# Secrets and Credentials
-secrets/
-.env.secrets
-*.pem
-*.key
-*.crt
-
-# Infrastructure Credentials
-healthcare-infra/terraform/terraform.tfvars
-healthcare-infra/terraform/terraform.tfvars.*
-!healthcare-infra/terraform/terraform.tfvars.example
-
-# GCP Credentials
-healthcare-infra/gcp/credentials/
-healthcare-infra/gcp/*.json
-healthcare-infra/gcp/*.key
-healthcare-infra/gcp/service-account-*.json
-!healthcare-infra/gcp/cloud-storage/cors.json
-
-# Environment Variables
-.env
-.env.local
-.env.development
-.env.production
-.env.staging
-!env.example
-
-# Configuration Files with Credentials
-terraform.tfvars
-terraform.tfvars.*
-!terraform.tfvars.example
-application-local.yml
-application-*.yml
-!application-example.yml
-!application.yml
-docker-compose.yml
-docker-compose.*.yml
-!docker-compose.example.yml
-
-# Patient Service Configuration (contains credentials)
-docker/patient/
-
-# Service Resource Packages (may contain credentials)
-services/*/src/main/resources/application-local.yml
-services/*/src/main/resources/application-*.yml
-services/*/src/main/resources/application-prod.yml
-services/*/src/main/resources/application-production.yml
-services/*/src/main/resources/application-staging.yml
-services/*/src/main/resources/*.properties
-services/*/src/main/resources/*.env
-services/*/src/main/resources/config/
-!services/*/src/main/resources/application-example.yml
-!services/*/src/main/resources/application.yml  # Base config (must use env var overrides)
-!services/*/src/main/resources/application-example.properties
-
-# Maven settings with credentials
-.m2/settings-security.xml
-.m2/settings.xml  # Often contains credentials - commit only .m2/settings-example.xml
-
-# Config Directory - Completely Ignored
-healthcare-infra/config/
-healthcare-infra/terraform/supabase/config/
-
-# Build artifacts
-bin/
-out/
-
-# Maven/Gradle
-.mvn/wrapper/maven-wrapper.jar
+# Gradle
 .gradle/
 **/.gradle/
 gradle-app.setting
-*.zip
-!gradle-wrapper.jar
-!**/gradle/wrapper/gradle-wrapper.jar
 
-# Additional sensitive patterns
-**/secrets/**
-**/credentials/**
-*.secret
-*.credential
-*password*.txt
-*secret*.txt
-*.keystore
-*.truststore
-*.jks
-
-# AWS/Azure/GCP credentials
-.aws/
-.azure/
-.gcloud/
-credentials.json
-service-account*.json
-!service-account*.example.json
+# GitHub Actions local
 .secrets
 .actrc
 
-
-# Personal knowledge notes (not for git)
-docs/knowledge-notes/
-SETUP_NOTES.md
+# Kubernetes
+*.kubeconfig

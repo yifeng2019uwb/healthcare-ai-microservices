@@ -603,57 +603,66 @@ Cloud SQL PostgreSQL
 
 ---
 
-## 10. Repository Structure
+10. Component-Owned Script Pattern
+Core Rule
+CI/CD never changes when adding new components within an existing layer.
+CI/CD only changes when adding a brand new layer.
+CI/CD knows only entry points — one per layer:
+    │
+    ├── services/dev.sh              ← all service operations
+    ├── healthcare-infra/run.sh      ← all infrastructure operations
+    ├── tests/run-e2e.sh             ← all system/e2e tests
+    └── frontend/run.sh              ← added only when frontend layer exists
+When to Change What
+ActionChange whereAdd provider-serviceservices/dev.sh onlyAdd ai-serviceservices/dev.sh onlyAdd new DB migrationhealthcare-infra/run.sh onlyReplace Synthea with real datahealthcare-infra/run.sh onlyAdd new Terraform resourcehealthcare-infra/run.sh onlyAdd frontend (new layer)Add frontend/run.sh + update CI/CDAdd new test suitetests/run-e2e.sh only
+Layer Scripts
+services/dev.sh — discovers and runs all enabled services:
+bash./services/dev.sh all build        # builds all services
+./services/dev.sh all test         # unit tests all services
+./services/dev.sh all deploy       # deploys all services
+healthcare-infra/run.sh — delegates to sub-scripts if they exist:
+bash./healthcare-infra/run.sh terraform plan
+./healthcare-infra/run.sh terraform apply
+./healthcare-infra/run.sh schema
+./healthcare-infra/run.sh data
+./healthcare-infra/run.sh all
+Sub-scripts are optional — run.sh skips gracefully if not configured.
+tests/run-e2e.sh — external HTTP tests against deployed services:
+bash./tests/run-e2e.sh dev    # integration + e2e against dev
+./tests/run-e2e.sh prod   # smoke test against prod
+Tests here call services via HTTP from outside — same as a real client would.
+Unit tests stay inside services/dev.sh. Integration and e2e tests live here.
+Configuration — Environment Variables Only
+No hardcoded values in any script. Local development sources .env (gitignored).
+GitHub Actions injects from GitHub Secrets + WIF. Same scripts work for any environment.
 
-```
+11. Repository Structure
 healthcare-ai-microservices/
-├── services/
-│   ├── gateway/             # Spring Cloud Gateway
-│   ├── patient-service/     # Patient APIs
-│   ├── appointment-service/ # Encounter/appointment APIs
-│   ├── provider-service/    # Phase 2
-│   ├── ai-service/          # Phase 2 — Vertex AI
-│   └── shared/              # Common entities, validation
-├── frontend/
-│   └── patient-portal/      # React (Phase 2)
-├── healthcare-infra/
-│   ├── terraform/gcp/       # GCP infrastructure
-│   └── scripts/
-│       ├── generate_data.sh # Synthea data generation
-│       └── load_data.sh     # Cloud SQL data loading
-├── data/
-│   └── synthea/             # Generated CSV files (gitignored)
-├── docs/
-│   ├── DESIGN.md            # This document
-│   ├── CICD_SECURITY.md     # WIF setup + public repo security guide
-│   ├── THREAT_MODEL.md      # STRIDE analysis (Phase 2)
-│   └── API.md               # API reference (Phase 2)
+├── services/                     # Service layer
+│   └── dev.sh                    ← entry point: build, test, deploy all services
+├── frontend/                     # Frontend layer (Phase 2)
+│   └── run.sh                    ← entry point: build, test, deploy frontend
+├── healthcare-infra/             # Infrastructure layer
+│   └── run.sh                    ← entry point: terraform, schema, data
+├── tests/                        # Integration + system test layer
+│   └── run-e2e.sh                ← entry point: external HTTP tests against deployed services
+├── data/                         # Generated data (gitignored)
+├── docs/                         # Design documentation
+│   ├── HEALTHCARE_PLATFORM_DESIGN.md
+│   ├── GCP_INFRASTRUCTURE_DESIGN.md
+│   ├── CICD_SECURITY.md
+│   ├── THREAT_MODEL.md           # Phase 2
+│   └── API.md                    # Phase 2
+├── scripts/
+│   └── local-ci.sh               ← orchestrator: calls layer entry points only
 └── .github/
     └── workflows/
-        ├── ci.yml           # Build + test + OWASP ZAP (WIF auth)
-        └── cd.yml           # Deploy to Cloud Run (WIF auth, main branch only)
-```
+        ├── README.md
+        ├── ci.yml
+        └── cd.yml
 
----
+12. What Changed From Previous Design
+PreviousCurrentReasonRailway deploymentGCP Cloud RunGCP free tier active, better security toolingSupabase PostgreSQLCloud SQL PostgreSQLGCP-native, VPC-private, IAM integrationSupabase AuthFirebase Auth + Identity PlatformOAuth 2.0/OIDC, GCP-nativeAWS S3, IAM, CloudWatchGCP equivalentsRemoved deprecated AWS designuser_profiles + patient_profiles splitSingle patients tableMirrors Synthea flat structureappointments tableencounters tableCorrect FHIR term, maps to Synthea directlymedical_records catch-allconditions, allergies, medications, observationsNormalized from real Synthea columnscustom_data JSONB everywhereReal typed columnsDerived from actual Synthea CSV fieldsGeneric synthetic dataSynthea CSV (FHIR-aligned)Real healthcare data standardPython FastAPI AI serviceVertex AI Gemini APIGCP-native, no model hosting neededGitHub Secret key storageWorkload Identity FederationKeyless, no credential file existsSecrets in env vars / configGCP Secret Manager onlyNothing sensitive in repo or logsHardcoded values in tfvarsTF_VAR_* environment variablesScalable across environments and regionsMonolithic CI/CD scriptComponent-owned scriptsDecoupled, independently maintainable
 
-## 11. What Changed From Previous Design
-
-| Previous | Current | Reason |
-|---|---|---|
-| Railway deployment | GCP Cloud Run | GCP free tier active, better security tooling |
-| Supabase PostgreSQL | Cloud SQL PostgreSQL | GCP-native, VPC-private, IAM integration |
-| Supabase Auth | Firebase Auth + Identity Platform | OAuth 2.0/OIDC, GCP-native |
-| AWS S3, IAM, CloudWatch | GCP equivalents | Removed deprecated AWS design |
-| `user_profiles` + `patient_profiles` split | Single `patients` table | Mirrors Synthea flat structure |
-| `appointments` table | `encounters` table | Correct FHIR term, maps to Synthea directly |
-| `medical_records` catch-all | `conditions`, `allergies`, `medications`, `observations` | Normalized from real Synthea columns |
-| `custom_data JSONB` everywhere | Real typed columns | Derived from actual Synthea CSV fields |
-| Generic synthetic data | Synthea CSV (FHIR-aligned) | Real healthcare data standard |
-| Python FastAPI AI service | Vertex AI Gemini API | GCP-native, no model hosting needed |
-| GitHub Secret key storage | Workload Identity Federation | Keyless, no credential file exists |
-| Secrets in env vars / config | GCP Secret Manager only | Nothing sensitive in repo or logs |
-
----
-
-*Healthcare AI Platform — Master Design Document v2.0*
-*Built with: GCP · Spring Boot · Firebase Auth · Synthea · Vertex AI*
+Healthcare AI Platform — Master Design Document v2.0
+Built with: GCP · Spring Boot · Firebase Auth · Synthea · Vertex AI
