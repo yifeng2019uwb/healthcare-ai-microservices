@@ -19,7 +19,6 @@
 
 ## 2. Architecture Overview
 
-```
 Internet
     │
     ▼
@@ -54,7 +53,6 @@ Artifact Registry
 
 Cloud Logging
 Cloud Audit Logs
-```
 
 ---
 
@@ -62,31 +60,31 @@ Cloud Audit Logs
 
 ### 3.1 VPC Network
 
-| Field | Value |
-|---|---|
-| Name | `healthcare-vpc` |
-| Region | `us-west1` |
-| Subnet | `healthcare-subnet` |
-| Subnet CIDR | `10.0.0.0/24` |
-| Private Google Access | Enabled |
+| Field                 | Value             |
+|-----------------------|-------------------|
+| Name                  | `healthcare-vpc`  |
+| Region                | `us-west1`        |
+| Subnet                | `healthcare-subnet` |
+| Subnet CIDR           | `10.0.0.0/24`     |
+| Private Google Access | Enabled           |
 
 Private Google Access allows Cloud Run and Cloud SQL to reach GCP APIs
 (Secret Manager, Artifact Registry) without a public IP.
 
 ### 3.2 Cloud SQL
 
-| Field | Value |
-|---|---|
-| Instance name | `healthcare-db-dev` |
-| Database version | PostgreSQL 15 |
-| Tier | `db-f1-micro` (free tier eligible) |
-| Region | `us-west1` |
-| IP | Private IP only (VPC-internal) |
-| Storage | 10 GB SSD |
-| Backups | Disabled (dev environment) |
-| Database name | `healthcare` |
-| User | `postgres` |
-| Password | Stored in Secret Manager |
+| Field             | Value                             |
+|-------------------|-----------------------------------|
+| Instance name     | `healthcare-db-dev`               |
+| Database version  | PostgreSQL 15                     |
+| Tier              | `db-f1-micro` (free tier eligible) |
+| Region            | `us-west1`                        |
+| IP                | Private IP only (VPC-internal)    |
+| Storage           | 10 GB SSD                         |
+| Backups           | Disabled (dev environment)        |
+| Database name     | `healthcare`                      |
+| User              | `postgres`                        |
+| Password          | Stored in Secret Manager          |
 
 Private IP means Cloud SQL is not reachable from the internet.
 Only resources inside `healthcare-vpc` can connect.
@@ -145,22 +143,26 @@ Cloud Run configuration (all services):
 
 ### 3.6 Cloud Armor
 
-| Field | Value |
-|---|---|
-| Policy name | `healthcare-waf` |
-| Attached to | Cloud Load Balancer (in front of gateway) |
-| Rules | OWASP Top 10 preconfigured ruleset |
-| Mode | Prevention (blocks, not just detects) |
+| Field         | Value                                     |
+|---------------|-------------------------------------------|
+| Policy name   | `healthcare-waf`                          |
+| Attached to   | Cloud Load Balancer (in front of gateway) |
+| Rules         | OWASP Top 10 preconfigured ruleset        |
+| Mode          | Prevention (blocks, not just detects)     |
 
 Blocks common attacks at the network edge before requests reach
 the application layer.
 
 ### 3.7 IAM — Service Accounts
 
-| Service Account | Email | Roles | Purpose |
-|---|---|---|---|
-| `github-actions` | `github-actions@${project_id}.iam.gserviceaccount.com` | `roles/run.admin`, `roles/artifactregistry.writer`, `roles/secretmanager.secretAccessor` | CI/CD via WIF |
-| `cloud-run-sa` | `cloud-run-sa@${project_id}.iam.gserviceaccount.com` | `roles/cloudsql.client`, `roles/secretmanager.secretAccessor` | Runtime identity for all Cloud Run services |
+| Service Account | Email                       | Roles                         | Purpose                 |
+|-----------------|-----------------------------|-------------------------------|-------------------------|
+| `github-actions`|`github-actions@${project_id}|`roles/run.admin`,             |CI/CD via WIF            |
+|                 |.iam.gserviceaccount.com`    |`roles/artifactregistry.writer`,|                        |
+|                 |                             |`roles/secretmanager.secretAccessor`|                    |
+-----------------------------------------------------------------------------------------------------------
+| `cloud-run-sa`  |`cloud-run-sa@${project_id}  |`roles/cloudsql.client`,       | Runtime identity for all|
+|                 |.iam.gserviceaccount.com`    |`roles/secretmanager.secretAccessor`| Cloud Run services |
 
 All service accounts follow least privilege — only the roles they need.
 No `roles/editor` or `roles/owner`.
@@ -170,21 +172,21 @@ No `roles/editor` or `roles/owner`.
 Keyless authentication from GitHub Actions to GCP.
 No service account JSON key file exists anywhere.
 
-| Field | Value |
-|---|---|
-| Pool name | `github-pool` |
-| Provider name | `github-provider` |
-| Issuer | `https://token.actions.githubusercontent.com` |
-| Allowed repo | `yifeng2019uwb/healthcare-ai-microservices` |
+| Field         | Value                                         |
+|---------------|-----------------------------------------------|
+| Pool name     | `github-pool`                                 |
+| Provider name | `github-provider`                             |
+| Issuer        | `https://token.actions.githubusercontent.com` |
+| Allowed repo  | `yifeng2019uwb/healthcare-ai-microservices`   |
 
 See `docs/CICD_SECURITY.md` for full setup details.
 
 ### 3.9 Cloud Logging + Cloud Audit Logs
 
-| Service | What it captures |
-|---|---|
-| Cloud Logging | Structured application logs from all Cloud Run services |
-| Cloud Audit Logs | All GCP API calls — who did what and when |
+| Service           | What it captures                                        |
+|-------------------|---------------------------------------------------------|
+| Cloud Logging     | Structured application logs from all Cloud Run services |
+| Cloud Audit Logs  | All GCP API calls — who did what and when               |
 
 Both are enabled by default on new GCP projects.
 Application logs use structured JSON format for easy querying.
@@ -256,8 +258,34 @@ terraform {
 ```
 
 ---
+6. Secret Management
+Current Approach
+Secret containers are created by Terraform. Values are set manually via gcloud:
+bashecho -n "value" | gcloud secrets versions add SECRET_NAME \
+  --data-file=- \
+  --project=PROJECT_ID
+Sufficient for current stage — secrets are set once and rarely change.
+Why set-secrets Was Excluded From run-terraform.sh
+A set-secrets command was considered but excluded because:
 
-## 6. Cost Estimate (Dev Environment)
+Secrets set once at initial setup, not on every apply
+Manual gcloud command is simple and explicit for now
+Automating adds complexity without current benefit
+
+When to Add It Back
+
+Firebase SA needs to replace current placeholder value
+Secret rotation becomes a regular requirement
+Dev + prod environments need secret sync
+
+Future Implementation
+
+Local: read from gitignored secrets.env, push to Secret Manager
+CI/CD: read from GitHub Secrets, push to Secret Manager
+Support --rotate, --new, --all flags
+Never echo or log secret values
+
+## 7. Cost Estimate (Dev Environment)
 
 | Service | Config | Est. Monthly Cost |
 |---|---|---|
@@ -275,7 +303,7 @@ Cloud Armor is optional in early dev — can be added in Phase 2.
 
 ---
 
-## 7. Setup Order
+## 8. Setup Order
 
 Infrastructure must be created in this order due to dependencies:
 
@@ -292,7 +320,7 @@ Infrastructure must be created in this order due to dependencies:
 
 ---
 
-## 8. Phase Status
+## 9. Phase Status
 
 | Resource | Status |
 |---|---|

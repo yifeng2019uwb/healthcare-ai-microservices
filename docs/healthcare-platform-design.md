@@ -28,23 +28,56 @@ federal agencies, health systems, insurance companies, or health tech startups.
 Backend Engineer, Cloud/DevOps Engineer, Security Engineer, Federal IT (GS-2210 series)
 
 ---
+2. Infrastructure Configuration Principles
+Config Follows Requirements — Not Convention
+Every infrastructure configuration decision must be derived from actual project
+requirements, not defaults, common patterns, or cost optimization alone.
+For each resource, define requirements first:
 
-## 2. Tech Stack
+What is the actual data volume?
+What is the actual concurrency?
+What are the performance needs?
+Is HA needed?
+Is data recoverable if lost?
 
-| Layer | Technology | Reason |
-|---|---|---|
-| **Cloud** | GCP (us-west1) | 90-day $300 free tier, active account |
-| **Compute** | Cloud Run | Scales to zero, no idle cost, container-native |
-| **Database** | Cloud SQL PostgreSQL 15 | Managed, VPC-private, GCP-native IAM |
-| **Authentication** | Firebase Auth + GCP Identity Platform | OAuth 2.0 / OIDC, free tier generous |
-| **Secrets** | GCP Secret Manager | No credentials in config files or env vars |
-| **WAF** | Cloud Armor | OWASP Top 10 blocking at load balancer |
-| **Audit** | Cloud Audit Logs + Cloud Logging | Who accessed what patient data and when |
-| **AI** | Vertex AI Gemini | Patient risk analysis, clinical summarization |
-| **IaC** | Terraform (GCP provider) | Reuses existing HCL structure, just new provider |
-| **CI/CD** | GitHub Actions + Workload Identity Federation | Keyless GCP auth — no credentials stored anywhere |
-| **Services** | Spring Boot 3.2 / Java 17 | Existing codebase |
-| **Data** | Synthea synthetic data (CSV) | Realistic FHIR-aligned patient records |
+Then set config to match. Document the requirement behind each setting in the
+Terraform file as a comment — not just what the setting does but why it was chosen.
+Project Reality
+This is a portfolio project with synthetic data and no real users:
+
+No real patient data — all data is Synthea-generated and regeneratable
+No production traffic — dev and demo only
+Single developer — low concurrency
+Data loss is acceptable — Synthea data can be reloaded anytime
+
+This reality drives all infrastructure sizing decisions. Both dev and demo
+("prod") environments share the same low requirements.
+Test Data Strategy
+Integration tests running repeatedly can pollute the database with dirty test data
+mixed with clean Synthea data. To keep data clean:
+
+Integration tests should truncate test-specific tables after each run
+Or use a separate test schema isolated from Synthea data
+Reload clean Synthea data periodically via healthcare-infra/run.sh data
+
+Storage growth from integration tests is minimal (~50MB over months of active
+development) — the concern is data quality, not storage size.
+
+| Layer         | Technology                            | Reason                                        |
+|---------------|---------------------------------------|-----------------------------------------------|
+| Cloud         | GCP (us-west1)                        | 90-day $300 free tier, active account         |
+| Compute       | Cloud Run                             | Scales to zero, no idle cost, container-native |
+| Database      | Cloud SQL PostgreSQL 15               | Managed, VPC-private, GCP-native IAM          |
+| Authentication | Firebase Auth + GCP Identity Platform | OAuth 2.0 / OIDC, free tier generous         |
+| Secrets       | GCP Secret Manager                    | No credentials in config files or env vars    |
+| WAF           | Cloud Armor                           | OWASP Top 10 blocking at load balancer        |
+| Audit         | Cloud Audit Logs + Cloud Logging      | Who accessed what patient data and when       |
+| AI            | Vertex AI Gemini                      | Patient risk analysis, clinical summarization |
+| IaC           | Terraform (GCP provider)              | Reuses existing HCL structure, just new provider |
+| CI/CD         | GitHub Actions + Workload Identity Federation | Keyless GCP auth — no credentials stored anywhere |
+| Services      | Spring Boot 3.2 / Java 17             | Existing codebase                             |
+| Data          | Synthea synthetic data (CSV)          | Realistic FHIR-aligned patient records        |
+
 
 ---
 

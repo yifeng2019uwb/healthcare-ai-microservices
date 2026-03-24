@@ -63,6 +63,8 @@ credentials/
 *.credential
 *password*.txt
 *secret*.txt
+.env
+*/.env
 
 # Infrastructure config dirs
 healthcare-infra/config/
