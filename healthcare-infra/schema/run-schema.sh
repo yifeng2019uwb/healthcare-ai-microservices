@@ -105,6 +105,7 @@ TABLE=$1
 
 # Ordered list — dependencies must come first
 ALL_TABLES=(
+  "users"
   "patients"
   "organizations"
   "providers"
@@ -112,6 +113,7 @@ ALL_TABLES=(
   "conditions"
   "allergies"
   "audit_logs"
+  "permissions.sql"
 )
 
 run_sql() {

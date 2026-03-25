@@ -604,10 +604,10 @@ Cloud SQL PostgreSQL
 
 **Goal**: Working GCP deployment with patient + encounter APIs, real Synthea data, Firebase auth.
 
-- [ ] GCP project setup, enable APIs
-- [ ] Terraform: Cloud SQL + VPC + Secret Manager
-- [ ] Generate 200-patient Synthea dataset (Washington state)
-- [ ] Write and run data loading scripts
+- [x] GCP project setup, enable APIs
+- [x] Terraform: Cloud SQL + VPC + Secret Manager
+- [x] Generate 200-patient Synthea dataset (Washington state)
+- [x] Write and run data loading scripts
 - [ ] Migrate Spring Boot services to Cloud Run
 - [ ] Firebase Auth integration + JWT validation at Gateway
 - [ ] Patient Service: 4 endpoints live

@@ -37,3 +37,35 @@ resource "google_secret_manager_secret" "jwt_secret" {
     auto {}
   }
 }
+
+resource "google_secret_manager_secret" "db_password_auth_service" {
+  secret_id = "db-password-auth-service"
+  project   = var.project_id
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret" "db_password_patient_service" {
+  secret_id = "db-password-patient-service"
+  project   = var.project_id
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret" "db_password_provider_service" {
+  secret_id = "db-password-provider-service"
+  project   = var.project_id
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret" "db_password_appointment_service" {
+  secret_id = "db-password-appointment-service"
+  project   = var.project_id
+  replication {
+    auto {}
+  }
+}
