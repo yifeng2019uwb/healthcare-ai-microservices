@@ -326,14 +326,14 @@ Infrastructure must be created in this order due to dependencies:
 |---|---|
 | GCP Project | ✅ Done |
 | Billing linked | ✅ Done |
-| APIs enabled | ⏳ Todo |
-| Terraform state bucket | ⏳ Todo |
-| VPC | ⏳ Todo |
-| Cloud SQL | ⏳ Todo |
-| Secret Manager | ⏳ Todo |
-| Artifact Registry | ⏳ Todo |
-| IAM + WIF | ⏳ Todo |
-| Cloud Run | ⏳ Todo |
+| APIs enabled | ✅ Done |
+| Terraform state bucket | ✅ Done |
+| VPC | ✅ Done |
+| Cloud SQL | ✅ Done |
+| Secret Manager | ✅ Done |
+| Artifact Registry | ✅ Done |
+| IAM + WIF | ✅ Done |
+| Cloud Run | ✅ Done |
 | Cloud Armor | ⏳ Phase 2 |
 
 ---

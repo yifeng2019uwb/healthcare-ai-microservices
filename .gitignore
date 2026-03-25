@@ -104,3 +104,7 @@ gradle-app.setting
 
 # Kubernetes
 *.kubeconfig
+
+# Synthea
+healthcare-infra/synthea/output/
+healthcare-infra/synthea/*.jar
