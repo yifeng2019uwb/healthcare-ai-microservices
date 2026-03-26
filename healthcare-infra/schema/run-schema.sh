@@ -113,7 +113,7 @@ ALL_TABLES=(
   "conditions"
   "allergies"
   "audit_logs"
-  "permissions.sql"
+  "permissions"
 )
 
 run_sql() {

@@ -3,13 +3,16 @@
 -- Requirements:
 --   - Store Synthea synthetic patient data as-is
 --   - auth_id (UUID) links to users.id — null until user registers
---   - mrn (Medical Record Number) — nullable, Phase 2 patient matching
---   - No real patient data — all Synthea generated, regeneratable
+--   - mrn (Medical Record Number) — system generated, unique, required
+--     Used for patient account registration — MRN + first_name + last_name validation
 --
--- Patient matching strategy (Phase 1):
---   first_name + last_name + birthdate + gender — best effort
---   Limitation: not guaranteed unique for large datasets
---   Phase 2: use mrn for reliable unique matching
+-- Patient registration flow:
+--   1. Provider creates patient record → MRN auto-generated
+--   2. Provider gives MRN to patient
+--   3. Patient registers account with MRN + first_name + last_name
+
+-- Sequence for MRN auto-generation
+CREATE SEQUENCE IF NOT EXISTS mrn_seq START 1;
 
 CREATE TABLE IF NOT EXISTS patients (
     -- Synthea fields
@@ -44,7 +47,14 @@ CREATE TABLE IF NOT EXISTS patients (
 
     -- Application fields
     auth_id              UUID UNIQUE,              -- links to users.id, null until registered
-    mrn                  VARCHAR(20) UNIQUE,        -- Medical Record Number, Phase 2 matching
+    mrn                  VARCHAR(20) UNIQUE NOT NULL
+                         DEFAULT 'MRN-' || LPAD(nextval('mrn_seq')::TEXT, 6, '0'),
+
+    -- Contact and medical info
+    phone                VARCHAR(20),              -- contact number for appointments
+    emergency_contact    VARCHAR(255),             -- emergency contact info
+    blood_type           VARCHAR(5),               -- A+, B-, O+, etc. nullable
+    notes                TEXT,                     -- general notes
 
     created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -52,4 +62,4 @@ CREATE TABLE IF NOT EXISTS patients (
 
 CREATE INDEX IF NOT EXISTS idx_patients_auth_id ON patients(auth_id);
 CREATE INDEX IF NOT EXISTS idx_patients_name ON patients(last_name, first_name);
-CREATE INDEX IF NOT EXISTS idx_patients_matching ON patients(first_name, last_name, birthdate, gender);
+CREATE INDEX IF NOT EXISTS idx_patients_mrn ON patients(mrn);

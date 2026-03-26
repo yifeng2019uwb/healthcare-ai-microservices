@@ -151,6 +151,14 @@ load_table() {
 load() {
   stage "Loading Synthea data"
 
+  # Setup sequences and defaults — idempotent, safe to run every time
+  load_table "sequences" "
+    CREATE SEQUENCE IF NOT EXISTS mrn_seq START 1;
+    ALTER TABLE patients ALTER COLUMN mrn SET DEFAULT 'MRN-' || LPAD(nextval('mrn_seq')::TEXT, 6, '0');
+    CREATE SEQUENCE IF NOT EXISTS provider_code_seq START 1;
+    ALTER TABLE providers ALTER COLUMN provider_code SET DEFAULT 'PRV-' || LPAD(nextval('provider_code_seq')::TEXT, 6, '0');
+  "
+
   # patients
   load_table "patients" "
     CREATE TEMP TABLE patients_import (
@@ -182,7 +190,7 @@ load() {
     INSERT INTO organizations (id,name,address,city,state,zip,lat,lon,phone,revenue,utilization)
     SELECT id,name,address,city,state,zip,lat,lon,phone,revenue,utilization
     FROM orgs_import ON CONFLICT (id) DO NOTHING;
-    "
+  "
 
   # providers — CSV has address columns not in schema, use temp table to skip them
   load_table "providers" "
@@ -194,9 +202,8 @@ load() {
     );
     \COPY providers_import FROM '$OUTPUT_DIR/providers.csv' CSV HEADER;
     INSERT INTO providers (id,organization_id,name,gender,speciality,encounters,procedures)
-    SELECT p.id, p.organization_id, p.name, p.gender, p.speciality, p.encounters, p.procedures
-    FROM providers_import p
-    ON CONFLICT (id) DO NOTHING;
+    SELECT id,organization_id,name,gender,speciality,encounters,procedures
+    FROM providers_import ON CONFLICT (id) DO NOTHING;
   "
 
   # encounters
