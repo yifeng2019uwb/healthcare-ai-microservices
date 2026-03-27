@@ -11,8 +11,9 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash   VARCHAR(255) NOT NULL,          -- BCrypt hashed, never plain text
     role            VARCHAR(20) NOT NULL,            -- PATIENT, PROVIDER, ADMIN
     is_active       BOOLEAN NOT NULL DEFAULT true,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_by      VARCHAR(100) DEFAULT 'system'
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

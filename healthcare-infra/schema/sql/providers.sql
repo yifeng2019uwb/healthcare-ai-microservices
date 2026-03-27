@@ -36,8 +36,9 @@ CREATE TABLE IF NOT EXISTS providers (
     is_active       BOOLEAN NOT NULL DEFAULT true,  -- active/inactive in system
     bio             TEXT,                -- provider bio/description
 
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_by      VARCHAR(100) DEFAULT 'system'
 );
 
 CREATE INDEX IF NOT EXISTS idx_providers_organization ON providers(organization_id);

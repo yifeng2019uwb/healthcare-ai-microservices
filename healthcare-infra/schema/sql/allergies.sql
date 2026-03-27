@@ -22,6 +22,10 @@ CREATE TABLE IF NOT EXISTS allergies (
     severity2       VARCHAR(10),
     notes           TEXT,                    -- additional reactions or clinical observations
 
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_by      VARCHAR(100) DEFAULT 'system'
+
     PRIMARY KEY (patient_id, encounter_id, code)
 );
 

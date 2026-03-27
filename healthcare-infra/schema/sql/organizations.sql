@@ -11,6 +11,10 @@ CREATE TABLE IF NOT EXISTS organizations (
     revenue     DECIMAL(12,2),           -- internal metric, nullable
     utilization INTEGER                 -- internal metric, nullable
 
+    created_at  TIMESTAMPTZ DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ DEFAULT NOW(),
+    updated_by  VARCHAR(100) DEFAULT 'system'
+
 );
 
 CREATE INDEX IF NOT EXISTS idx_organizations_name ON organizations(name);

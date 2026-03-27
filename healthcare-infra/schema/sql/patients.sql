@@ -56,8 +56,10 @@ CREATE TABLE IF NOT EXISTS patients (
     blood_type           VARCHAR(5),               -- A+, B-, O+, etc. nullable
     notes                TEXT,                     -- general notes
 
-    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at           TIMESTAMPTZ DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ DEFAULT NOW(),
+    updated_by           VARCHAR(100) DEFAULT 'system'
+
 );
 
 CREATE INDEX IF NOT EXISTS idx_patients_auth_id ON patients(auth_id);
