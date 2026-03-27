@@ -55,12 +55,12 @@ in Phase 1.
 | Table | Owner Service | Write Access | Read Access |
 |---|---|---|---|
 | `users` | auth-service | auth-service only | auth-service only |
-| `patients` | patient-service | patient + provider | patient + provider |
+| `patients` | patient-service | patient (own profile) + provider (create) | patient-service + provider-service |
 | `organizations` | provider-service | provider-service only | all services |
 | `providers` | provider-service | provider-service only | all services |
-| `encounters` | appointment-service | appointment-service + provider | all services |
-| `conditions` | patient-service | provider only | patient + provider |
-| `allergies` | patient-service | provider only | patient + provider |
+| `encounters` | appointment-service | appointment-service (Phase 2) | all services |
+| `conditions` | patient-service | Phase 2 | patient-service + provider-service |
+| `allergies` | patient-service | Phase 2 | patient-service + provider-service |
 | `audit_logs` | all services | all services | admin only |
 
 ### Access Rules
@@ -95,8 +95,8 @@ See `healthcare-infra/schema/sql/permissions.sql` for full SQL.
 ```
 auth_role
     CRUD  → users
-    
-patient_role  
+
+patient_role
     CRU   → patients
     CRU   → conditions
     CRU   → allergies

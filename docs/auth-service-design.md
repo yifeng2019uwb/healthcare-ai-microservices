@@ -1,6 +1,6 @@
 # Auth Service Design
 
-> Version: 1.0 | Last Updated: March 2026
+> Version: 1.1 | Last Updated: March 2026
 
 ---
 
@@ -15,11 +15,13 @@ All other services validate JWT via the internal validate endpoint.
 
 ## Responsibilities
 
-- User registration (PATIENT, PROVIDER roles)
+- Patient registration — creates account + links to patient record via MRN
+- Provider registration — creates account + links to provider record via provider_code
 - Login — validate credentials, issue JWT
 - Token refresh and logout
 - Internal JWT validation for gateway
-- Does NOT handle patient or provider profile data — that belongs to patient-service and provider-service
+- Does NOT handle patient or provider profile data — that belongs to
+  patient-service and provider-service
 
 ---
 
@@ -48,7 +50,8 @@ users
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/api/auth/register` | Create user account |
+| POST | `/api/auth/register/patient` | Create patient account + link to patient record |
+| POST | `/api/auth/register/provider` | Create provider account + link to provider record |
 | POST | `/api/auth/login` | Login, returns JWT |
 | GET | `/health` | Health check |
 
@@ -58,7 +61,6 @@ users
 |---|---|---|
 | POST | `/api/auth/refresh` | Refresh access token |
 | POST | `/api/auth/logout` | Invalidate token |
-| GET | `/api/auth/me` | Get current user info |
 
 ### Internal (gateway only, not exposed externally)
 
@@ -70,7 +72,10 @@ users
 
 ## Request / Response
 
-### POST `/api/auth/register`
+### POST `/api/auth/register/patient`
+
+Validates MRN + first_name + last_name against patients table.
+Creates users row and links auth_id to patient record.
 
 Request:
 ```json
@@ -78,7 +83,9 @@ Request:
   "username": "john_doe",
   "email": "john@example.com",
   "password": "SecurePass123!",
-  "role": "PATIENT"
+  "mrn": "MRN-000001",
+  "first_name": "John",
+  "last_name": "Doe"
 }
 ```
 
@@ -89,13 +96,53 @@ Response `201`:
   "username": "john_doe",
   "email": "john@example.com",
   "role": "PATIENT",
-  "created_at": "2026-03-25T10:00:00Z"
+  "created_at": "2026-03-26T10:00:00Z"
 }
 ```
 
 Errors:
+- `400` — validation error (missing fields)
+- `404` — MRN not found in patients table
+- `409` — name does not match patient record
+- `409` — MRN already linked to another account
 - `409` — username or email already exists
-- `400` — validation error
+
+---
+
+### POST `/api/auth/register/provider`
+
+Validates provider_code + first_name + last_name against providers table.
+Creates users row and links auth_id to provider record.
+
+Request:
+```json
+{
+  "username": "dr_smith",
+  "email": "smith@hospital.com",
+  "password": "SecurePass123!",
+  "provider_code": "PRV-000001",
+  "first_name": "John",
+  "last_name": "Smith"
+}
+```
+
+Response `201`:
+```json
+{
+  "id": "uuid",
+  "username": "dr_smith",
+  "email": "smith@hospital.com",
+  "role": "PROVIDER",
+  "created_at": "2026-03-26T10:00:00Z"
+}
+```
+
+Errors:
+- `400` — validation error (missing fields)
+- `404` — provider_code not found in providers table
+- `409` — name does not match provider record
+- `409` — provider_code already linked to another account
+- `409` — username or email already exists
 
 ---
 
@@ -144,22 +191,6 @@ Response `200`:
 
 ---
 
-### GET `/api/auth/me`
-
-Response `200`:
-```json
-{
-  "id": "uuid",
-  "username": "john_doe",
-  "email": "john@example.com",
-  "role": "PATIENT",
-  "is_active": true,
-  "created_at": "2026-03-25T10:00:00Z"
-}
-```
-
----
-
 ### POST `/internal/auth/validate`
 
 Called by gateway on every request to validate JWT and get user context.
@@ -184,6 +215,38 @@ Response `200`:
 Errors:
 - `401` — invalid or expired token
 - `403` — account inactive
+
+---
+
+## Registration Flow
+
+### Patient Registration
+```
+1. Provider creates patient record in patient-service
+   → MRN auto-generated (MRN-000001)
+   → Provider gives MRN to patient
+
+2. Patient calls POST /api/auth/register/patient
+   → auth-service validates MRN + first_name + last_name
+     against patients table (read access via patient_role)
+   → Creates users row (role=PATIENT)
+   → Links users.id → patients.auth_id
+   → Returns JWT
+```
+
+### Provider Registration
+```
+1. Admin creates provider record in provider-service
+   → provider_code auto-generated (PRV-000001)
+   → Admin gives provider_code to provider
+
+2. Provider calls POST /api/auth/register/provider
+   → auth-service validates provider_code + first_name + last_name
+     against providers table (read access via auth_role)
+   → Creates users row (role=PROVIDER)
+   → Links users.id → providers.auth_id
+   → Returns JWT
+```
 
 ---
 
@@ -212,9 +275,10 @@ Never stored in code or config files.
 - Passwords hashed with BCrypt (strength 12)
 - Access token expiry: 1 hour
 - Refresh token expiry: 7 days
-- Failed login attempts: logged to audit_logs
+- Failed login attempts logged to audit_logs
 - All endpoints behind Cloud Armor WAF
 - Internal validate endpoint not exposed externally — gateway only
+- MRN and provider_code validation prevents unauthorized account creation
 
 ---
 
@@ -224,7 +288,8 @@ Every auth event written to `audit_logs`:
 
 | Event | Action | Resource Type |
 |---|---|---|
-| Register | CREATE | users |
+| Patient register | CREATE | users |
+| Provider register | CREATE | users |
 | Login success | READ | users |
 | Login failure | READ | users |
 | Logout | UPDATE | users |
@@ -239,7 +304,7 @@ Every auth event written to `audit_logs`:
 {
   "error": "ERROR_CODE",
   "message": "Human readable message",
-  "timestamp": "2026-03-25T10:00:00Z"
+  "timestamp": "2026-03-26T10:00:00Z"
 }
 ```
 
@@ -249,7 +314,8 @@ Every auth event written to `audit_logs`:
 
 - [ ] Spring Boot project setup
 - [ ] User entity + repository
-- [ ] Register endpoint
+- [ ] Patient register endpoint + MRN validation
+- [ ] Provider register endpoint + provider_code validation
 - [ ] Login endpoint + JWT generation
 - [ ] Token refresh + logout
 - [ ] Internal validate endpoint
