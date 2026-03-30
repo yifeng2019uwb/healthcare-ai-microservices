@@ -5,24 +5,26 @@
 -- payer_coverage kept for reference — billing/insurance is Phase 2
 
 CREATE TABLE IF NOT EXISTS encounters (
-    id              UUID PRIMARY KEY,
-    patient_id      UUID NOT NULL REFERENCES patients(id),
-    provider_id     UUID NOT NULL REFERENCES providers(id),
-    organization_id UUID NOT NULL REFERENCES organizations(id),
-    payer_id        VARCHAR(36),         -- Phase 2: add FK when payers table exists
-    start_time      TIMESTAMPTZ NOT NULL,
-    stop_time       TIMESTAMPTZ,
-    encounter_class VARCHAR(50),
-    code            VARCHAR(20),
-    description     VARCHAR(255),
-    base_cost       DECIMAL(10,2),
-    total_cost      DECIMAL(10,2),
-    payer_coverage  DECIMAL(10,2),       -- Phase 2: related to payer billing
-    reason_code     VARCHAR(20),
-    reason_desc     VARCHAR(255),
-    created_at      TIMESTAMPTZ DEFAULT NOW()
-    updated_at      TIMESTAMPTZ DEFAULT NOW(),
-    updated_by      VARCHAR(100) DEFAULT 'system'
+    id                  UUID PRIMARY KEY,
+    patient_id          UUID NOT NULL REFERENCES patients(id),
+    provider_id         UUID NOT NULL REFERENCES providers(id),
+    organization_id     UUID NOT NULL REFERENCES organizations(id),
+    payer_id            VARCHAR(36),         -- Phase 2: add FK when payers table exists
+    start_time          TIMESTAMPTZ NOT NULL,
+    stop_time           TIMESTAMPTZ,
+    encounter_class     VARCHAR(50),
+    code                VARCHAR(20),
+    encounter_type      VARCHAR(50),
+    status              VARCHAR(20),
+    description         VARCHAR(255),
+    base_cost           DECIMAL(10,2),
+    total_cost          DECIMAL(10,2),
+    payer_coverage      DECIMAL(10,2),       -- Phase 2: related to payer billing
+    reason_code         VARCHAR(20),
+    reason_desc         VARCHAR(255),
+    created_at          TIMESTAMPTZ DEFAULT NOW()
+    updated_at          TIMESTAMPTZ DEFAULT NOW(),
+    updated_by          VARCHAR(100) DEFAULT 'system'
 );
 
 CREATE INDEX IF NOT EXISTS idx_encounters_patient ON encounters(patient_id);

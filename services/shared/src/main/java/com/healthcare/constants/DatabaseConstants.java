@@ -118,7 +118,7 @@ public final class DatabaseConstants {
     public static final String COL_PAYER_COVERAGE      = "payer_coverage";
     public static final String COL_REASON_CODE         = "reason_code";
     public static final String COL_REASON_DESC         = "reason_desc";
-    public static final String COL_ENCOUNTER_STATUS    = "encounter_status";
+    public static final String COL_ENCOUNTER_STATUS    = "status";
     public static final String COL_ENCOUNTER_TYPE      = "encounter_type";
 
     // ==================== CONDITIONS COLUMNS ====================

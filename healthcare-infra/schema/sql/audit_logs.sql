@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     auth_id         VARCHAR(128),           -- user identity, null for system actions
     user_role       VARCHAR(20),            -- PATIENT, PROVIDER — minimum necessary rule
     -- WHAT
-    action          VARCHAR(10) NOT NULL,   -- READ, CREATE, UPDATE
+    action          VARCHAR(10) NOT NULL,   -- READ, CREATE, UPDATE, LOGIN, LOGOUT, DELETE
     resource_type   VARCHAR(50) NOT NULL,   -- patients, encounters, conditions, allergies
     resource_id     UUID,                   -- specific PHI record accessed
     -- OUTCOME
