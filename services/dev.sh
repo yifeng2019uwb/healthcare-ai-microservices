@@ -31,10 +31,34 @@ check_prerequisites() {
         exit 1
     fi
 
+    # Ensure JAVA_HOME is valid for tools like Maven.
+    # macOS often has java on PATH even when JAVA_HOME is missing.
+    if [ -z "$JAVA_HOME" ] || [ ! -x "$JAVA_HOME/bin/java" ]; then
+        if [ "$(uname)" = "Darwin" ] && command -v /usr/libexec/java_home >/dev/null 2>&1; then
+            DETECTED_JAVA_HOME=$(/usr/libexec/java_home -v "$JAVA_VERSION" 2>/dev/null || true)
+            if [ -n "$DETECTED_JAVA_HOME" ] && [ -x "$DETECTED_JAVA_HOME/bin/java" ]; then
+                export JAVA_HOME="$DETECTED_JAVA_HOME"
+                echo "✅ JAVA_HOME set to $JAVA_HOME"
+            fi
+        fi
+    fi
+
+    if [ -z "$JAVA_HOME" ] || [ ! -x "$JAVA_HOME/bin/java" ]; then
+        echo "❌ JAVA_HOME is not set to a valid JDK."
+        echo "   Example: export JAVA_HOME=\$(/usr/libexec/java_home -v $JAVA_VERSION)"
+        exit 1
+    fi
+
     # Check Maven
     if command -v mvn &> /dev/null; then
-        MAVEN_VER=$(mvn -version | head -n 1 | cut -d' ' -f3)
-        echo "✅ Maven $MAVEN_VER found"
+        if MAVEN_VER_LINE=$(mvn -version 2>/dev/null | awk 'NR==1 {print; exit}'); then
+            MAVEN_VER=$(echo "$MAVEN_VER_LINE" | cut -d' ' -f3)
+            echo "✅ Maven $MAVEN_VER found"
+        else
+            echo "❌ Maven is installed but failed to run."
+            echo "   Please verify JAVA_HOME points to a valid JDK."
+            exit 1
+        fi
     else
         echo "❌ Maven not found. Please install Maven"
         exit 1

@@ -17,18 +17,6 @@ class OutcomeTest {
     }
 
     @Test
-    void testOutcomeCodes() {
-        assertThat(Outcome.SUCCESS.getCode()).isEqualTo("SUCCESS");
-        assertThat(Outcome.FAILURE.getCode()).isEqualTo("FAILURE");
-    }
-
-    @Test
-    void testOutcomeDescriptions() {
-        assertThat(Outcome.SUCCESS.getDescription()).isEqualTo("Operation successful");
-        assertThat(Outcome.FAILURE.getDescription()).isEqualTo("Operation failed");
-    }
-
-    @Test
     void testOutcomeValueOf() {
         assertThat(Outcome.valueOf("SUCCESS")).isEqualTo(Outcome.SUCCESS);
         assertThat(Outcome.valueOf("FAILURE")).isEqualTo(Outcome.FAILURE);

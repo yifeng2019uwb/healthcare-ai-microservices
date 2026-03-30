@@ -4,9 +4,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
 import com.healthcare.exception.ValidationException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,7 +48,7 @@ class BaseEntityTest {
         // Test setting null - should throw ValidationException
         assertThatThrownBy(() -> testEntity.setUpdatedBy(null))
             .isInstanceOf(ValidationException.class)
-            .hasMessageContaining("Updated by cannot be null");
+            .hasMessageContaining("Updated by cannot be null or empty");
 
         // Test setting empty string - should throw ValidationException
         assertThatThrownBy(() -> testEntity.setUpdatedBy(""))
@@ -153,7 +150,7 @@ class BaseEntityTest {
         // Reset to null and test preUpdate - should throw validation exception
         assertThatThrownBy(() -> testEntity.setUpdatedBy(null))
             .isInstanceOf(ValidationException.class)
-            .hasMessageContaining("Updated by cannot be null");
+            .hasMessageContaining("Updated by cannot be null or empty");
 
         auditListener.preUpdate(testEntity);
         assertThat(testEntity.getUpdatedBy()).isNotNull();
@@ -162,10 +159,9 @@ class BaseEntityTest {
 
     @Test
     void testBaseEntityInheritance() {
-        // Test that TestEntity properly inherits from BaseEntity
         assertThat(testEntity).isInstanceOf(BaseEntity.class);
+        assertThat(testEntity).isInstanceOf(ProfileBaseEntity.class);
 
-        // Test that we can access BaseEntity methods
         assertThat(testEntity.getId()).isNull();
         assertThat(testEntity.getCreatedAt()).isNull();
         assertThat(testEntity.getUpdatedAt()).isNull();
@@ -195,8 +191,7 @@ class BaseEntityTest {
     /**
      * Test implementation of BaseEntity for testing purposes
      */
-    private static class TestEntity extends BaseEntity {
-        // This class inherits all BaseEntity functionality
-        // No additional fields needed for testing
+    private static class TestEntity extends ProfileBaseEntity {
+        // Concrete subclass so BaseEntity + UUID id behavior can be exercised in tests
     }
 }

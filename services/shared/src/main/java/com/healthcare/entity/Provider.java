@@ -1,270 +1,270 @@
 package com.healthcare.entity;
 
+import com.healthcare.constants.AppConstants;
 import com.healthcare.constants.DatabaseConstants;
+import com.healthcare.constants.ValidationConstants;
 import com.healthcare.constants.ValidationPatterns;
+import com.healthcare.enums.Gender;
 import com.healthcare.exception.ValidationException;
 import com.healthcare.utils.ValidationUtils;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
-import org.hibernate.annotations.BatchSize;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * Provider entity representing healthcare provider information
- * Maps to provider_profiles table
+ * Provider entity mapping to the providers table.
+ *
+ * Registration flow:
+ *   1. Admin creates provider record → provider_code auto-generated
+ *   2. Admin gives provider_code to provider
+ *   3. Provider registers with provider_code + name
+ *
+ * Trimming and business validation belongs in the service layer.
+ * Entity only checks structural requirements.
  */
 @Entity
 @Table(name = DatabaseConstants.TABLE_PROVIDERS,
        indexes = {
-           @Index(name = DatabaseConstants.INDEX_PROVIDERS_USER_ID_UNIQUE, columnList = DatabaseConstants.COL_USER_ID),
-           @Index(name = DatabaseConstants.INDEX_PROVIDERS_NPI_NUMBER_UNIQUE, columnList = DatabaseConstants.COL_NPI_NUMBER),
-           @Index(name = DatabaseConstants.INDEX_PROVIDERS_SPECIALTY, columnList = DatabaseConstants.COL_SPECIALTY)
+           @Index(name = DatabaseConstants.INDEX_PROVIDERS_ORGANIZATION,
+                  columnList = DatabaseConstants.COL_ORGANIZATION_ID),
+           @Index(name = DatabaseConstants.INDEX_PROVIDERS_AUTH_ID,
+                  columnList = DatabaseConstants.COL_AUTH_ID),
+           @Index(name = DatabaseConstants.INDEX_PROVIDERS_SPECIALITY,
+                  columnList = DatabaseConstants.COL_SPECIALITY),
+           @Index(name = DatabaseConstants.INDEX_PROVIDERS_CODE,
+                  columnList = DatabaseConstants.COL_PROVIDER_CODE),
+           @Index(name = DatabaseConstants.INDEX_PROVIDERS_ACTIVE,
+                  columnList = DatabaseConstants.COL_IS_ACTIVE)
        })
-@NamedEntityGraphs({
-    @NamedEntityGraph(
-        name = DatabaseConstants.ENTITY_GRAPH_PROVIDER_WITH_USER,
-        attributeNodes = {
-            @NamedAttributeNode(DatabaseConstants.ATTR_USER)
-        }
-    ),
-    @NamedEntityGraph(
-        name = DatabaseConstants.ENTITY_GRAPH_PROVIDER_WITH_APPOINTMENTS,
-        attributeNodes = {
-            @NamedAttributeNode(DatabaseConstants.ATTR_APPOINTMENTS)
-        }
-    ),
-    @NamedEntityGraph(
-        name = DatabaseConstants.ENTITY_GRAPH_PROVIDER_FULL_DETAILS,
-        attributeNodes = {
-            @NamedAttributeNode(DatabaseConstants.ATTR_USER),
-            @NamedAttributeNode(DatabaseConstants.ATTR_APPOINTMENTS)
-        }
-    )
-})
-public class Provider extends BaseEntity {
+public class Provider extends ProfileBaseEntity {
+
+    private static final String FIELD_PROVIDER_NAME  = "Provider name";
+    private static final String FIELD_LICENSE_NUMBER  = "License number";
+    private static final String FIELD_PHONE = "Phone";
+    private static final String FIELD_ORGANIZATION_ID = "Organization ID";
+
+    // ------------------------------------------------------------------
+    // Synthea fields
+    // ------------------------------------------------------------------
+
+    @Column(name = DatabaseConstants.COL_ORGANIZATION_ID)
+    private UUID organizationId;
+
+    @Size(max = DatabaseConstants.LEN_PROVIDER_NAME)
+    @Column(name = DatabaseConstants.COL_NAME)
+    private String name;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = DatabaseConstants.COL_GENDER)
+    private Gender gender;
+
+    @Size(max = DatabaseConstants.LEN_SPECIALITY)
+    @Column(name = DatabaseConstants.COL_SPECIALITY)
+    private String speciality;
+
+    /** Synthea metric - number of encounters recorded. */
+    @Column(name = DatabaseConstants.COL_ENCOUNTERS)
+    private Integer encounters;
+
+    /** Synthea metric - number of procedures recorded. */
+    @Column(name = DatabaseConstants.COL_PROCEDURES)
+    private Integer procedures;
+
+    // ------------------------------------------------------------------
+    // Application fields
+    // ------------------------------------------------------------------
 
     /**
-     * Foreign key linking to user_profiles.id
-     * Immutable after creation - cannot be changed
+     * Links to users.id after provider registers an account.
+     * Null until registration is complete.
      */
-    @NotNull
-    @Column(name = DatabaseConstants.COL_USER_ID, nullable = false)
-    private UUID userId;
+    @Column(name = DatabaseConstants.COL_AUTH_ID, unique = true)
+    private UUID authId;
 
-    @Size(max = 50)
-    @Column(name = DatabaseConstants.COL_LICENSE_NUMBERS)
-    private String licenseNumbers;
+    /**
+     * Provider code — auto-generated by DB sequence.
+     * Format: PRV-000001.
+     * Used for provider registration: provider_code + name must match.
+     */
+    @Size(max = DatabaseConstants.LEN_PROVIDER_CODE)
+    @Column(name = DatabaseConstants.COL_PROVIDER_CODE, unique = true)
+    private String providerCode;
 
-    @NotBlank
-    @Size(max = 10)
-    @Pattern(regexp = ValidationPatterns.NPI, message = "NPI number must be exactly 10 digits")
-    @Column(name = DatabaseConstants.COL_NPI_NUMBER, nullable = false, unique = true)
-    private String npiNumber;
+    @Size(max = DatabaseConstants.LEN_PHONE)
+    @Pattern(regexp = ValidationPatterns.PHONE,
+             message = "Phone must be a valid international format")
+    @Column(name = DatabaseConstants.COL_PHONE)
+    private String phone;
 
-    @Size(max = 100)
-    @Column(name = DatabaseConstants.COL_SPECIALTY)
-    private String specialty;
+    @Size(max = DatabaseConstants.LEN_LICENSE_NUMBER)
+    @Column(name = DatabaseConstants.COL_LICENSE_NUMBER)
+    private String licenseNumber;
 
-    @Column(name = DatabaseConstants.COL_QUALIFICATIONS, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TEXT)
-    private String qualifications;
+    @Column(name = DatabaseConstants.COL_IS_ACTIVE)
+    private Boolean isActive = true;
 
-    @Column(name = DatabaseConstants.COL_BIO, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TEXT)
+    @Column(name = DatabaseConstants.COL_BIO,
+            columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TEXT)
     private String bio;
 
-    @Size(max = 20)
-    @Column(name = DatabaseConstants.COL_OFFICE_PHONE)
-    private String officePhone;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = DatabaseConstants.COL_CUSTOM_DATA, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
-    private JsonNode customData;
-
-    // ==================== JPA RELATIONSHIPS ====================
+    // ------------------------------------------------------------------
+    // JPA relationships
+    // ------------------------------------------------------------------
 
     /**
-     * Many-to-one relationship with User
-     * Each provider belongs to exactly one user
+     * Navigation to the linked organization.
+     * insertable/updatable = false — organizationId column manages the FK.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = DatabaseConstants.COL_USER_ID, nullable = false, insertable = false, updatable = false)
+    @JoinColumn(name = DatabaseConstants.COL_ORGANIZATION_ID,
+                insertable = false, updatable = false)
+    private Organization organization;
+
+    /**
+     * Navigation to the linked user account.
+     * Null until provider completes registration.
+     * insertable/updatable = false — authId column manages the FK.
+     */
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = DatabaseConstants.COL_AUTH_ID,
+                insertable = false, updatable = false)
     private User user;
 
-    /**
-     * One-to-many relationship with Appointments
-     * A provider can have multiple appointments
-     *
-     * Performance optimization:
-     * - LAZY loading prevents unnecessary data fetching
-     * - @BatchSize reduces N+1 query problems by batching related entity loads
-     * - orphanRemoval ensures clean deletion of appointments
-     */
-    @OneToMany(mappedBy = DatabaseConstants.ATTR_PROVIDER,
-               cascade = CascadeType.ALL,
-               fetch = FetchType.LAZY,
-               orphanRemoval = true)
-    @BatchSize(size = 20)
-    private java.util.List<Appointment> appointments = new java.util.ArrayList<>();
+    // ------------------------------------------------------------------
+    // Constructors
+    // ------------------------------------------------------------------
 
-    // ==================== CONSTRUCTORS ====================
-
-    /**
-     * Private constructor for JPA only.
-     */
-    @SuppressWarnings("unused")
+    /** For JPA only. */
+    @SuppressWarnings(AppConstants.SUPPRESS_UNUSED)
     private Provider() {}
 
     /**
-     * Simple constructor for required fields only.
-     * Use setters for optional fields.
+     * Minimal constructor for API-created provider records.
      *
-     * @param userId The ID of the user this provider belongs to
-     * @param npiNumber The National Provider Identifier (10 digits)
+     * @param organizationId the organization this provider belongs to
+     * @param name           provider full name
      */
-    public Provider(UUID userId, String npiNumber) {
-        if (userId == null) {
-            throw new ValidationException("User ID is required");
-        }
-        if (npiNumber == null || npiNumber.trim().isEmpty()) {
-            throw new ValidationException("NPI number is required");
-        }
+    public Provider(UUID organizationId, String name) {
+        if (organizationId == null)
+            throw new ValidationException(FIELD_ORGANIZATION_ID + " is required");
+        if (name == null || name.isBlank())
+            throw new ValidationException(FIELD_PROVIDER_NAME + " is required");
 
-        this.userId = userId;
-        this.npiNumber = npiNumber;
+        this.organizationId = organizationId;
+        this.name           = name.trim();
+        this.isActive       = true;
     }
 
-    // ==================== BUSINESS LOGIC METHODS ====================
+    // ------------------------------------------------------------------
+    // Business methods
+    // ------------------------------------------------------------------
 
     /**
-     * Validates that the provider object is in a valid state.
-     * This should be called after object creation to ensure all required fields are set.
-     *
-     * @throws ValidationException if the provider is in an invalid state
+     * Whether this provider has registered an account.
      */
-    public void validateState() {
-        if (userId == null) {
-            throw new ValidationException("User ID is required");
-        }
-        if (npiNumber == null || npiNumber.trim().isEmpty()) {
-            throw new ValidationException("NPI number is required");
-        }
-        if (!npiNumber.matches(ValidationPatterns.NPI)) {
-            throw new ValidationException("NPI number must be exactly 10 digits");
-        }
+    public boolean isRegistered() {
+        return authId != null;
     }
 
     /**
-     * Checks if this provider has complete professional credentials.
+     * Link this provider record to a user account after successful registration.
+     * Can only be set once — cannot re-link to a different user.
      *
-     * @return true if provider has specialty, license numbers, and qualifications
+     * @param userId the UUID from users.id
      */
-    public boolean hasCompleteCredentials() {
-        return specialty != null && !specialty.trim().isEmpty() &&
-               licenseNumbers != null && !licenseNumbers.trim().isEmpty() &&
-               qualifications != null && !qualifications.trim().isEmpty();
+    public void linkAuthAccount(UUID userId) {
+        if (userId == null)
+            throw new ValidationException("User ID cannot be null");
+        if (this.authId != null)
+            throw new ValidationException("Provider is already linked to an account");
+        this.authId = userId;
     }
 
-    // Getters and Setters
-
-    public UUID getUserId() {
-        return userId;
+    /**
+     * Validate registration credentials.
+     * Provider must provide provider_code + name to register.
+     *
+     * @param providerCode provided provider code
+     * @param name         provided name
+     * @return true if credentials match this provider record
+     */
+    public boolean matchesRegistrationCredentials(String providerCode, String name) {
+        if (providerCode == null || name == null)
+            return false;
+        return this.providerCode.equalsIgnoreCase(providerCode)
+                && this.name.equalsIgnoreCase(name.trim());
     }
 
-    // Note: userId is immutable after creation - use factory methods to create new providers
-
-    public String getLicenseNumbers() {
-        return licenseNumbers;
+    public boolean isActive() {
+        return Boolean.TRUE.equals(isActive);
     }
 
-    public void setLicenseNumbers(String licenseNumbers) {
-        this.licenseNumbers = ValidationUtils.validateAndNormalizeString(
-            licenseNumbers,
-            "License numbers",
-            50
-        );
+    // ------------------------------------------------------------------
+    // Getters
+    // ------------------------------------------------------------------
+
+    public UUID getOrganizationId()   { return organizationId; }
+    public String getName()           { return name; }
+    public Gender getGender()         { return gender; }
+    public String getSpeciality()     { return speciality; }
+    public Integer getEncounters()    { return encounters; }
+    public Integer getProcedures()    { return procedures; }
+    public UUID getAuthId()           { return authId; }
+    public String getProviderCode()   { return providerCode; }
+    public String getPhone()          { return phone; }
+    public String getLicenseNumber()  { return licenseNumber; }
+    public Boolean getIsActive()      { return isActive; }
+    public String getBio()            { return bio; }
+    public Organization getOrganization() { return organization; }
+    public User getUser()             { return user; }
+
+    // ------------------------------------------------------------------
+    // Setters
+    // authId     — set only via linkAuthAccount(), no direct setter
+    // providerCode — set by DB sequence, no setter
+    // ------------------------------------------------------------------
+
+    public void setName(String name) {
+        this.name = ValidationUtils.validateAndNormalizeString(
+                name, FIELD_PROVIDER_NAME, ValidationConstants.MAX_FULL_NAME_LENGTH);
     }
 
-    public String getNpiNumber() {
-        return npiNumber;
+    public void setGender(Gender gender)           { this.gender = gender; }
+    public void setSpeciality(String speciality)   { this.speciality = speciality; }
+    public void setEncounters(Integer encounters)  { this.encounters = encounters; }
+    public void setProcedures(Integer procedures)  { this.procedures = procedures; }
+
+    public void setPhone(String phone) {
+        this.phone = ValidationUtils.validateAndNormalizeString(
+                phone, FIELD_PHONE,
+                ValidationConstants.MAX_PHONE_LENGTH,
+                ValidationPatterns.PHONE,
+               FIELD_PHONE +  " must be a valid international format");
     }
 
-    // Note: npiNumber is immutable after creation - use factory methods to create new providers
-
-
-    public String getSpecialty() {
-        return specialty;
+    public void setLicenseNumber(String licenseNumber) {
+        this.licenseNumber = ValidationUtils.validateAndNormalizeString(
+                licenseNumber, FIELD_LICENSE_NUMBER, DatabaseConstants.LEN_LICENSE_NUMBER);
     }
 
-    public void setSpecialty(String specialty) {
-        this.specialty = ValidationUtils.validateAndNormalizeString(
-            specialty,
-            "Specialty",
-            100
-        );
-    }
-
-    public String getQualifications() {
-        return qualifications;
-    }
-
-    public void setQualifications(String qualifications) {
-        this.qualifications = ValidationUtils.validateAndNormalizeString(
-            qualifications,
-            "Qualifications",
-            null,
-            null,
-            null
-        );
-    }
-
-    public String getBio() {
-        return bio;
+    public void setIsActive(Boolean isActive) {
+        if (isActive == null)
+            throw new ValidationException("isActive cannot be null");
+        this.isActive = isActive;
     }
 
     public void setBio(String bio) {
-        this.bio = ValidationUtils.validateAndNormalizeString(
-            bio,
-            "Bio",
-            null,
-            null,
-            null
-        );
+        this.bio = bio;
     }
-
-    public String getOfficePhone() {
-        return officePhone;
-    }
-
-    public void setOfficePhone(String officePhone) {
-        this.officePhone = ValidationUtils.validateAndNormalizeString(
-            officePhone,
-            "Office phone",
-            20,
-            ValidationPatterns.PHONE,
-            "Office phone must be a valid international format"
-        );
-    }
-
-    public JsonNode getCustomData() {
-        return customData;
-    }
-
-    public void setCustomData(JsonNode customData) {
-        this.customData = customData;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public java.util.List<Appointment> getAppointments() {
-        return appointments;
-    }
-
 }

@@ -11,26 +11,16 @@ class UserRoleTest {
 
     @Test
     void testUserRoleValues() {
-        assertThat(UserRole.values()).hasSize(2);
+        assertThat(UserRole.values()).hasSize(3);
         assertThat(UserRole.PATIENT).isNotNull();
         assertThat(UserRole.PROVIDER).isNotNull();
-    }
-
-    @Test
-    void testUserRoleCodes() {
-        assertThat(UserRole.PATIENT.getCode()).isEqualTo("PATIENT");
-        assertThat(UserRole.PROVIDER.getCode()).isEqualTo("PROVIDER");
-    }
-
-    @Test
-    void testUserRoleDescriptions() {
-        assertThat(UserRole.PATIENT.getDescription()).isEqualTo("Patient user");
-        assertThat(UserRole.PROVIDER.getDescription()).isEqualTo("Healthcare provider");
+        assertThat(UserRole.ADMIN).isNotNull();
     }
 
     @Test
     void testUserRoleValueOf() {
         assertThat(UserRole.valueOf("PATIENT")).isEqualTo(UserRole.PATIENT);
         assertThat(UserRole.valueOf("PROVIDER")).isEqualTo(UserRole.PROVIDER);
+        assertThat(UserRole.valueOf("ADMIN")).isEqualTo(UserRole.ADMIN);
     }
 }

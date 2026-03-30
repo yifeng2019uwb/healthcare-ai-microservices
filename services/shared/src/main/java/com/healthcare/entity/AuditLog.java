@@ -1,232 +1,165 @@
 package com.healthcare.entity;
 
+import com.healthcare.constants.AppConstants;
 import com.healthcare.constants.DatabaseConstants;
 import com.healthcare.enums.ActionType;
 import com.healthcare.enums.Outcome;
-import com.healthcare.enums.ResourceType;
-import com.healthcare.exception.ValidationException;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
+import com.healthcare.enums.UserRole;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.Size;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.net.InetAddress;
+import java.time.OffsetDateTime;
 import java.util.UUID;
-import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * Audit log entity for tracking system activities
- * Maps to audit_logs table
+ * AuditLog entity mapping to the audit_logs table.
+ *
+ * HIPAA Security Rule 45 CFR § 164.312(b) — records all access to ePHI.
+ * Append only — never updated or deleted.
+ * Retention: minimum 6 years per HIPAA requirement.
+ *
+ * Does NOT extend BaseEntity or ProfileBaseEntity —
+ * audit_logs has no updated_at or updated_by columns.
  */
 @Entity
 @Table(name = DatabaseConstants.TABLE_AUDIT_LOGS,
        indexes = {
-           @Index(name = DatabaseConstants.INDEX_AUDIT_LOGS_USER_ACTIVITY, columnList = DatabaseConstants.COL_USER_ID + "," + DatabaseConstants.COL_CREATED_AT),
-           @Index(name = DatabaseConstants.INDEX_AUDIT_LOGS_RESOURCE_ACTIVITY, columnList = DatabaseConstants.COL_RESOURCE_TYPE + "," + DatabaseConstants.COL_RESOURCE_ID + "," + DatabaseConstants.COL_CREATED_AT),
-           @Index(name = DatabaseConstants.INDEX_AUDIT_LOGS_SECURITY_MONITORING, columnList = DatabaseConstants.COL_ACTION_TYPE + "," + DatabaseConstants.COL_OUTCOME + "," + DatabaseConstants.COL_CREATED_AT)
+           @Index(name = DatabaseConstants.INDEX_AUDIT_AUTH_ID,
+                  columnList = DatabaseConstants.COL_AUTH_ID),
+           @Index(name = DatabaseConstants.INDEX_AUDIT_RESOURCE,
+                  columnList = DatabaseConstants.COL_RESOURCE_TYPE + "," + DatabaseConstants.COL_RESOURCE_ID),
+           @Index(name = DatabaseConstants.INDEX_AUDIT_CREATED_AT,
+                  columnList = DatabaseConstants.COL_CREATED_AT)
        })
-public class AuditLog extends BaseEntity {
+public class AuditLog {
 
-    /**
-     * Foreign key linking to user_profiles.id
-     * Immutable after creation - cannot be changed
-     */
-    @NotNull
-    @Column(name = DatabaseConstants.COL_USER_ID, nullable = false)
-    private UUID userId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = DatabaseConstants.COL_ID,
+            updatable = false,
+            nullable = false,
+            columnDefinition = "UUID DEFAULT gen_random_uuid()")
+    private UUID id;
 
-    @NotNull
+    // WHO
+    /** User identity — null for system actions. */
+    @Size(max = DatabaseConstants.LEN_AUDIT_AUTH_ID)
+    @Column(name = DatabaseConstants.COL_AUTH_ID)
+    private String authId;
+
     @Enumerated(EnumType.STRING)
-    @Column(name = DatabaseConstants.COL_ACTION_TYPE, nullable = false)
-    private ActionType actionType;
+    @Size(max = DatabaseConstants.LEN_ROLE)
+    @Column(name = DatabaseConstants.COL_USER_ROLE)
+    private UserRole userRole;
 
-    @NotNull
+    // WHAT
     @Enumerated(EnumType.STRING)
-    @Column(name = DatabaseConstants.COL_RESOURCE_TYPE, nullable = false)
-    private ResourceType resourceType;
+    @Size(max = DatabaseConstants.LEN_ACTION)
+    @Column(name = DatabaseConstants.COL_ACTION)
+    private ActionType action;
+
+    @Size(max = DatabaseConstants.LEN_RESOURCE_TYPE)
+    @Column(name = DatabaseConstants.COL_RESOURCE_TYPE)
+    private String resourceType;
 
     @Column(name = DatabaseConstants.COL_RESOURCE_ID)
     private UUID resourceId;
 
-    @NotNull
+    // OUTCOME
     @Enumerated(EnumType.STRING)
-    @Column(name = DatabaseConstants.COL_OUTCOME, nullable = false)
+    @Size(max = DatabaseConstants.LEN_OUTCOME)
+    @Column(name = DatabaseConstants.COL_OUTCOME)
     private Outcome outcome;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = DatabaseConstants.COL_DETAILS, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
-    private JsonNode details;
-
-    @Column(name = DatabaseConstants.COL_SOURCE_IP, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_INET)
+    // WHERE FROM
+    @Column(name = DatabaseConstants.COL_SOURCE_IP,
+            columnDefinition = DatabaseConstants.COLUMN_DEFINITION_INET)
     private InetAddress sourceIp;
 
-    @Column(name = DatabaseConstants.COL_USER_AGENT, columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TEXT)
+    @Column(name = DatabaseConstants.COL_USER_AGENT,
+            columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TEXT)
     private String userAgent;
 
-    // ==================== CONSTRUCTORS ====================
+    // WHEN
+    @CreationTimestamp
+    @Column(name = DatabaseConstants.COL_CREATED_AT,
+            updatable = false,
+            columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TIMESTAMPTZ)
+    private OffsetDateTime createdAt;
 
-    /**
-     * Private constructor for JPA only.
-     */
-    @SuppressWarnings("unused")
+    // ------------------------------------------------------------------
+    // Constructors
+    // ------------------------------------------------------------------
+
+    /** For JPA only. */
+    @SuppressWarnings(AppConstants.SUPPRESS_UNUSED)
     private AuditLog() {}
 
     /**
-     * Simple constructor for required fields only.
-     * Use setters for optional fields.
+     * Create an audit log entry.
      *
-     * @param userId The ID of the user performing the action
-     * @param actionType The type of action performed
-     * @param resourceType The type of resource affected
-     * @param outcome The outcome of the action
+     * @param action       READ, CREATE, UPDATE
+     * @param resourceType e.g. patients, encounters, conditions
+     * @param outcome      SUCCESS or FAILURE
      */
-    public AuditLog(UUID userId, ActionType actionType, ResourceType resourceType, Outcome outcome) {
-        if (userId == null) {
-            throw new ValidationException("User ID is required");
-        }
-        if (actionType == null) {
-            throw new ValidationException("Action type is required");
-        }
-        if (resourceType == null) {
-            throw new ValidationException("Resource type is required");
-        }
-        if (outcome == null) {
-            throw new ValidationException("Outcome is required");
-        }
-
-        this.userId = userId;
-        this.actionType = actionType;
+    public AuditLog(ActionType action, String resourceType, Outcome outcome) {
+        this.action       = action;
         this.resourceType = resourceType;
-        this.outcome = outcome;
+        this.outcome      = outcome;
     }
 
+    // ------------------------------------------------------------------
+    // Getters — no setters, append only
+    // ------------------------------------------------------------------
 
-    // Getters and Setters
+    public UUID getId()              { return id; }
+    public String getAuthId()        { return authId; }
+    public UserRole getUserRole()    { return userRole; }
+    public ActionType getAction()    { return action; }
+    public String getResourceType()  { return resourceType; }
+    public UUID getResourceId()      { return resourceId; }
+    public Outcome getOutcome()      { return outcome; }
+    public InetAddress getSourceIp() { return sourceIp; }
+    public String getUserAgent()     { return userAgent; }
+    public OffsetDateTime getCreatedAt() { return createdAt; }
 
-    public UUID getUserId() {
-        return userId;
+    // ------------------------------------------------------------------
+    // Builder-style setters — called before first save only
+    // ------------------------------------------------------------------
+
+    public AuditLog withAuthId(String authId) {
+        this.authId = authId;
+        return this;
     }
 
-    // Note: userId is immutable after creation - use factory methods to create new audit logs
-
-    public ActionType getActionType() {
-        return actionType;
+    public AuditLog withUserRole(UserRole userRole) {
+        this.userRole = userRole;
+        return this;
     }
 
-
-    public ResourceType getResourceType() {
-        return resourceType;
-    }
-
-
-    public UUID getResourceId() {
-        return resourceId;
-    }
-
-
-    public Outcome getOutcome() {
-        return outcome;
-    }
-
-
-    public JsonNode getDetails() {
-        return details;
-    }
-
-    public void setDetails(JsonNode details) {
-        this.details = details;
-    }
-
-    public InetAddress getSourceIp() {
-        return sourceIp;
-    }
-
-    public void setSourceIp(InetAddress sourceIp) {
-        this.sourceIp = validateSourceIp(sourceIp);
-    }
-
-    public void setResourceId(UUID resourceId) {
+    public AuditLog withResourceId(UUID resourceId) {
         this.resourceId = resourceId;
+        return this;
     }
 
-
-    public String getUserAgent() {
-        return userAgent;
+    public AuditLog withSourceIp(InetAddress sourceIp) {
+        this.sourceIp = sourceIp;
+        return this;
     }
 
-    public void setUserAgent(String userAgent) {
-        this.userAgent = this.validateUserAgent(userAgent);
+    public AuditLog withUserAgent(String userAgent) {
+        this.userAgent = userAgent;
+        return this;
     }
-
-    // ==================== VALIDATION METHODS ====================
-
-    /**
-     * Validates the source IP address.
-     * If not null, ensures it's a valid IP address format.
-     *
-     * @param sourceIp the IP address to validate
-     * @return the validated IP address or null
-     * @throws ValidationException if the IP address format is invalid
-     */
-    private InetAddress validateSourceIp(InetAddress sourceIp) {
-        if (sourceIp == null) {
-            return null;
-        }
-
-        // InetAddress.getByName() already validates the format, so if we have an InetAddress object,
-        // it's already valid. We only reject multicast addresses as they're not valid source IPs.
-        // Loopback addresses are valid for development, testing, and local environments.
-
-        if (sourceIp.isMulticastAddress()) {
-            throw new ValidationException("Source IP cannot be a multicast address");
-        }
-
-        return sourceIp;
-    }
-
-    private String validateUserAgent(String userAgent) {
-        if (userAgent == null || userAgent.trim().isEmpty()) {
-            return null;
-        }
-
-        String trimmed = userAgent.trim();
-        if (trimmed.length() > 500) {
-            throw new ValidationException("User agent cannot exceed 500 characters");
-        }
-
-        return trimmed;
-    }
-
-    // ==================== BUSINESS LOGIC METHODS ====================
-
-    /**
-     * Validates that the audit log object is in a valid state.
-     * This should be called after object creation to ensure all required fields are set.
-     *
-     * @throws ValidationException if the audit log is in an invalid state
-     */
-    public void validateState() {
-        if (userId == null) {
-            throw new ValidationException("User ID is required");
-        }
-        if (actionType == null) {
-            throw new ValidationException("Action type is required");
-        }
-        if (resourceType == null) {
-            throw new ValidationException("Resource type is required");
-        }
-        if (outcome == null) {
-            throw new ValidationException("Outcome is required");
-        }
-    }
-
-    /**
-     * Checks if this audit log has security details recorded.
-     *
-     * @return true if both source IP and user agent are recorded
-     */
-    public boolean hasSecurityDetails() {
-        return sourceIp != null && userAgent != null && !userAgent.trim().isEmpty();
-    }
-
 }

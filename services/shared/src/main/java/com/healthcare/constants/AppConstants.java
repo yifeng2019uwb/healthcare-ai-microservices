@@ -42,6 +42,7 @@ public final class AppConstants {
     public static final String JWT_CLAIM_USERNAME = "username";
     public static final String JWT_CLAIM_EMAIL    = "email";
 
+
     // ------------------------------------------------------------------
     // User roles (string form — mirrors UserRole enum, for use in
     // Spring Security expressions like hasRole(...))
@@ -49,4 +50,11 @@ public final class AppConstants {
 
     public static final String ROLE_PATIENT  = "PATIENT";
     public static final String ROLE_PROVIDER = "PROVIDER";
+
+    public static final String SUPPRESS_UNUSED = "unused";
+
+
+    public static final String FIELD_PATIENT_ID   = "patientId";
+    public static final String FIELD_ENCOUNTER_ID = "encounterId";
+
 }
