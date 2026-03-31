@@ -8,49 +8,31 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Data Access Object for Patient entity
- * Handles database operations for patient profiles
+ * DAO for Patient entity.
+ * Maps to patients table — owned by patient-service.
  */
 @Repository
 public interface PatientDao extends JpaRepository<Patient, UUID> {
 
     /**
-     * Find patient by user ID
-     * Used to get patient profile from user ID (1:1 relationship)
-     *
-     * @param userId The user ID
-     * @return Optional containing the patient if found
+     * Find patient by MRN.
+     * Used for patient registration — MRN + first_name + last_name validation.
      */
-    Optional<Patient> findByUserId(UUID userId);
+    Optional<Patient> findByMrn(String mrn);
 
     /**
-     * Find patient by patient number
-     * Used for patient lookup by unique patient number
-     *
-     * @param patientNumber The patient number (format: PAT-XXXXXXXX)
-     * @return Optional containing the patient if found
+     * Find patient by auth_id.
+     * Used after login to fetch patient profile.
      */
-    Optional<Patient> findByPatientNumber(String patientNumber);
+    Optional<Patient> findByAuthId(UUID authId);
 
     /**
-     * Create a new patient
-     * Saves the patient entity to the database
-     *
-     * @param patient The patient entity to create
-     * @return The created patient entity
+     * Check if MRN exists.
      */
-    default Patient create(Patient patient) {
-        return save(patient);
-    }
+    boolean existsByMrn(String mrn);
 
     /**
-     * Update an existing patient
-     * Updates the patient entity in the database
-     *
-     * @param patient The patient entity to update
-     * @return The updated patient entity
+     * Check if auth_id is already linked.
      */
-    default Patient update(Patient patient) {
-        return save(patient);
-    }
+    boolean existsByAuthId(UUID authId);
 }

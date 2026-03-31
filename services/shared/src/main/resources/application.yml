@@ -1,8 +1,11 @@
 spring:
+  application:
+    name: shared-test
+
   datasource:
-    url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:54322/postgres}"
-    username: "${SPRING_DATASOURCE_USERNAME:postgres}"
-    password: "${SPRING_DATASOURCE_PASSWORD:postgres}"
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -13,17 +16,3 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        jdbc:
-          time_zone: UTC
-        type:
-          sql: cast
-        # PostgreSQL enum handling - cast strings to enum types
-        jdbc:
-          time_zone: UTC
-        # Enable PostgreSQL enum support
-        connection:
-          provider_disables_autocommit: true
-
-logging:
-  level:
-    com.healthcare: INFO

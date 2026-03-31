@@ -2,8 +2,6 @@ package com.healthcare.dao;
 
 import com.healthcare.entity.Provider;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -11,58 +9,41 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Data Access Object for Provider entity
- * Handles database operations for provider profiles
+ * DAO for Provider entity.
+ * Maps to providers table — owned by provider-service.
  */
 @Repository
 public interface ProviderDao extends JpaRepository<Provider, UUID> {
 
     /**
-     * Find provider by user ID
-     * Used to get provider profile from user ID (1:1 relationship)
-     *
-     * @param userId The user ID
-     * @return Optional containing the provider if found
+     * Find provider by provider_code.
+     * Used for provider registration validation.
      */
-    Optional<Provider> findByUserId(UUID userId);
+    Optional<Provider> findByProviderCode(String providerCode);
 
     /**
-     * Find provider by NPI number
-     * Used for provider lookup by unique NPI number
-     *
-     * @param npiNumber The NPI number (10 digits)
-     * @return Optional containing the provider if found
+     * Find provider by auth_id.
+     * Used after login to fetch provider profile.
      */
-    Optional<Provider> findByNpiNumber(String npiNumber);
+    Optional<Provider> findByAuthId(UUID authId);
 
     /**
-     * Find providers by specialty
-     * Used for provider search by medical specialty
-     *
-     * @param specialty The medical specialty
-     * @return List of providers with the specified specialty
+     * Find all providers in an organization.
      */
-    List<Provider> findBySpecialty(String specialty);
+    List<Provider> findByOrganizationId(UUID organizationId);
 
     /**
-     * Create a new provider
-     * Saves the provider entity to the database
-     *
-     * @param provider The provider entity to create
-     * @return The created provider entity
+     * Find active providers by speciality.
      */
-    default Provider create(Provider provider) {
-        return save(provider);
-    }
+    List<Provider> findBySpecialityAndIsActive(String speciality, Boolean isActive);
 
     /**
-     * Update an existing provider
-     * Updates the provider entity in the database
-     *
-     * @param provider The provider entity to update
-     * @return The updated provider entity
+     * Check if provider_code exists.
      */
-    default Provider update(Provider provider) {
-        return save(provider);
-    }
+    boolean existsByProviderCode(String providerCode);
+
+    /**
+     * Check if auth_id is already linked.
+     */
+    boolean existsByAuthId(UUID authId);
 }

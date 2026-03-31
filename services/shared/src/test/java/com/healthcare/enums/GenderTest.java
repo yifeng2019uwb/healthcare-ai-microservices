@@ -12,17 +12,17 @@ class GenderTest {
     @Test
     void testGenderValues() {
         assertThat(Gender.values()).hasSize(4);
-        assertThat(Gender.MALE).isNotNull();
-        assertThat(Gender.FEMALE).isNotNull();
-        assertThat(Gender.OTHER).isNotNull();
+        assertThat(Gender.M).isNotNull();
+        assertThat(Gender.F).isNotNull();
+        assertThat(Gender.O).isNotNull();
         assertThat(Gender.UNKNOWN).isNotNull();
     }
 
     @Test
     void testGenderValueOf() {
-        assertThat(Gender.valueOf("MALE")).isEqualTo(Gender.MALE);
-        assertThat(Gender.valueOf("FEMALE")).isEqualTo(Gender.FEMALE);
-        assertThat(Gender.valueOf("OTHER")).isEqualTo(Gender.OTHER);
+        assertThat(Gender.valueOf("M")).isEqualTo(Gender.M);
+        assertThat(Gender.valueOf("F")).isEqualTo(Gender.F);
+        assertThat(Gender.valueOf("O")).isEqualTo(Gender.O);
         assertThat(Gender.valueOf("UNKNOWN")).isEqualTo(Gender.UNKNOWN);
     }
 }
