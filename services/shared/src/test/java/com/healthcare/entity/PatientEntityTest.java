@@ -1,8 +1,11 @@
 package com.healthcare.entity;
 
+import com.healthcare.enums.Gender;
 import com.healthcare.exception.ValidationException;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -149,7 +152,127 @@ class PatientEntityTest {
             fail("Failed to set user field via reflection: " + e.getMessage());
         }
 
-        // Now should return the user
         assertThat(patient.getUser()).isEqualTo(user);
+    }
+
+    @Test
+    void getDemographicFields_nullByDefault() {
+        Patient patient = createPatient();
+        assertThat(patient.getBirthdate()).isNull();
+        assertThat(patient.getDeathdate()).isNull();
+        assertThat(patient.getSsn()).isNull();
+        assertThat(patient.getDrivers()).isNull();
+        assertThat(patient.getPassport()).isNull();
+        assertThat(patient.getPrefix()).isNull();
+        assertThat(patient.getMiddleName()).isNull();
+        assertThat(patient.getSuffix()).isNull();
+        assertThat(patient.getMaiden()).isNull();
+        assertThat(patient.getMarital()).isNull();
+        assertThat(patient.getRace()).isNull();
+        assertThat(patient.getEthnicity()).isNull();
+        assertThat(patient.getGender()).isNull();
+        assertThat(patient.getBirthplace()).isNull();
+        assertThat(patient.getAddress()).isNull();
+        assertThat(patient.getCity()).isNull();
+        assertThat(patient.getState()).isNull();
+        assertThat(patient.getCounty()).isNull();
+        assertThat(patient.getFips()).isNull();
+        assertThat(patient.getZip()).isNull();
+        assertThat(patient.getLat()).isNull();
+        assertThat(patient.getLon()).isNull();
+        assertThat(patient.getHealthcareExpenses()).isNull();
+        assertThat(patient.getHealthcareCoverage()).isNull();
+        assertThat(patient.getIncome()).isNull();
+        assertThat(patient.getBloodType()).isNull();
+    }
+
+    @Test
+    void setDemographicFields() {
+        Patient patient = createPatient();
+        LocalDate birthdate = LocalDate.of(1990, 5, 15);
+        LocalDate deathdate = LocalDate.of(2050, 1, 1);
+        BigDecimal lat = new BigDecimal("47.608013");
+        BigDecimal lon = new BigDecimal("-122.335167");
+        BigDecimal expenses = new BigDecimal("1500.00");
+        BigDecimal coverage = new BigDecimal("1200.00");
+
+        patient.setBirthdate(birthdate);
+        patient.setDeathdate(deathdate);
+        patient.setSsn("999-99-9999");
+        patient.setDrivers("S99999999");
+        patient.setPassport("X12345678");
+        patient.setPrefix("Mr.");
+        patient.setSuffix("Jr.");
+        patient.setMaiden("Smith");
+        patient.setMarital("M");
+        patient.setRace("white");
+        patient.setEthnicity("nonhispanic");
+        patient.setGender(Gender.M);
+        patient.setBirthplace("Boston MA US");
+        patient.setAddress("123 Main St");
+        patient.setCity("Seattle");
+        patient.setState("WA");
+        patient.setCounty("King");
+        patient.setFips("53033");
+        patient.setZip("98101");
+        patient.setLat(lat);
+        patient.setLon(lon);
+        patient.setHealthcareExpenses(expenses);
+        patient.setHealthcareCoverage(coverage);
+        patient.setIncome(75000);
+        patient.setBloodType("O+");
+
+        assertThat(patient.getBirthdate()).isEqualTo(birthdate);
+        assertThat(patient.getDeathdate()).isEqualTo(deathdate);
+        assertThat(patient.getSsn()).isEqualTo("999-99-9999");
+        assertThat(patient.getDrivers()).isEqualTo("S99999999");
+        assertThat(patient.getPassport()).isEqualTo("X12345678");
+        assertThat(patient.getPrefix()).isEqualTo("Mr.");
+        assertThat(patient.getSuffix()).isEqualTo("Jr.");
+        assertThat(patient.getMaiden()).isEqualTo("Smith");
+        assertThat(patient.getMarital()).isEqualTo("M");
+        assertThat(patient.getRace()).isEqualTo("white");
+        assertThat(patient.getEthnicity()).isEqualTo("nonhispanic");
+        assertThat(patient.getGender()).isEqualTo(Gender.M);
+        assertThat(patient.getBirthplace()).isEqualTo("Boston MA US");
+        assertThat(patient.getAddress()).isEqualTo("123 Main St");
+        assertThat(patient.getCity()).isEqualTo("Seattle");
+        assertThat(patient.getState()).isEqualTo("WA");
+        assertThat(patient.getCounty()).isEqualTo("King");
+        assertThat(patient.getFips()).isEqualTo("53033");
+        assertThat(patient.getZip()).isEqualTo("98101");
+        assertThat(patient.getLat()).isEqualByComparingTo(lat);
+        assertThat(patient.getLon()).isEqualByComparingTo(lon);
+        assertThat(patient.getHealthcareExpenses()).isEqualByComparingTo(expenses);
+        assertThat(patient.getHealthcareCoverage()).isEqualByComparingTo(coverage);
+        assertThat(patient.getIncome()).isEqualTo(75000);
+        assertThat(patient.getBloodType()).isEqualTo("O+");
+    }
+
+    @Test
+    void setFirstName_normalizesBlankToNull() {
+        Patient patient = createPatient();
+        patient.setFirstName("Jane");
+        assertThat(patient.getFirstName()).isEqualTo("Jane");
+        patient.setFirstName("   ");
+        assertThat(patient.getFirstName()).isNull();
+    }
+
+    @Test
+    void setMiddleName_normalizesBlankToNull() {
+        Patient patient = createPatient();
+        patient.setMiddleName("Marie");
+        assertThat(patient.getMiddleName()).isEqualTo("Marie");
+        patient.setMiddleName("");
+        assertThat(patient.getMiddleName()).isNull();
+    }
+
+    @Test
+    void setLastName_normalizesBlankToNull() {
+        Patient patient = createPatient();
+        patient.setLastName("Smith");
+        assertThat(patient.getLastName()).isEqualTo("Smith");
+        patient.setLastName("   ");
+        assertThat(patient.getLastName()).isNull();
     }
 }

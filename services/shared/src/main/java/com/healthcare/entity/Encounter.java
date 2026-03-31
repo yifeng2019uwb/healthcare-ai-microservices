@@ -157,42 +157,46 @@ public class Encounter extends ProfileBaseEntity {
     // Getters
     // ------------------------------------------------------------------
 
-    public UUID getPatientId()           { return patientId; }
-    public UUID getProviderId()          { return providerId; }
-    public UUID getOrganizationId()      { return organizationId; }
-    public String getPayerId()           { return payerId; }
-    public OffsetDateTime getStartTime() { return startTime; }
-    public OffsetDateTime getStopTime()  { return stopTime; }
-    public String getEncounterClass()    { return encounterClass; }
-    public String getCode()              { return code; }
-    public String getDescription()       { return description; }
-    public BigDecimal getBaseCost()      { return baseCost; }
-    public BigDecimal getTotalCost()     { return totalCost; }
-    public BigDecimal getPayerCoverage() { return payerCoverage; }
-    public String getReasonCode()        { return reasonCode; }
-    public String getReasonDesc()        { return reasonDesc; }
-    public Patient getPatient()          { return patient; }
-    public Provider getProvider()        { return provider; }
-    public Organization getOrganization() { return organization; }
+    public UUID getPatientId()                  { return patientId; }
+    public UUID getProviderId()                 { return providerId; }
+    public UUID getOrganizationId()             { return organizationId; }
+    public String getPayerId()                  { return payerId; }
+    public OffsetDateTime getStartTime()        { return startTime; }
+    public OffsetDateTime getStopTime()         { return stopTime; }
+    public String getEncounterClass()           { return encounterClass; }
+    public EncounterStatus getStatus()   {return status;}
+    public EncounterType getEncounterType()     {return encounterType;}
+    public String getCode()                     { return code; }
+    public String getDescription()              { return description; }
+    public BigDecimal getBaseCost()             { return baseCost; }
+    public BigDecimal getTotalCost()            { return totalCost; }
+    public BigDecimal getPayerCoverage()        { return payerCoverage; }
+    public String getReasonCode()               { return reasonCode; }
+    public String getReasonDesc()               { return reasonDesc; }
+    public Patient getPatient()                 { return patient; }
+    public Provider getProvider()               { return provider; }
+    public Organization getOrganization()       { return organization; }
 
     // ------------------------------------------------------------------
     // Setters
     // ------------------------------------------------------------------
 
-    public void setPatientId(UUID patientId)               { this.patientId = patientId; }
-    public void setProviderId(UUID providerId)             { this.providerId = providerId; }
-    public void setOrganizationId(UUID organizationId)     { this.organizationId = organizationId; }
-    public void setStartTime(OffsetDateTime startTime)     { this.startTime = startTime; }
-    public void setPayerId(String payerId)                 { this.payerId = payerId; }
-    public void setStopTime(OffsetDateTime stopTime)       { this.stopTime = stopTime; }
-    public void setEncounterClass(String encounterClass)   { this.encounterClass = encounterClass; }
-    public void setCode(String code)                       { this.code = code; }
-    public void setDescription(String description)         { this.description = description; }
-    public void setBaseCost(BigDecimal baseCost)           { this.baseCost = baseCost; }
-    public void setTotalCost(BigDecimal totalCost)         { this.totalCost = totalCost; }
-    public void setPayerCoverage(BigDecimal payerCoverage) { this.payerCoverage = payerCoverage; }
-    public void setReasonCode(String reasonCode)           { this.reasonCode = reasonCode; }
-    public void setReasonDesc(String reasonDesc)           { this.reasonDesc = reasonDesc; }
+    public void setPatientId(UUID patientId)                    { this.patientId = patientId; }
+    public void setProviderId(UUID providerId)                  { this.providerId = providerId; }
+    public void setOrganizationId(UUID organizationId)          { this.organizationId = organizationId; }
+    public void setStartTime(OffsetDateTime startTime)          { this.startTime = startTime; }
+    public void setPayerId(String payerId)                      { this.payerId = payerId; }
+    public void setStopTime(OffsetDateTime stopTime)            { this.stopTime = stopTime; }
+    public void setEncounterClass(String encounterClass)        { this.encounterClass = encounterClass; }
+    public void setStatus(EncounterStatus status)               {this.status = status;}
+    public void setEncounterType(EncounterType encounterType)   {this.encounterType = encounterType;}
+    public void setCode(String code)                            { this.code = code; }
+    public void setDescription(String description)              { this.description = description; }
+    public void setBaseCost(BigDecimal baseCost)                { this.baseCost = baseCost; }
+    public void setTotalCost(BigDecimal totalCost)              { this.totalCost = totalCost; }
+    public void setPayerCoverage(BigDecimal payerCoverage)      { this.payerCoverage = payerCoverage; }
+    public void setReasonCode(String reasonCode)                { this.reasonCode = reasonCode; }
+    public void setReasonDesc(String reasonDesc)                { this.reasonDesc = reasonDesc; }
 
     // ------------------------------------------------------------------
     // Business methods

@@ -1,5 +1,6 @@
 package com.healthcare.entity;
 
+import com.healthcare.enums.Gender;
 import com.healthcare.enums.UserRole;
 import com.healthcare.exception.ValidationException;
 import org.junit.jupiter.api.Test;
@@ -120,6 +121,30 @@ class ProviderEntityTest {
         Provider p = newProvider();
         p.setBio("Board certified");
         assertThat(p.getBio()).isEqualTo("Board certified");
+    }
+
+    @Test
+    void getDemographicFields_nullByDefault() {
+            Provider p = newProvider();
+        assertThat(p.getGender()).isNull();
+        assertThat(p.getSpeciality()).isNull();
+        assertThat(p.getEncounters()).isNull();
+        assertThat(p.getProcedures()).isNull();
+        assertThat(p.getOrganization()).isNull();
+    }
+
+    @Test
+    void setDemographicFields() {
+        Provider p = newProvider();
+        p.setGender(Gender.M);
+        p.setSpeciality("Cardiology");
+        p.setEncounters(150);
+        p.setProcedures(75);
+
+        assertThat(p.getGender()).isEqualTo(Gender.M);
+        assertThat(p.getSpeciality()).isEqualTo("Cardiology");
+        assertThat(p.getEncounters()).isEqualTo(150);
+        assertThat(p.getProcedures()).isEqualTo(75);
     }
 
     @Test
