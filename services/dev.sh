@@ -1,72 +1,66 @@
 #!/bin/bash
 
 # Healthcare Services - Development Script
-# Usage: ./dev.sh [service] [clean|build|test|run]
-# Example: ./dev.sh gateway build
-# Example: ./dev.sh auth-service test
+# Usage: ./dev.sh [service] [clean|build|test|run|package|coverage]
+# Example: ./dev.sh shared test
+# Example: ./dev.sh auth-service run
+# Example: ./dev.sh all build
 
 set -e
 
 MAVEN_CMD="mvn"
 JAVA_VERSION="17"
+SERVICES=("shared" "auth-service" "gateway" "patient-service" "provider-service")
 
 echo "🏥 Healthcare Services - Development Script"
 echo "==========================================="
 
-# Function to check prerequisites
+# ──────────────────────────────────────────────
+# Prerequisites
+# ──────────────────────────────────────────────
 check_prerequisites() {
     echo "🔍 Checking prerequisites..."
 
-    # Check Java version
-    if command -v java &> /dev/null; then
-        JAVA_VER=$(java -version 2>&1 | head -n 1 | cut -d'"' -f2 | cut -d'.' -f1)
-        if [ "$JAVA_VER" -ge "$JAVA_VERSION" ]; then
-            echo "✅ Java $JAVA_VER found (required: $JAVA_VERSION+)"
-        else
-            echo "❌ Java $JAVA_VER found, but Java $JAVA_VERSION+ is required"
-            exit 1
-        fi
-    else
+    # Java
+    if ! command -v java &>/dev/null; then
         echo "❌ Java not found. Please install Java $JAVA_VERSION+"
         exit 1
     fi
 
-    # Ensure JAVA_HOME is valid for tools like Maven.
-    # macOS often has java on PATH even when JAVA_HOME is missing.
+    JAVA_VER=$(java -version 2>&1 | head -n 1 | cut -d'"' -f2 | cut -d'.' -f1)
+    if [ "$JAVA_VER" -lt "$JAVA_VERSION" ]; then
+        echo "❌ Java $JAVA_VER found, but Java $JAVA_VERSION+ is required"
+        exit 1
+    fi
+    echo "✅ Java $JAVA_VER found"
+
+    # JAVA_HOME — needed by Maven
     if [ -z "$JAVA_HOME" ] || [ ! -x "$JAVA_HOME/bin/java" ]; then
-        if [ "$(uname)" = "Darwin" ] && command -v /usr/libexec/java_home >/dev/null 2>&1; then
-            DETECTED_JAVA_HOME=$(/usr/libexec/java_home -v "$JAVA_VERSION" 2>/dev/null || true)
-            if [ -n "$DETECTED_JAVA_HOME" ] && [ -x "$DETECTED_JAVA_HOME/bin/java" ]; then
-                export JAVA_HOME="$DETECTED_JAVA_HOME"
-                echo "✅ JAVA_HOME set to $JAVA_HOME"
+        if [ "$(uname)" = "Darwin" ] && command -v /usr/libexec/java_home &>/dev/null; then
+            DETECTED=$(/usr/libexec/java_home -v "$JAVA_VERSION" 2>/dev/null || true)
+            if [ -n "$DETECTED" ] && [ -x "$DETECTED/bin/java" ]; then
+                export JAVA_HOME="$DETECTED"
+                echo "✅ JAVA_HOME auto-set to $JAVA_HOME"
             fi
         fi
     fi
 
     if [ -z "$JAVA_HOME" ] || [ ! -x "$JAVA_HOME/bin/java" ]; then
-        echo "❌ JAVA_HOME is not set to a valid JDK."
-        echo "   Example: export JAVA_HOME=\$(/usr/libexec/java_home -v $JAVA_VERSION)"
+        echo "❌ JAVA_HOME is not set. Run: export JAVA_HOME=\$(/usr/libexec/java_home -v $JAVA_VERSION)"
         exit 1
     fi
 
-    # Check Maven
-    if command -v mvn &> /dev/null; then
-        if MAVEN_VER_LINE=$(mvn -version 2>/dev/null | awk 'NR==1 {print; exit}'); then
-            MAVEN_VER=$(echo "$MAVEN_VER_LINE" | cut -d' ' -f3)
-            echo "✅ Maven $MAVEN_VER found"
-        else
-            echo "❌ Maven is installed but failed to run."
-            echo "   Please verify JAVA_HOME points to a valid JDK."
-            exit 1
-        fi
-    else
+    # Maven
+    if ! command -v mvn &>/dev/null; then
         echo "❌ Maven not found. Please install Maven"
         exit 1
     fi
+    MAVEN_VER=$(mvn -version 2>/dev/null | awk 'NR==1{print $3}')
+    echo "✅ Maven $MAVEN_VER found"
 
-    # Check if we're in the services directory
+    # Must run from services directory
     if [ ! -f "pom.xml" ]; then
-        echo "❌ pom.xml not found. Please run this script from the services directory"
+        echo "❌ pom.xml not found. Run this script from the services/ directory"
         exit 1
     fi
 
@@ -74,282 +68,185 @@ check_prerequisites() {
     echo ""
 }
 
-# Function to list available services
+# ──────────────────────────────────────────────
+# Helpers
+# ──────────────────────────────────────────────
 list_services() {
     echo "📋 Available services:"
-    for service in */; do
-        if [ -f "${service}pom.xml" ] || [ -f "${service}build.gradle" ]; then
-            echo "  - ${service%/}"
-        fi
+    for s in "${SERVICES[@]}"; do
+        [ -f "$s/pom.xml" ] && echo "  - $s"
     done
     echo ""
 }
 
-# Function to validate service
 validate_service() {
     local service=$1
-    if [ -z "$service" ]; then
-        echo "❌ Please specify a service name"
-        echo "Usage: $0 <service> [clean|build|test|run]"
-        list_services
-        exit 1
-    fi
-
-    # Special case for "all" command
-    if [ "$service" = "all" ]; then
-        return 0
-    fi
-
-    if [ ! -d "$service" ] || ([ ! -f "$service/pom.xml" ] && [ ! -f "$service/build.gradle" ]); then
-        echo "❌ Service '$service' not found or invalid"
-        echo "Available services:"
+    [ "$service" = "all" ] && return 0
+    if [ ! -d "$service" ] || [ ! -f "$service/pom.xml" ]; then
+        echo "❌ Service '$service' not found"
         list_services
         exit 1
     fi
 }
 
-# Function to run Maven command in service directory
 run_maven() {
     local service=$1
-    local command=$2
-    local extra_args=$3
-
-    echo "🔧 Running Maven in $service service..."
-    cd "$service"
-    $MAVEN_CMD $command $extra_args
-    cd ..
+    shift
+    echo "🔧 Running: mvn $* in $service/"
+    (cd "$service" && $MAVEN_CMD "$@")
 }
 
-# Function to run Gradle command in service directory
-run_gradle() {
+open_coverage_report() {
     local service=$1
-    local command=$2
-    local extra_args=$3
-
-    echo "🔧 Running Gradle in $service service..."
-    cd "$service"
-    ./gradlew $command $extra_args
-    cd ..
-}
-
-# Function to run Smithy CLI commands
-run_smithy_cli() {
-    local service=$1
-    local command=$2
-    local extra_args=$3
-
-    echo "🔧 Running Smithy CLI in $service service..."
-    cd "$service"
-
-    case "$command" in
-        "clean")
-            smithy clean
-            ;;
-        "validate")
-            smithy validate
-            ;;
-        "format")
-            smithy format
-            ;;
-        "build")
-            # For build, we need Gradle because CLI doesn't have Java codegen plugin
-            echo "📝 Note: Using Gradle for build (Smithy CLI doesn't have Java codegen plugin)"
-            ./gradlew clean build publishToMavenLocal
-            ;;
-        *)
-            smithy $command $extra_args
-            ;;
-    esac
-    cd ..
-}
-
-# Function to determine build tool and run appropriate command
-run_build_tool() {
-    local service=$1
-    local command=$2
-    local extra_args=$3
-
-    if [ "$service" = "smithy-models" ]; then
-        run_smithy_cli "$service" "$command" "$extra_args"
-    elif [ -f "$service/build.gradle" ]; then
-        run_gradle "$service" "$command" "$extra_args"
+    local report="$service/target/site/jacoco/index.html"
+    if [ -f "$report" ]; then
+        echo "📊 Opening coverage report: $report"
+        if [ "$(uname)" = "Darwin" ]; then
+            open "$report"
+        else
+            echo "   Report available at: $report"
+        fi
     else
-        run_maven "$service" "$command" "$extra_args"
+        echo "⚠️  Coverage report not found at $report"
     fi
 }
 
-# Always check prerequisites first
+# ──────────────────────────────────────────────
+# Main
+# ──────────────────────────────────────────────
 check_prerequisites
 
-# Get service name and command
-SERVICE=$1
+SERVICE=${1:-}
 COMMAND=${2:-build}
 
-# Validate service
+if [ -z "$SERVICE" ]; then
+    echo "Usage: $0 <service|all> [clean|build|test|run|package|coverage]"
+    echo ""
+    list_services
+    exit 1
+fi
+
 validate_service "$SERVICE"
 
-# Handle "all" commands first
+# ── all commands ──
 if [ "$SERVICE" = "all" ]; then
     case "$COMMAND" in
         "build")
             echo "🔄 Building all services..."
-            echo "📋 Available services: smithy-models, shared, gateway, auth-service, patient-service"
             echo ""
-
-            # Build Smithy models first (dependency for others)
-            # Using Gradle directly since Smithy CLI may not be installed in CI
-            # Note: This may fail locally due to Gradle wrapper permissions, but should work in CI
-            echo "🔨 Building smithy-models..."
-            if [ -f "smithy-models/build.gradle" ]; then
-                if (cd smithy-models && ./gradlew clean build publishToMavenLocal >/dev/null 2>&1); then
-                    echo "✅ Smithy models built and published to local Maven repository"
-                else
-                    echo "⚠️  smithy-models build failed or skipped (services depending on it may fail)"
-                    echo "    This is expected if smithy-models is not yet a dependency of other services"
+            run_maven "shared" clean install -DskipTests
+            echo "✅ shared built"
+            echo ""
+            for service in auth-service gateway patient-service provider-service; do
+                if [ -f "$service/pom.xml" ]; then
+                    echo "🔨 Building $service..."
+                    if run_maven "$service" clean compile; then
+                        echo "✅ $service built"
+                    else
+                        echo "⚠️  $service build failed (skipped)"
+                    fi
+                    echo ""
                 fi
-            else
-                echo "⚠️  smithy-models build.gradle not found (skipped)"
-            fi
-            echo ""
-
-            # Build shared second (dependency for others)
-            echo "🔨 Building shared module..."
-            run_maven "shared" "clean compile"
-            echo "✅ Shared module built"
-            echo ""
-
-            # Build individual services (may fail if they depend on smithy-models)
-            for service in gateway auth-service; do
-                echo "🔨 Building $service service..."
-                if run_maven "$service" "clean compile" 2>/dev/null; then
-                    echo "✅ $service service built"
-                else
-                    echo "⚠️  $service service build failed (may depend on smithy-models)"
-                fi
-                echo ""
             done
-
-            # Try patient service (may fail due to compilation error)
-            echo "🔨 Building patient-service (may have compilation issues)..."
-            if run_maven "patient-service" "clean compile" 2>/dev/null; then
-                echo "✅ patient-service built"
-            else
-                echo "⚠️  patient-service has compilation issues (skipped)"
-            fi
-            echo ""
-
-            echo "✅ All available services built"
+            echo "✅ All services built"
             ;;
+
         "test")
             echo "🧪 Testing all services..."
-            echo "📋 Available services: smithy-models, shared, gateway, auth-service, patient-service"
             echo ""
-
-            # Test Smithy models first
-            echo "🧪 Testing smithy-models..."
-            run_gradle "smithy-models" "test"
-            echo "✅ Smithy models tests passed"
-            echo ""
-
-            # Test shared second
-            echo "🧪 Testing shared module..."
-            run_maven "shared" "test"
-            echo "✅ Shared module tests passed"
-            echo ""
-
-            # Test individual services
-            for service in gateway auth-service; do
-                echo "🧪 Testing $service service..."
-                run_maven "$service" "test"
-                echo "✅ $service service tests passed"
-                echo ""
+            for service in shared auth-service gateway patient-service provider-service; do
+                if [ -f "$service/pom.xml" ]; then
+                    echo "🧪 Testing $service..."
+                    if run_maven "$service" test; then
+                        echo "✅ $service tests passed"
+                    else
+                        echo "⚠️  $service tests failed (skipped)"
+                    fi
+                    echo ""
+                fi
             done
-
-            # Try patient service (may fail due to compilation error)
-            echo "🧪 Testing patient-service (may have compilation issues)..."
-            if run_maven "patient-service" "test" 2>/dev/null; then
-                echo "✅ patient-service tests passed"
-            else
-                echo "⚠️  patient-service has compilation issues (skipped)"
-            fi
-            echo ""
-
-            echo "✅ All available service tests completed"
+            echo "✅ All service tests completed"
             ;;
-        *)
-            echo "Usage: $0 all [build|test]"
+
+        "coverage")
+            echo "📊 Coverage for all services..."
             echo ""
-            echo "All commands:"
-            echo "  build       - Build all services (skips services with compilation errors)"
-            echo "  test        - Test all services (skips services with compilation errors)"
+            for service in shared auth-service gateway patient-service provider-service; do
+                if [ -f "$service/pom.xml" ]; then
+                    echo "📊 Coverage for $service..."
+                    run_maven "$service" clean test jacoco:report
+                    open_coverage_report "$service"
+                    echo ""
+                fi
+            done
+            ;;
+
+        *)
+            echo "Usage: $0 all [build|test|coverage]"
             exit 1
             ;;
     esac
+
+# ── single service commands ──
 else
-    # Handle individual service commands
     case "$COMMAND" in
         "clean")
-            echo "🧹 Cleaning $SERVICE service..."
-            run_build_tool "$SERVICE" "clean"
+            echo "🧹 Cleaning $SERVICE..."
+            run_maven "$SERVICE" clean
             echo "✅ Clean completed"
             ;;
+
         "build")
-            echo "🔨 Building $SERVICE service..."
-            if [ "$SERVICE" = "smithy-models" ]; then
-                run_gradle "$SERVICE" "clean build publishToMavenLocal"
-                echo "✅ Smithy models built and published to local Maven repository"
-            else
-                run_build_tool "$SERVICE" "compile"
-                echo "✅ Build completed"
+            echo "🔨 Building $SERVICE..."
+            # Install shared first if building a dependent service
+            if [ "$SERVICE" != "shared" ] && [ -f "shared/pom.xml" ]; then
+                echo "📦 Installing shared module first..."
+                run_maven "shared" install -DskipTests -q
             fi
+            run_maven "$SERVICE" compile
+            echo "✅ Build completed"
             ;;
+
         "test")
-            echo "🧪 Running tests for $SERVICE service..."
-            run_build_tool "$SERVICE" "test"
+            echo "🧪 Testing $SERVICE..."
+            run_maven "$SERVICE" test
             echo "✅ Tests completed"
             ;;
+
         "run")
-            echo "🚀 Starting $SERVICE service..."
-            if [ -f "$SERVICE/build.gradle" ]; then
-                echo "❌ Gradle services don't support 'run' command yet"
-                echo "Please use: cd $SERVICE && ./gradlew run"
-            else
-                run_maven "$SERVICE" "spring-boot:run"
+            echo "🚀 Starting $SERVICE..."
+            # Install shared first
+            if [ "$SERVICE" != "shared" ] && [ -f "shared/pom.xml" ]; then
+                echo "📦 Installing shared module first..."
+                run_maven "shared" install -DskipTests -q
             fi
+            run_maven "$SERVICE" spring-boot:run
             ;;
+
         "package")
-            echo "📦 Packaging $SERVICE service..."
-            if [ "$SERVICE" = "smithy-models" ]; then
-                run_gradle "$SERVICE" "build"
-                echo "✅ Smithy models JAR built"
-            else
-                run_maven "$SERVICE" "package"
-                echo "✅ Package completed"
-            fi
+            echo "📦 Packaging $SERVICE..."
+            run_maven "$SERVICE" package -DskipTests
+            echo "✅ Package completed"
             ;;
+
         "coverage")
-            echo "📊 Running tests with coverage for $SERVICE service..."
-            if [ -f "$SERVICE/build.gradle" ]; then
-                echo "❌ Gradle services don't support 'coverage' command yet"
-                echo "Please use: cd $SERVICE && ./gradlew test jacocoTestReport"
-            else
-                run_maven "$SERVICE" "clean test jacoco:report"
-                echo "✅ Coverage report generated in $SERVICE/target/site/jacoco/index.html"
-            fi
+            echo "📊 Running coverage for $SERVICE..."
+            run_maven "$SERVICE" clean test jacoco:report
+            open_coverage_report "$SERVICE"
+            echo "✅ Coverage completed"
             ;;
+
         *)
             echo "Usage: $0 <service> [clean|build|test|run|package|coverage]"
-            echo "       $0 all [build|test]"
+            echo "       $0 all [build|test|coverage]"
             echo ""
             echo "Commands:"
-            echo "  clean       - Clean previous builds"
-            echo "  build       - Compile the service (default)"
-            echo "  test        - Run all tests for the service"
-            echo "  run         - Start the service with Spring Boot"
-            echo "  package     - Create JAR package"
-            echo "  coverage    - Run tests with coverage report"
-            echo "  all build   - Build all services"
-            echo "  all test    - Test all services"
+            echo "  clean     — Remove build artifacts"
+            echo "  build     — Compile (default)"
+            echo "  test      — Run tests"
+            echo "  run       — Start with Spring Boot"
+            echo "  package   — Build JAR"
+            echo "  coverage  — Run tests + open JaCoCo report"
             echo ""
             list_services
             exit 1
@@ -357,4 +254,5 @@ else
     esac
 fi
 
-echo "🎉 Script completed successfully!"
+echo ""
+echo "🎉 Done!"
