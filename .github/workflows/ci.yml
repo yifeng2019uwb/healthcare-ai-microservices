@@ -7,14 +7,14 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  test-all-services:
+
+  # ── 1. Structure check (no Java needed) ────────────────────────────────────
+  validate:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up JDK 17
+      - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
@@ -25,176 +25,140 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y maven
 
-    - name: Cache Maven dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2
-        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-        restore-keys: ${{ runner.os }}-m2
+      - name: Validate project structure
+        run: |
+          for dir in docs healthcare-infra services services/shared; do
+            [ -d "$dir" ] || { echo "Missing directory: $dir"; exit 1; }
+          done
+          for file in services/shared/pom.xml services/dev.sh README.md .gitignore; do
+            [ -f "$file" ] || { echo "Missing file: $file"; exit 1; }
+          done
+          echo "Project structure OK"
 
-    - name: Validate project structure
-      run: |
-        echo "🔍 Checking project structure..."
+  # ── 2. Shared module (all other jobs depend on this) ───────────────────────
+  test-shared:
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@v4
 
-        # Check main directories exist
-        if [ -d "docs" ]; then
-          echo "✅ docs/ directory exists"
-        else
-          echo "❌ docs/ directory missing"
-          exit 1
-        fi
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
 
-        if [ -d "healthcare-infra" ]; then
-          echo "✅ healthcare-infra/ directory exists"
-        else
-          echo "❌ healthcare-infra/ directory missing"
-          exit 1
-        fi
+      - name: Install parent POM
+        run: cd services && mvn install -N -q
 
-        if [ -d "services" ]; then
-          echo "✅ services/ directory exists"
-        else
-          echo "❌ services/ directory missing"
-          exit 1
-        fi
+      - name: Test shared module with coverage
+        run: cd services/shared && mvn test jacoco:report
 
-        # Check shared module exists
-        if [ -d "services/shared" ]; then
-          echo "✅ services/shared/ directory exists"
-        else
-          echo "❌ services/shared/ directory missing"
-          exit 1
-        fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shared-coverage
+          path: services/shared/target/site/jacoco/
 
-        if [ -f "services/shared/pom.xml" ]; then
-          echo "✅ services/shared/pom.xml exists"
-        else
-          echo "❌ services/shared/pom.xml missing"
-          exit 1
-        fi
+      - name: Comment coverage on PR
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs');
+            const p = 'services/shared/target/site/jacoco/index.html';
+            if (!fs.existsSync(p)) return;
+            const html = fs.readFileSync(p, 'utf8');
+            const pct = (html.match(/Total.*?ctr2">(\d+)%/) || [, 'N/A'])[1];
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Shared Module Coverage\nTotal: **${pct}%**\n[Full Report](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`
+            });
 
-        if [ -f "services/dev.sh" ]; then
-          echo "✅ services/dev.sh exists"
-        else
-          echo "❌ services/dev.sh missing"
-          exit 1
-        fi
+  # ── 3. Auth service ────────────────────────────────────────────────────────
+  test-auth-service:
+    runs-on: ubuntu-latest
+    needs: test-shared
+    steps:
+      - uses: actions/checkout@v4
 
-        # Check key files exist
-        if [ -f "README.md" ]; then
-          echo "✅ README.md exists"
-        else
-          echo "❌ README.md missing"
-          exit 1
-        fi
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
 
-        if [ -f ".gitignore" ]; then
-          echo "✅ .gitignore exists"
-        else
-          echo "❌ .gitignore missing"
-          exit 1
-        fi
+      - name: Install parent POM and shared
+        run: |
+          cd services
+          mvn install -N -q
+          cd shared && mvn install -q
 
-        echo "🎉 Project structure validation passed!"
+      - name: Test auth-service
+        run: cd services/auth-service && mvn test
 
-    - name: Install parent POM and shared module
-      run: |
-        echo "📦 Installing parent POM and shared module..."
-        cd services
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: auth-service-test-results
+          path: services/auth-service/target/surefire-reports/
 
-        # Install parent POM first
-        mvn clean install -N
+  # ── 4. Gateway (skeleton — allowed to fail) ────────────────────────────────
+  test-gateway:
+    runs-on: ubuntu-latest
+    needs: test-shared
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
 
-        # Install shared module (needed by other services)
-        cd shared
-        mvn clean install
-        cd ..
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
 
-    - name: Test all services
-      run: |
-        echo "🧪 Testing all services..."
-        cd services
+      - name: Install parent POM and shared
+        run: |
+          cd services
+          mvn install -N -q
+          cd shared && mvn install -q
 
-        # Make dev.sh executable
-        chmod +x dev.sh
+      - name: Test gateway
+        run: cd services/gateway && mvn test
 
-        echo "🔨 Building all services..."
-        ./dev.sh all build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gateway-test-results
+          path: services/gateway/target/surefire-reports/
 
-        echo "🧪 Testing shared module with coverage..."
-        ./dev.sh shared coverage
+  # ── 5. Patient service (skeleton — allowed to fail) ────────────────────────
+  test-patient-service:
+    runs-on: ubuntu-latest
+    needs: test-shared
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
 
-        echo "🧪 Testing gateway service..."
-        ./dev.sh gateway test || echo "⚠️ Gateway service tests failed (expected for skeleton service)"
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
 
-        echo "🧪 Testing auth-service..."
-        ./dev.sh auth-service test || echo "⚠️ Auth service tests failed (expected for skeleton service)"
+      - name: Install parent POM and shared
+        run: |
+          cd services
+          mvn install -N -q
+          cd shared && mvn install -q
 
-        echo "🧪 Testing patient-service..."
-        ./dev.sh patient-service test || echo "⚠️ Patient service tests failed (expected for skeleton service)"
+      - name: Test patient-service
+        run: cd services/patient-service && mvn test
 
-        echo "✅ All service tests completed!"
-
-    - name: Upload test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: test-results
-        path: services/*/target/surefire-reports/
-
-    - name: Upload coverage report
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: coverage-report
-        path: services/shared/target/site/jacoco/
-
-    - name: Comment coverage on PR
-      uses: actions/github-script@v7
-      if: github.event_name == 'pull_request' && always()
-      with:
-        script: |
-          const fs = require('fs');
-          const path = require('path');
-
-          try {
-            // Read coverage data from HTML report
-            const coveragePath = 'services/shared/target/site/jacoco/index.html';
-            if (fs.existsSync(coveragePath)) {
-              const htmlContent = fs.readFileSync(coveragePath, 'utf8');
-
-              // Extract total coverage
-              const totalMatch = htmlContent.match(/Total.*ctr2">(\d+)%<\/td>/);
-              const totalCoverage = totalMatch ? totalMatch[1] : 'N/A';
-
-              // Extract package coverage
-              const entityMatch = htmlContent.match(/com\.healthcare\.entity.*ctr2">(\d+)%<\/td>/);
-              const enumMatch = htmlContent.match(/com\.healthcare\.enums.*ctr2">(\d+)%<\/td>/);
-              const exceptionMatch = htmlContent.match(/com\.healthcare\.exception.*ctr2">(\d+)%<\/td>/);
-
-              const entityCoverage = entityMatch ? entityMatch[1] : 'N/A';
-              const enumCoverage = enumMatch ? enumMatch[1] : 'N/A';
-              const exceptionCoverage = exceptionMatch ? exceptionMatch[1] : 'N/A';
-
-              const comment = `## 📊 Code Coverage Report
-
-              | Package | Coverage |
-              |---------|----------|
-              | **Total** | **${totalCoverage}%** |
-              | 🏥 Entity | ${entityCoverage}% |
-              | 📋 Enum | ${enumCoverage}% |
-              | ⚠️ Exception | ${exceptionCoverage}% |
-
-              📁 [Detailed Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-              `;
-
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: comment
-              });
-            }
-          } catch (error) {
-            console.log('Could not generate coverage comment:', error.message);
-          }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: patient-service-test-results
+          path: services/patient-service/target/surefire-reports/
