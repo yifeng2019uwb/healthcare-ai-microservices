@@ -4,7 +4,6 @@ import com.healthcare.dao.PatientDao;
 import com.healthcare.dao.UserDao;
 import com.healthcare.entity.Patient;
 import com.healthcare.entity.User;
-import com.healthcare.enums.UserStatus;
 import com.healthcare.exception.ConflictException;
 import com.healthcare.exception.ResourceNotFoundException;
 import com.healthcare.exception.ValidationException;
@@ -39,28 +38,29 @@ public class PatientServiceImpl implements PatientService {
         // Validate input
         validateUserForPatientCreation(user);
 
-        // Check if user already exists (conflict - resource already exists)
-        if (userDao.findByExternalAuthId(user.getExternalAuthId()).isPresent()) {
-            throw new ConflictException("User with external ID already exists: " + user.getExternalAuthId());
-        }
+        // // Check if user already exists (conflict - resource already exists)
+        // if (userDao.findByExternalAuthId(user.getExternalAuthId()).isPresent()) {
+        //     throw new ConflictException("User with external ID already exists: " + user.getExternalAuthId());
+        // }
 
-        if (userDao.findByEmail(user.getEmail()).isPresent()) {
-            throw new ConflictException("User with email already exists: " + user.getEmail());
-        }
+        // if (userDao.findByEmail(user.getEmail()).isPresent()) {
+        //     throw new ConflictException("User with email already exists: " + user.getEmail());
+        // }
 
-        // Set user status (role is already set in constructor)
-        user.setStatus(UserStatus.ACTIVE);
+        // // Set user status (role is already set in constructor)
+        // user.setStatus(UserStatus.ACTIVE);
 
-        // Save user
-        User savedUser = userDao.create(user);
+        // // Save user
+        // User savedUser = userDao.create(user);
 
-        // Create patient profile
-        Patient patient = new Patient(savedUser.getId(), generatePatientNumber());
+        // // Create patient profile
+        // Patient patient = new Patient(savedUser.getId(), generatePatientNumber());
 
-        // Save patient
-        patientDao.create(patient);
+        // // Save patient
+        // patientDao.create(patient);
 
-        return savedUser;
+        // return savedUser;
+        return null;
     }
 
     @Override

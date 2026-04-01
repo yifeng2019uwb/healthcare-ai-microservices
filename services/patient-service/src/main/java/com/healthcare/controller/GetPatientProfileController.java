@@ -65,41 +65,41 @@ public class GetPatientProfileController {
      */
     private GetPatientProfileOutput buildPatientProfileResponse(User user, Patient patient) {
         return GetPatientProfileOutput.builder()
-                .externalUserId(user.getExternalAuthId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .email(user.getEmail())
-                .phone(user.getPhone())
-                .gender(convertGender(user.getGender()))
-                .emergencyContactPhone(patient.getEmergencyContactPhone())
-                .role(convertUserRole(user.getRole()))
-                .status(convertUserStatus(user.getStatus()))
+                // .externalUserId(user.getExternalAuthId())
+                // .firstName(user.getFirstName())
+                // .lastName(user.getLastName())
+                // .email(user.getEmail())
+                // .phone(user.getPhone())
+                // .gender(convertGender(user.getGender()))
+                // .emergencyContactPhone(patient.getEmergencyContactPhone())
+                // .role(convertUserRole(user.getRole()))
+                // .status(convertUserStatus(user.getStatus()))
                 .build();
     }
 
-    private Gender convertGender(com.healthcare.enums.Gender entityGender) {
-        return switch (entityGender) {
-            case MALE -> Gender.MALE;
-            case FEMALE -> Gender.FEMALE;
-            case OTHER -> Gender.OTHER;
-            default -> Gender.UNKNOWN;
-        };
-    }
+    // private Gender convertGender(com.healthcare.enums.Gender entityGender) {
+    //     return switch (entityGender) {
+    //         // case MALE -> Gender.MALE;
+    //         // case FEMALE -> Gender.FEMALE;
+    //         // case OTHER -> Gender.OTHER;
+    //         default -> Gender.UNKNOWN;
+    //     };
+    // }
 
-    private UserRole convertUserRole(com.healthcare.enums.UserRole entityRole) {
-        return switch (entityRole) {
-            case PATIENT -> UserRole.PATIENT;
-            case PROVIDER -> UserRole.PROVIDER;
-            default -> UserRole.PATIENT;
-        };
-    }
+    // private UserRole convertUserRole(com.healthcare.enums.UserRole entityRole) {
+    //     return switch (entityRole) {
+    //         case PATIENT -> UserRole.PATIENT;
+    //         case PROVIDER -> UserRole.PROVIDER;
+    //         default -> UserRole.PATIENT;
+    //     };
+    // }
 
-    private UserStatus convertUserStatus(com.healthcare.enums.UserStatus entityStatus) {
-        return switch (entityStatus) {
-            case ACTIVE -> UserStatus.ACTIVE;
-            case INACTIVE -> UserStatus.INACTIVE;
-            case SUSPENDED -> UserStatus.SUSPENDED;
-            default -> UserStatus.ACTIVE;
-        };
-    }
+    // private UserStatus convertUserStatus(com.healthcare.enums.UserStatus entityStatus) {
+    //     return switch (entityStatus) {
+    //         case ACTIVE -> UserStatus.ACTIVE;
+    //         case INACTIVE -> UserStatus.INACTIVE;
+    //         case SUSPENDED -> UserStatus.SUSPENDED;
+    //         default -> UserStatus.ACTIVE;
+    //     };
+    // }
 }

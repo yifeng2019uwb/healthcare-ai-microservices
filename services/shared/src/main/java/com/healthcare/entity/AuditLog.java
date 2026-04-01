@@ -148,8 +148,23 @@ public class AuditLog {
         return this;
     }
 
+    public AuditLog withAction(ActionType action) {
+        this.action = action;
+        return this;
+    }
+
+    public AuditLog withResourceType(String resourceType) {
+        this.resourceType = resourceType;
+        return this;
+    }
+
     public AuditLog withResourceId(UUID resourceId) {
         this.resourceId = resourceId;
+        return this;
+    }
+
+    public AuditLog withOutcome(Outcome outcome) {
+        this.outcome = outcome;
         return this;
     }
 

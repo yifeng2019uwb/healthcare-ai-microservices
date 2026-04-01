@@ -81,17 +81,14 @@ public class CreatePatientController {
      */
     private User buildUserFromRequest(CreatePatientInput request) {
         // Use the public constructor for required fields
-        User user = new User(
-            request.externalUserId(),
-            request.email(),
-            UserRole.PATIENT
-        );
+        // User user = new User(
+        //     request.externalUserId(),
+        //     request.email(),
+        //     UserRole.PATIENT
+        // );
 
-        // Set optional fields using setters
-        user.setFirstName(request.firstName());
-        user.setLastName(request.lastName());
-        user.setPhone(request.phone());
-        user.setGender(Gender.OTHER); // Default value, should be provided in request
-        return user;
+        // // Set optional fields using setters
+        // return user;
+        return null;
     }
 }
