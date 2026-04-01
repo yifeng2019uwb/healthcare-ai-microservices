@@ -4,7 +4,6 @@ import com.healthcare.dao.PatientDao;
 import com.healthcare.dao.UserDao;
 import com.healthcare.entity.Patient;
 import com.healthcare.entity.User;
-import com.healthcare.exception.ConflictException;
 import com.healthcare.exception.ResourceNotFoundException;
 import com.healthcare.exception.ValidationException;
 import com.healthcare.service.PatientService;
@@ -12,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.UUID;
 
 /**
