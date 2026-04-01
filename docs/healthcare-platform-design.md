@@ -68,7 +68,8 @@ development) — the concern is data quality, not storage size.
 | Cloud         | GCP (us-west1)                        | 90-day $300 free tier, active account         |
 | Compute       | Cloud Run                             | Scales to zero, no idle cost, container-native |
 | Database      | Cloud SQL PostgreSQL 15               | Managed, VPC-private, GCP-native IAM          |
-| Authentication | Firebase Auth + GCP Identity Platform | OAuth 2.0 / OIDC, free tier generous         |
+| Authentication | Custom auth-service (RS256 JWT)      | Full ownership of auth flow, JWKS-based gateway validation |
+| Token blacklist | Cloud Memorystore Redis             | JWT revocation on logout/rotation             |
 | Secrets       | GCP Secret Manager                    | No credentials in config files or env vars    |
 | WAF           | Cloud Armor                           | OWASP Top 10 blocking at load balancer        |
 | Audit         | Cloud Audit Logs + Cloud Logging      | Who accessed what patient data and when       |
@@ -181,14 +182,28 @@ audit_logs (application layer — not from Synthea)
 
 ### Table Definitions
 
+#### `users`
+Source: Application layer — owned exclusively by auth-service.
+
+| Column        | Type                  | Notes                               |
+|---------------|-----------------------|-------------------------------------|
+| id            | UUID PK DEFAULT gen_random_uuid() | |
+| username      | VARCHAR(30) UNIQUE NOT NULL | |
+| email         | VARCHAR(255) UNIQUE NOT NULL | |
+| password_hash | VARCHAR(255) NOT NULL | BCrypt strength 12                  |
+| role          | VARCHAR(20) NOT NULL  | PATIENT / PROVIDER / ADMIN          |
+| is_active     | BOOLEAN NOT NULL DEFAULT true | |
+| created_at    | TIMESTAMPTZ NOT NULL DEFAULT NOW() | |
+| updated_at    | TIMESTAMPTZ NOT NULL DEFAULT NOW() | |
+
 #### `patients`
 Source: `patients.csv`
-Firebase UID added for auth linkage. Nullable — Synthea data loads first, users claim records on registration.
+`auth_id` added for auth linkage. Nullable — Synthea data loads first, users claim records on registration via MRN.
 
 | Column        | Type                  | Notes                  |
 |---------------|-----------------------|------------------------|
 | id            | UUID PK               | Synthea patient UUID |
-| firebase_uid  | VARCHAR(128) UNIQUE   | Null until user registers |
+| auth_id       | UUID UNIQUE FK → users.id | Null until user registers |
 | birthdate     | DATE NOT NULL         | |
 | deathdate     | DATE                  | Null if alive |
 | prefix        | VARCHAR(10)           | Mr, Mrs, Dr etc |
@@ -229,13 +244,13 @@ Hospitals and clinics that providers work at.
 
 #### `providers`
 Source: `providers.csv`
-Clinicians. Firebase UID nullable — added if provider registers.
+Clinicians. `auth_id` nullable — added when provider registers via provider_code.
 
 | Column            | Type                      | Notes                 |
 |-------------------|---------------------------|-----------------------|
 | id                | UUID PK                   | Synthea provider UUID |
 | organization_id   | UUID FK → organizations   | |
-| firebase_uid      | VARCHAR(128) UNIQUE       | Null until provider registers |
+| auth_id           | UUID UNIQUE FK → users.id | Null until provider registers |
 | name              | VARCHAR(255) NOT NULL     | |
 | gender            | VARCHAR(10)               | |
 | speciality        | VARCHAR(100)              | Synthea spelling: speciality |
@@ -336,7 +351,7 @@ Application layer — not from Synthea. Core security requirement.
 | Column        | Type                              | Notes |
 |---------------|-----------------------------------|------------------------|
 | id            | UUID PK DEFAULT gen_random_uuid() | |
-| firebase_uid  | VARCHAR(128)                      | Who made the request |
+| auth_id       | UUID FK → users.id                | Who made the request (null for unauthenticated) |
 | action        | VARCHAR(10) NOT NULL              | GET / POST / PUT / DELETE |
 | resource_type | VARCHAR(50) NOT NULL              | patients, encounters, conditions etc |
 | resource_id   | UUID                              | The specific record accessed |
@@ -363,31 +378,35 @@ Cloud Load Balancer
     │
     ▼
 Cloud Run — API Gateway     ← Spring Cloud Gateway (Port 8080)
-    │                          Firebase JWT validation
+    │                          RS256 JWT validation via JWKS
+    │                          Redis blacklist check per request
     │                          Rate limiting
-    ├──────────────────────────────────────┐
-    ▼                                      ▼
-Cloud Run — Patient Service     Cloud Run — Appointment Service
-(Port 8002)                     (Port 8004)
-    │                                      │
-    └──────────────┬───────────────────────┘
-                   ▼
-           Cloud SQL PostgreSQL
-           (Private VPC — no public IP)
-                   │
-           GCP Secret Manager
-           (DB password, Firebase config)
+    ├──────────────┬───────────────────────┐
+    ▼              ▼                       ▼
+Cloud Run      Cloud Run              Cloud Run
+Auth Service   Patient Service        Appointment Service
+(Port 8082)    (Port 8002)            (Port 8004)
+    │               │                      │
+    │           └───┴──────────────────────┘
+    │                          │
+    └──────────────────────────┤
+                               ▼
+                       Cloud SQL PostgreSQL
+                       (Private VPC — no public IP)
 
-Cloud Logging ← All services emit structured logs
-Cloud Audit Logs ← All GCP API calls captured
-Vertex AI Gemini ← Phase 2 AI analysis endpoint
+Cloud Memorystore Redis ← JWT blacklist (auth-service + gateway)
+GCP Secret Manager      ← RS256 keys, DB password, Redis password
+Cloud Logging           ← All services emit structured logs
+Cloud Audit Logs        ← All GCP API calls captured
+Vertex AI Gemini        ← Phase 2 AI analysis endpoint
 ```
 
 ### Services in Scope
 
 | Service | Phase | Port | Responsibility |
 |---|---|---|---|
-| API Gateway | 1 | 8080 | Routing, Firebase JWT validation, rate limiting |
+| API Gateway | 1 | 8080 | Routing, RS256 JWT validation via JWKS, Redis blacklist check, rate limiting |
+| Auth Service | 1 | 8082 | Registration, login, token refresh/logout, JWKS endpoint |
 | Patient Service | 1 | 8002 | Patient profile, medical history read |
 | Appointment Service | 1 | 8004 | Browse encounters, book/cancel |
 | Provider Service | 2 | 8003 | Provider profiles, RBAC |
@@ -398,9 +417,21 @@ Vertex AI Gemini ← Phase 2 AI analysis endpoint
 ## 6. API Design (Phase 1)
 
 ### Authentication
-All protected endpoints require: `Authorization: Bearer <Firebase JWT>`
+All protected endpoints require: `Authorization: Bearer <JWT>`
 
-Gateway validates JWT on every request before routing to downstream services.
+JWT is issued by auth-service (RS256). Gateway validates signature locally using the
+public key fetched from `auth-service/.well-known/jwks.json` (cached, re-fetched on kid miss).
+Gateway also checks the JTI against Redis blacklist before forwarding.
+
+### Auth Service Endpoints
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/auth/register/patient` | None | Create patient account, link via MRN |
+| POST | `/api/auth/register/provider` | None | Create provider account, link via provider_code |
+| POST | `/api/auth/login` | None | Returns JWT access + refresh token pair |
+| POST | `/api/auth/refresh` | Refresh token | Rotate tokens, enforce 8hr session cap |
+| POST | `/api/auth/logout` | Bearer token | Blacklist both tokens in Redis |
 
 ### Patient Service Endpoints
 
@@ -440,26 +471,32 @@ Gateway validates JWT on every request before routing to downstream services.
 
 ```
 Layer 1 — Network:    Cloud Armor WAF (OWASP Top 10, DDoS protection)
-Layer 2 — Auth:       Firebase Auth + JWT validation at Gateway
-Layer 3 — Access:     RBAC (patient role Phase 1, provider role Phase 2)
-Layer 4 — Secrets:    GCP Secret Manager (no credentials in code or env vars)
-Layer 5 — Data:       Cloud SQL in private VPC, TLS in transit
-Layer 6 — Audit:      Cloud Audit Logs + structured audit_logs table
-Layer 7 — CI/CD:      Workload Identity Federation — keyless GCP auth from GitHub Actions
-Layer 8 — Scan:       OWASP ZAP security scan in CI pipeline
+Layer 2 — Auth:       Custom auth-service (RS256 JWT) + JWKS validation at Gateway
+Layer 3 — Revocation: Redis blacklist — JTI checked on every request at Gateway
+Layer 4 — Access:     RBAC via role claim in JWT (PATIENT / PROVIDER / ADMIN)
+Layer 5 — Secrets:    GCP Secret Manager (no credentials in code or env vars)
+Layer 6 — Data:       Cloud SQL in private VPC, TLS in transit
+Layer 7 — Audit:      Cloud Audit Logs + structured audit_logs table
+Layer 8 — CI/CD:      Workload Identity Federation — keyless GCP auth from GitHub Actions
+Layer 9 — Scan:       OWASP ZAP security scan in CI pipeline
 ```
 
-### Firebase Auth Flow
+### JWT Auth Flow
 
 ```
-1. User registers / logs in via Firebase Auth (client)
-2. Firebase issues JWT (RS256 signed)
-3. Client sends JWT in Authorization header
-4. API Gateway validates JWT signature against Firebase public keys
-5. Gateway extracts uid, email, role from JWT claims
-6. Gateway forwards request + user context to downstream service
-7. Service performs RBAC check before processing
-8. All access written to audit_logs table
+1. User registers or logs in via POST /api/auth/login
+2. Auth-service validates credentials, issues RS256 JWT (access 15min + refresh 1hr)
+3. Client sends JWT in Authorization: Bearer header
+4. API Gateway:
+   a. Extracts kid from JWT header
+   b. Looks up kid in local JWKS cache (fetched from auth-service at startup)
+   c. kid miss → re-fetches JWKS (rate limited: max once per 5min)
+   d. Validates RS256 signature locally — no auth-service call per request
+   e. Checks JTI against Redis blacklist → 401 if blacklisted
+   f. Extracts sub (user id), role, username from claims
+   g. Injects X-User-Id, X-User-Role, X-Username headers → forwards to downstream
+5. Downstream service reads user context from headers — no JWT parsing needed
+6. All access written to audit_logs table
 ```
 
 ### CI/CD Security — Workload Identity Federation (Public Repo Strategy)
@@ -521,12 +558,12 @@ commands, and GitHub Actions workflow files.
 
 ### GCP Secret Manager — Secrets Stored
 
-| Secret Name                   | Content                                 |
-|-------------------------------|-----------------------------------------|
-| `db-password`                 | Cloud SQL PostgreSQL password           |
-| `firebase-project-id`         | Firebase project identifier             |
-| `firebase-service-account`    | Firebase Admin SDK credentials          |
-| `jwt-secret`                  | Internal service-to-service signing key |
+| Secret Name                   | Content                                         | Access             |
+|-------------------------------|-------------------------------------------------|--------------------|
+| `db-password`                 | Cloud SQL PostgreSQL password                   | All services       |
+| `jwt-private-key`             | RS256 private key (PEM) — signs tokens          | auth-service only  |
+| `jwt-public-key`              | RS256 public key (PEM) — served via JWKS        | auth-service only  |
+| `redis-auth-password`         | Cloud Memorystore Redis AUTH password           | auth-service only  |
 
 ### STRIDE Threat Model (Summary)
 
@@ -546,16 +583,16 @@ commands, and GitHub Actions workflow files.
 
 ### GCP Services Used
 
-| Service                 | Purpose             | Free Tier              |
-|-------------------------|---------------------|------------------------|
-| Cloud Run               | Host all services   | 2M requests/month free |
-| Cloud SQL (db-f1-micro) | PostgreSQL database | Not free but ~$7/month |
-| Firebase Auth           | User authentication | 10K MAU free           |
-| GCP Secret Manager      | Credential storage  | 6 secrets free         |
-| Cloud Armor             | WAF                 | Pay per policy         |
-| Cloud Logging           | Structured logs     | 50 GB/month free       |
-| Cloud Audit Logs        | GCP API audit trail | Free                   |
-| Vertex AI Gemini        | AI analysis (Phase 2) | Free quota available |
+| Service                      | Purpose                        | Cost                   |
+|------------------------------|--------------------------------|------------------------|
+| Cloud Run                    | Host all services              | 2M requests/month free |
+| Cloud SQL (db-f1-micro)      | PostgreSQL database            | ~$7/month              |
+| Cloud Memorystore Redis Basic | JWT blacklist                 | ~$11-12/month          |
+| GCP Secret Manager           | RS256 keys, DB + Redis passwords | 6 secrets free       |
+| Cloud Armor                  | WAF                            | Pay per policy         |
+| Cloud Logging                | Structured logs                | 50 GB/month free       |
+| Cloud Audit Logs             | GCP API audit trail            | Free                   |
+| Vertex AI Gemini             | AI analysis (Phase 2)          | Free quota available   |
 
 ### Terraform Structure (GCP Provider)
 
@@ -608,11 +645,12 @@ Cloud SQL PostgreSQL
 - [x] Terraform: Cloud SQL + VPC + Secret Manager
 - [x] Generate 200-patient Synthea dataset (Washington state)
 - [x] Write and run data loading scripts
-- [ ] Migrate Spring Boot services to Cloud Run
-- [ ] Firebase Auth integration + JWT validation at Gateway
+- [ ] Auth Service: registration, login, refresh, logout, JWKS endpoint
+- [ ] Gateway: RS256 JWT validation via JWKS + Redis blacklist check
 - [ ] Patient Service: 4 endpoints live
 - [ ] Appointment Service: 5 endpoints live
 - [ ] `audit_logs` table wired up on every request
+- [ ] Migrate Spring Boot services to Cloud Run
 
 ### Phase 2 — Security Layer (Weeks 5–6)
 
@@ -695,7 +733,26 @@ healthcare-ai-microservices/
         └── cd.yml
 
 12. What Changed From Previous Design
-PreviousCurrentReasonRailway deploymentGCP Cloud RunGCP free tier active, better security toolingSupabase PostgreSQLCloud SQL PostgreSQLGCP-native, VPC-private, IAM integrationSupabase AuthFirebase Auth + Identity PlatformOAuth 2.0/OIDC, GCP-nativeAWS S3, IAM, CloudWatchGCP equivalentsRemoved deprecated AWS designuser_profiles + patient_profiles splitSingle patients tableMirrors Synthea flat structureappointments tableencounters tableCorrect FHIR term, maps to Synthea directlymedical_records catch-allconditions, allergies, medications, observationsNormalized from real Synthea columnscustom_data JSONB everywhereReal typed columnsDerived from actual Synthea CSV fieldsGeneric synthetic dataSynthea CSV (FHIR-aligned)Real healthcare data standardPython FastAPI AI serviceVertex AI Gemini APIGCP-native, no model hosting neededGitHub Secret key storageWorkload Identity FederationKeyless, no credential file existsSecrets in env vars / configGCP Secret Manager onlyNothing sensitive in repo or logsHardcoded values in tfvarsTF_VAR_* environment variablesScalable across environments and regionsMonolithic CI/CD scriptComponent-owned scriptsDecoupled, independently maintainable
+
+| Previous | Current | Reason |
+|---|---|---|
+| Railway deployment | GCP Cloud Run | GCP free tier active, better security tooling |
+| Supabase PostgreSQL | Cloud SQL PostgreSQL | GCP-native, VPC-private, IAM integration |
+| Supabase Auth → Firebase Auth | Custom auth-service (RS256 JWT) | Full ownership of auth flow; JWKS-based validation; no third-party auth dependency |
+| firebase_uid in patients/providers | auth_id UUID FK → users.id | Matches custom auth-service; users table owned by auth-service |
+| No auth-service | Auth Service (Port 8082) | Registration, login, token lifecycle, JWKS endpoint |
+| Firebase JWT at Gateway | RS256 JWT via JWKS + Redis blacklist | Gateway validates locally, checks revocation — no per-request auth-service call |
+| AWS S3, IAM, CloudWatch | GCP equivalents | Removed deprecated AWS design |
+| user_profiles + patient_profiles split | Single patients table | Mirrors Synthea flat structure |
+| appointments table | encounters table | Correct FHIR term, maps to Synthea directly |
+| medical_records catch-all | conditions, allergies, medications, observations | Normalized from real Synthea columns |
+| custom_data JSONB everywhere | Real typed columns | Derived from actual Synthea CSV fields |
+| Generic synthetic data | Synthea CSV (FHIR-aligned) | Real healthcare data standard |
+| Python FastAPI AI service | Vertex AI Gemini API | GCP-native, no model hosting needed |
+| GitHub Secret key storage | Workload Identity Federation | Keyless, no credential file exists |
+| Secrets in env vars / config | GCP Secret Manager only | Nothing sensitive in repo or logs |
+| Hardcoded values in tfvars | TF_VAR_* environment variables | Scalable across environments and regions |
+| Monolithic CI/CD script | Component-owned scripts | Decoupled, independently maintainable |
 
 Healthcare AI Platform — Master Design Document v2.0
 Built with: GCP · Spring Boot · Firebase Auth · Synthea · Vertex AI

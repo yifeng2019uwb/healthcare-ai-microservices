@@ -1,147 +1,180 @@
 # Gateway Service Design
 
-> **🎯 Professional Focus: API Gateway for Healthcare Microservices**
->
-> This document defines the design for the API Gateway service.
-> **Design Philosophy**: Simple routing and orchestration for healthcare microservices.
-
-## 📋 **Document Information**
-
-- **Document Title**: Gateway Service Design for Healthcare AI Microservices
-- **Version**: 1.0
-- **Date**: 2024-01-15
-- **Author**: Healthcare AI Team
-- **Status**: Draft
-
-## 🎯 **Overview**
-
-### **What This Service Is**
-The Gateway Service is the **single entry point** for all external API requests, handling routing, authentication, and basic request/response processing.
-
-### **Business Value & Impact**
-The Gateway provides centralized access control, request routing, and security for all healthcare microservices, ensuring consistent API experience and security compliance.
-
-### **Scope**
-- **In Scope**: Request routing, authentication middleware, basic validation, response formatting
-- **Out of Scope**: Business logic, data processing, complex orchestration
-
-**Note**: Gateway handles orchestration for registration flow (calls Supabase Auth + business services).
-
-## 📚 **Definitions & Glossary**
-
-- **API Gateway**: Central entry point for all external API requests
-- **Routing**: Directing requests to appropriate backend services
-- **Authentication Middleware**: JWT validation and user context extraction
-- **Rate Limiting**: Controlling request frequency per user/IP
-
-## 👥 **User Cases**
-
-### **User Case 1: Patient Registration**
-When a patient wants to register, the Gateway receives the registration request, orchestrates the complete registration process by calling Supabase Auth API and Patient Service, and returns success/error response.
-
-**Process**: Gateway validates format → Calls Supabase Auth → Creates patient profile → Returns result
-**Failure Handling**: Gateway coordinates rollback if any step fails
-
-### **User Case 2: Patient Profile Access**
-When a patient wants to view their profile, the Gateway validates their JWT token, extracts user context, routes the request to Patient Service, and returns the profile data.
-
-### **User Case 3: Provider Authentication**
-When a provider logs in, the Gateway validates their JWT token, extracts role and permissions, and allows access to provider-specific endpoints.
-
-## 🔧 **Solution Alternatives**
-
-### **Solution 1: Simple Routing Gateway**
-**Infrastructure**: Spring Cloud Gateway with basic routing
-**Database**: No database required
-**Workflow**: Route requests to appropriate services based on URL patterns
-
-### **Solution 2: Orchestration Gateway (RECOMMENDED)**
-**Infrastructure**: Spring Cloud Gateway with service orchestration
-**Database**: No database required
-**Workflow**: Gateway coordinates multi-service operations (registration, complex flows)
-
-**Registration Flow**: Gateway orchestrates Supabase Auth + Business Service calls
-**Failure Handling**: Gateway coordinates rollback for transactional operations
-
-### **Solution 3: Advanced Gateway**
-**Infrastructure**: Spring Cloud Gateway with caching, rate limiting, monitoring
-**Database**: Redis for caching and rate limiting
-**Workflow**: Full-featured gateway with advanced capabilities
-
-## 🏗️ **High-Level Design**
-
-### **Core Concept**
-Spring Cloud Gateway positioned as the single external entry point, routing requests to appropriate backend services while handling authentication and basic validation.
-
-### **Key Components**
-- **Gateway Service**: Request routing and orchestration (Port 8080)
-- **Authentication Middleware**: JWT validation and user context extraction
-- **Route Configuration**: URL-based routing to backend services
-- **Response Handling**: Error handling and response formatting
-
-### **Data Flow**
-1. **External Request**: Client sends request to Gateway
-2. **Authentication**: Gateway validates JWT token via Auth Service
-3. **Routing**: Gateway routes request to appropriate backend service
-4. **Response**: Gateway returns response to client
-
-## 🛠️ **API Design**
-
-### **Endpoints**
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/api/auth/register/patient` | Patient registration | No |
-| POST | `/api/auth/register/provider` | Provider registration | No |
-| POST | `/api/patients/*` | Patient service routes | Yes |
-| POST | `/api/providers/*` | Provider service routes | Yes |
-| POST | `/api/medical/*` | Medical records routes | Yes |
-| GET | `/health` | Health check | No |
-
-### **Request/Response Examples**
-[To be defined based on solution choice]
-
-## 🗄️ **Database Schema Design**
-
-### **No Database Tables Required**
-The Gateway Service is stateless and does not require any database tables.
-
-## ❓ **Q&A**
-
-**Q: How does the Gateway handle authentication?**
-A: [To be defined based on solution choice]
-
-**Q: What happens if a backend service is down?**
-A: [To be defined based on solution choice]
-
-**Q: How does the Gateway handle rate limiting?**
-A: [To be defined based on solution choice]
-
-## 🔍 **Discussion Points**
-
-### **1. Gateway Implementation Strategy**
-**Question**: Simple routing vs. orchestration approach?
-- **Simple Routing**: Basic request forwarding, minimal complexity
-- **Orchestration**: Handles registration flow, more complex but better UX
-- **Decision Needed**: Balance MVP goals with functionality
-
-### **2. External Auth Integration**
-**Question**: How does Gateway work with Supabase Auth and Auth Service?
-- **Flow**: Supabase Auth → JWT → Gateway → Auth Service → Business Services
-- **Registration**: Gateway orchestrates complete registration (Supabase Auth + Business Service)
-- **Decision**: Gateway handles orchestration, Auth Service only validates JWT
-
-### **3. Service Communication**
-**Question**: How should Gateway handle service failures?
-- **Error Handling**: Circuit breakers, fallbacks, retries
-- **User Experience**: Clear error messages vs. technical details
-- **Decision Needed**: Error handling strategy
-
-## 📚 **References**
-
-- [System Design](system-design.md)
-- [Authentication Design](authentication-design.md)
-- [Patient Service Design](patient-service-design.md)
+> Version: 2.0 | Status: Active | Last Updated: April 2026
 
 ---
 
-*This Gateway service design provides the foundation for routing and orchestrating requests across healthcare microservices.*
+## Overview
+
+The Gateway is the single entry point for all external requests.
+It handles JWT validation and routes to downstream services.
+No business logic lives here.
+
+---
+
+## Responsibilities
+
+- Route all incoming requests to the correct downstream service
+- Validate RS256 JWT on every protected request (locally via cached JWKS)
+- Check JTI against Redis blacklist on every protected request
+- Inject user context headers (`X-User-Id`, `X-User-Role`, `X-Username`) for downstream services
+- Does NOT handle registration, login, or any business logic
+
+---
+
+## Dependencies
+
+```xml
+spring-boot-starter-webflux          <!-- reactive — Spring Cloud Gateway requires reactive -->
+spring-cloud-starter-gateway
+spring-boot-starter-data-redis-reactive
+spring-boot-starter-actuator
+jjwt-api:0.12.6
+jjwt-impl:0.12.6
+jjwt-jackson:0.12.6
+spring-cloud-gcp-starter-secretmanager
+```
+
+---
+
+## Port
+
+`8080`
+
+---
+
+## Route Table
+
+| Method | Path | Auth Required | Downstream |
+|--------|------|---------------|------------|
+| POST | `/api/auth/register/patient` | No | auth-service |
+| POST | `/api/auth/register/provider` | No | auth-service |
+| POST | `/api/auth/login` | No | auth-service |
+| POST | `/api/auth/refresh` | No | auth-service |
+| POST | `/api/auth/logout` | Yes | auth-service |
+| GET  | `/api/patients/**` | Yes | patient-service |
+| PUT  | `/api/patients/**` | Yes | patient-service |
+| GET  | `/api/encounters/**` | Yes | appointment-service |
+| POST | `/api/encounters/**` | Yes | appointment-service |
+| PUT  | `/api/encounters/**` | Yes | appointment-service |
+| GET  | `/actuator/health` | No | gateway (self) |
+
+---
+
+## Request Flow
+
+### Public request (no auth)
+```
+Client → Gateway → route to downstream → return response
+```
+
+### Protected request
+```
+Client → Gateway
+    │
+    ├── 1. Extract JWT from Authorization: Bearer header
+    │        → missing or malformed → 401
+    │
+    ├── 2. Extract kid from JWT header
+    │        → look up kid in local JWKS cache
+    │        → kid miss → re-fetch from auth-service/.well-known/jwks.json
+    │                     (rate limited: max once per 5 min)
+    │        → still not found → 401
+    │
+    ├── 3. Validate RS256 signature locally
+    │        → invalid signature → 401
+    │        → expired (exp claim) → 401
+    │
+    ├── 4. Check JTI in Redis blacklist
+    │        → blacklisted → 401
+    │        → Redis unavailable → 503 (fail closed)
+    │
+    ├── 5. Inject headers into forwarded request:
+    │        X-User-Id:   {sub}
+    │        X-User-Role: {role}
+    │        X-Username:  {username}
+    │
+    └── 6. Route to downstream service → return response
+```
+
+---
+
+## JWKS Cache
+
+```
+Startup       → fetch JWKS from auth-service/.well-known/jwks.json → cache in memory
+Per request   → look up kid in cache → validate locally (no network call)
+kid miss      → re-fetch JWKS, rate limited to max once per 5 min
+Cache TTL     → 5 minutes (background refresh)
+```
+
+Gateway never calls auth-service per request for validation — all validation is local.
+
+---
+
+## Error Responses
+
+| Scenario | HTTP Status | Message |
+|---|---|---|
+| Missing Authorization header | 401 | Unauthorized |
+| Invalid or expired JWT | 401 | Unauthorized |
+| JTI blacklisted | 401 | Unauthorized |
+| Redis unavailable | 503 | Service Unavailable |
+| Downstream service unreachable | 502 | Bad Gateway |
+
+Gateway never exposes internal error detail to clients.
+
+---
+
+## Headers Forwarded to Downstream
+
+After successful JWT validation, gateway strips the original `Authorization` header
+and injects:
+
+| Header | Value | Source |
+|--------|-------|--------|
+| `X-User-Id` | users.id (UUID) | JWT `sub` claim |
+| `X-User-Role` | PATIENT / PROVIDER / ADMIN | JWT `role` claim |
+| `X-Username` | username string | JWT `username` claim |
+
+Downstream services trust these headers — they only accept requests via gateway (VPC-internal).
+
+---
+
+## Class Structure
+
+```
+gateway/src/main/java/com/healthcare/
+├── GatewayApplication.java
+├── config/
+│   ├── RouteConfig.java         — Spring Cloud Gateway route definitions
+│   ├── RedisConfig.java         — Cloud Memorystore connection
+│   └── JwksConfig.java          — JWKS fetch + cache initialization
+├── filter/
+│   └── JwtAuthFilter.java       — GlobalFilter: validates JWT, checks blacklist, injects headers
+├── jwks/
+│   ├── JwksCache.java           — in-memory JWKS cache with TTL + rate-limited refresh
+│   └── JwksClient.java          — fetches JWKS from auth-service
+└── exception/
+    └── GatewayExceptionHandler.java — maps errors to 401/502/503
+```
+
+---
+
+## Infrastructure
+
+| Component | GCP Service |
+|---|---|
+| Gateway runtime | Cloud Run (Port 8080) |
+| JWKS source | auth-service `/.well-known/jwks.json` (VPC-internal) |
+| Token blacklist | Cloud Memorystore Redis (shared with auth-service) |
+| Secret storage | GCP Secret Manager (Redis password via Workload Identity) |
+
+---
+
+## Future Additions
+
+- Rate limiting (per IP, per user)
+- Request/response logging with correlation IDs
+- Circuit breaker for downstream services
+- Cloud Armor WAF integration

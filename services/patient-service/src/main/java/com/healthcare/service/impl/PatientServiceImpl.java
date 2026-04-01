@@ -86,24 +86,8 @@ public class PatientServiceImpl implements PatientService {
             throw new ValidationException("User ID cannot be null");
         }
 
-        return patientDao.findByUserId(userId)
+        return patientDao.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found for user ID: " + userId));
-    }
-
-    /**
-     * Get patient by patient number.
-     *
-     * @param patientNumber the patient number
-     * @return the patient entity
-     */
-    @Transactional(readOnly = true)
-    public Patient getPatientByNumber(String patientNumber) {
-        if (patientNumber == null || patientNumber.trim().isEmpty()) {
-            throw new ValidationException("Patient number cannot be null or empty");
-        }
-
-        return patientDao.findByPatientNumber(patientNumber.trim())
-                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with number: " + patientNumber));
     }
 
     /**
@@ -126,7 +110,7 @@ public class PatientServiceImpl implements PatientService {
             throw new ResourceNotFoundException("Patient not found with ID: " + patient.getId());
         }
 
-        return patientDao.update(patient);
+        return patientDao.save(patient);
     }
 
     /**
@@ -139,20 +123,8 @@ public class PatientServiceImpl implements PatientService {
             throw new ValidationException("User cannot be null");
         }
 
-        if (user.getExternalAuthId() == null || user.getExternalAuthId().trim().isEmpty()) {
-            throw new ValidationException("External authentication ID is required");
-        }
-
         if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
             throw new ValidationException("Email is required");
-        }
-
-        if (user.getFirstName() == null || user.getFirstName().trim().isEmpty()) {
-            throw new ValidationException("First name is required");
-        }
-
-        if (user.getLastName() == null || user.getLastName().trim().isEmpty()) {
-            throw new ValidationException("Last name is required");
         }
 
         // Validate email format using simple regex
@@ -161,21 +133,11 @@ public class PatientServiceImpl implements PatientService {
             throw new ValidationException("Invalid email format: " + user.getEmail());
         }
 
-        // Validate date of birth if provided
-        if (user.getDateOfBirth() != null && user.getDateOfBirth().isAfter(LocalDate.now())) {
-            throw new ValidationException("Date of birth cannot be in the future");
-        }
     }
 
-    /**
-     * Generate a unique patient number.
-     *
-     * @return the generated patient number
-     */
-    private String generatePatientNumber() {
-        String prefix = "PAT-";
-        String timestamp = String.valueOf(System.currentTimeMillis());
-        String randomSuffix = String.valueOf((int) (Math.random() * 1000));
-        return prefix + timestamp.substring(timestamp.length() - 8) + randomSuffix;
+    @Override
+    public Patient getPatientByNumber(String patientNumber) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getPatientByNumber'");
     }
 }
