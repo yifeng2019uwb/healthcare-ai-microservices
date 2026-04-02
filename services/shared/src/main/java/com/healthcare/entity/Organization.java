@@ -78,7 +78,7 @@ public class Organization extends ProfileBaseEntity {
 
     /** For JPA only. */
     @SuppressWarnings(AppConstants.SUPPRESS_UNUSED)
-    private Organization() {}
+    protected Organization() {}
 
     /**
      * Create a new organization.

@@ -117,7 +117,7 @@ public class Allergy extends BaseEntity {
 
     /** For JPA only. */
     @SuppressWarnings(AppConstants.SUPPRESS_UNUSED)
-    private Allergy() {}
+    protected Allergy() {}
 
     /**
      * Create a new allergy record.

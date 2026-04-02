@@ -13,7 +13,7 @@ public final class DatabaseConstants {
     public static final String TABLE_USERS          = "users";
     public static final String TABLE_PATIENTS       = "patients";
     public static final String TABLE_PROVIDERS      = "provider_profiles";
-    public static final String TABLE_ENCOUNTERS     = "encounter";
+    public static final String TABLE_ENCOUNTERS     = "encounters";
     public static final String TABLE_CONDITIONS     = "conditions";
     public static final String TABLE_ALLERGIES       = "allergies";
     public static final String TABLE_AUDIT_LOGS     = "audit_logs";
@@ -134,12 +134,12 @@ public final class DatabaseConstants {
     // ==================== ALLERGYS COLUMNS ====================
 
     public static final String COL_ALLERGY_TYPE        = "allergy_type";
-    public static final String COL_START_DATE          = "col_start_date";
+    public static final String COL_START_DATE          = "start_date";
     public static final String COL_CATEGORY            = "category";
     public static final String COL_REACTION1           = "reaction1";
-    public static final String COL_SEVERITY1           = "serverity1";
+    public static final String COL_SEVERITY1           = "severity1";
     public static final String COL_REACTION2           = "reaction2";
-    public static final String COL_SEVERITY2           = "serverity2";
+    public static final String COL_SEVERITY2           = "severity2";
     public static final String COL_DESCRIPTION1        = "description1";
     public static final String COL_DESCRIPTION2        = "description2";
 

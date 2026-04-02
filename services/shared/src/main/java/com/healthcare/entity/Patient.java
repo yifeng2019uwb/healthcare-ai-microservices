@@ -228,7 +228,7 @@ public class Patient extends ProfileBaseEntity {
 
     /** For JPA only. */
     @SuppressWarnings(AppConstants.SUPPRESS_UNUSED)
-    private Patient() {}
+    protected Patient() {}
 
     /**
      * Minimal constructor for API-created patient records.

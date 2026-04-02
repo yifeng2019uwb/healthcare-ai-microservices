@@ -46,7 +46,7 @@ TERRAFORM_DIR="./healthcare-infra/terraform"
 SERVICES_DIR="./services"
 GATEWAY_URL="${GATEWAY_URL:-https://gateway-dev-qgjl6kwqia-uw.a.run.app}"
 # Services to build/deploy
-SERVICES=("auth-service" "gateway")
+SERVICES=("auth-service" "patient-service" "gateway")
 PROXY_PID=""
 # =============================================================================
 
@@ -300,27 +300,7 @@ run_data() {
 
 run_deploy() {
   stage "Deploy to Cloud Run"
-  gcloud auth configure-docker "$GCP_REGION-docker.pkg.dev" --quiet
-
-  GIT_SHA=$(git rev-parse --short HEAD)
-
-  # Install parent POM + shared once before building any service
-  (cd services && mvn install -N -q && cd shared && mvn install -DskipTests -q)
-
-  for svc in "${SERVICES[@]}"; do
-    [[ -d "services/$svc" ]] || { warn "services/$svc not found — skipped"; continue; }
-    warn "Building $svc..."
-
-    (cd "services/$svc" && mvn clean package -DskipTests -q)
-
-    IMAGE="$ARTIFACT_REGISTRY/$svc:$GIT_SHA"
-    gcloud builds submit --tag "$IMAGE" "services/$svc/"
-
-    warn "Deploying $svc..."
-    ./scripts/deploy-services.sh "$svc" "$IMAGE"
-
-    ok "$svc deployed → $svc-$ENVIRONMENT"
-  done
+  ./scripts/deploy-services.sh all
 }
 
 run_integration() {

@@ -73,7 +73,7 @@ public class Condition extends BaseEntity {
 
     /** For JPA only. */
     @SuppressWarnings(AppConstants.SUPPRESS_UNUSED)
-    private Condition() {}
+    protected Condition() {}
 
     /**
      * Create a new condition.

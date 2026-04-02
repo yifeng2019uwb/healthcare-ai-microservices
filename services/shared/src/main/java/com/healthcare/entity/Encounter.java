@@ -137,7 +137,7 @@ public class Encounter extends ProfileBaseEntity {
 
     /** For JPA only. */
     @SuppressWarnings(AppConstants.SUPPRESS_UNUSED)
-    private Encounter() {}
+    protected Encounter() {}
 
     /**
      * Create a new encounter.

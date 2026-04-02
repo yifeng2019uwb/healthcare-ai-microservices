@@ -1,58 +1,31 @@
 package com.healthcare.service;
 
-import com.healthcare.entity.Patient;
-import com.healthcare.entity.User;
+import com.healthcare.dto.AllergyResponse;
+import com.healthcare.dto.ConditionResponse;
+import com.healthcare.dto.EncounterResponse;
+import com.healthcare.dto.PageResponse;
+import com.healthcare.dto.PatientProfileResponse;
+import com.healthcare.dto.UpdatePatientRequest;
+import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
- * Service interface for Patient operations.
- * Defines the business logic contract for patient management.
+ * Business logic contract for patient-service.
  *
- * @author Healthcare AI Team
- * @version 1.0.0
- * @since 2025-01-09
+ * All methods operate on the authenticated patient identified by authId
+ * (the users.id propagated by the gateway in the X-User-Id header).
  */
 public interface PatientService {
 
-    /**
-     * Create a new patient account.
-     * Creates both User and Patient entities in the database.
-     *
-     * @param user the user entity to create patient for
-     * @return the created user entity with generated ID
-     */
-    User createPatient(User user);
+    PatientProfileResponse getProfile(UUID authId);
 
-    /**
-     * Get user by ID.
-     *
-     * @param userId the user ID
-     * @return the user entity
-     */
-    User getUserById(UUID userId);
+    PatientProfileResponse updateProfile(UUID authId, String username, UpdatePatientRequest request);
 
-    /**
-     * Get patient by user ID.
-     *
-     * @param userId the user ID
-     * @return the patient entity
-     */
-    Patient getPatientByUserId(UUID userId);
+    PageResponse<EncounterResponse> getEncounters(UUID authId, Pageable pageable);
 
-    /**
-     * Get patient by patient number.
-     *
-     * @param patientNumber the patient number
-     * @return the patient entity
-     */
-    Patient getPatientByNumber(String patientNumber);
+    List<ConditionResponse> getConditions(UUID authId);
 
-    /**
-     * Update patient information.
-     *
-     * @param patient the patient entity to update
-     * @return the updated patient entity
-     */
-    Patient updatePatient(Patient patient);
+    List<AllergyResponse> getAllergies(UUID authId);
 }

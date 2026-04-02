@@ -62,7 +62,7 @@ public class User extends ProfileBaseEntity {
 
     /** For JPA only. */
     @SuppressWarnings(AppConstants.SUPPRESS_UNUSED)
-    private User() {}
+    protected User() {}
 
     /**
      * Create a new user account.

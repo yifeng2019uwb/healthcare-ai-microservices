@@ -147,7 +147,7 @@ public class Provider extends ProfileBaseEntity {
 
     /** For JPA only. */
     @SuppressWarnings(AppConstants.SUPPRESS_UNUSED)
-    private Provider() {}
+    protected Provider() {}
 
     /**
      * Minimal constructor for API-created provider records.

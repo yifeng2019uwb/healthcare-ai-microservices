@@ -1,141 +1,149 @@
 package com.healthcare.service.impl;
 
+import com.healthcare.dao.AllergyDao;
+import com.healthcare.dao.AuditLogDao;
+import com.healthcare.dao.ConditionDao;
+import com.healthcare.dao.EncounterDao;
 import com.healthcare.dao.PatientDao;
-import com.healthcare.dao.UserDao;
+import com.healthcare.dto.AllergyResponse;
+import com.healthcare.dto.ConditionResponse;
+import com.healthcare.dto.EncounterResponse;
+import com.healthcare.dto.PageResponse;
+import com.healthcare.dto.PatientProfileResponse;
+import com.healthcare.dto.UpdatePatientRequest;
+import com.healthcare.entity.AuditLog;
 import com.healthcare.entity.Patient;
-import com.healthcare.entity.User;
-import com.healthcare.exception.ResourceNotFoundException;
-import com.healthcare.exception.ValidationException;
+import com.healthcare.enums.ActionType;
+import com.healthcare.enums.Outcome;
+import com.healthcare.enums.UserRole;
+import com.healthcare.exception.PatientServiceException;
 import com.healthcare.service.PatientService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-/**
- * Service implementation for Patient operations.
- * Handles patient account creation and profile management.
- *
- * @author Healthcare AI Team
- * @version 1.0.0
- * @since 2025-01-09
- */
 @Service
-@Transactional
 public class PatientServiceImpl implements PatientService {
 
-    @Autowired
-    private UserDao userDao;
+    private static final Logger log = LoggerFactory.getLogger(PatientServiceImpl.class);
 
-    @Autowired
-    private PatientDao patientDao;
+    private static final String RESOURCE_PATIENTS = "patients";
 
-    @Override
-    public User createPatient(User user) {
-        // Validate input
-        validateUserForPatientCreation(user);
+    private final PatientDao patientDao;
+    private final EncounterDao encounterDao;
+    private final ConditionDao conditionDao;
+    private final AllergyDao allergyDao;
+    private final AuditLogDao auditLogDao;
 
-        // // Check if user already exists (conflict - resource already exists)
-        // if (userDao.findByExternalAuthId(user.getExternalAuthId()).isPresent()) {
-        //     throw new ConflictException("User with external ID already exists: " + user.getExternalAuthId());
-        // }
-
-        // if (userDao.findByEmail(user.getEmail()).isPresent()) {
-        //     throw new ConflictException("User with email already exists: " + user.getEmail());
-        // }
-
-        // // Set user status (role is already set in constructor)
-        // user.setStatus(UserStatus.ACTIVE);
-
-        // // Save user
-        // User savedUser = userDao.create(user);
-
-        // // Create patient profile
-        // Patient patient = new Patient(savedUser.getId(), generatePatientNumber());
-
-        // // Save patient
-        // patientDao.create(patient);
-
-        // return savedUser;
-        return null;
+    public PatientServiceImpl(PatientDao patientDao,
+                              EncounterDao encounterDao,
+                              ConditionDao conditionDao,
+                              AllergyDao allergyDao,
+                              AuditLogDao auditLogDao) {
+        this.patientDao   = patientDao;
+        this.encounterDao = encounterDao;
+        this.conditionDao = conditionDao;
+        this.allergyDao   = allergyDao;
+        this.auditLogDao  = auditLogDao;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public User getUserById(UUID userId) {
-        if (userId == null) {
-            throw new ValidationException("User ID cannot be null");
-        }
+    public PatientProfileResponse getProfile(UUID authId) {
+        Patient patient = requirePatient(authId);
 
-        return userDao.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
-    }
+        auditLogDao.insert(new AuditLog(ActionType.READ, RESOURCE_PATIENTS, Outcome.SUCCESS)
+                .withAuthId(authId.toString())
+                .withUserRole(UserRole.PATIENT)
+                .withResourceId(patient.getId()));
 
-    /**
-     * Get patient by user ID.
-     *
-     * @param userId the user ID
-     * @return the patient entity
-     */
-    @Transactional(readOnly = true)
-    public Patient getPatientByUserId(UUID userId) {
-        if (userId == null) {
-            throw new ValidationException("User ID cannot be null");
-        }
-
-        return patientDao.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Patient not found for user ID: " + userId));
-    }
-
-    /**
-     * Update patient information.
-     *
-     * @param patient the patient entity to update
-     * @return the updated patient entity
-     */
-    public Patient updatePatient(Patient patient) {
-        if (patient == null) {
-            throw new ValidationException("Patient cannot be null");
-        }
-
-        if (patient.getId() == null) {
-            throw new ValidationException("Patient ID cannot be null for update");
-        }
-
-        // Check if patient exists
-        if (!patientDao.existsById(patient.getId())) {
-            throw new ResourceNotFoundException("Patient not found with ID: " + patient.getId());
-        }
-
-        return patientDao.save(patient);
-    }
-
-    /**
-     * Validate user for patient creation.
-     *
-     * @param user the user entity to validate
-     */
-    private void validateUserForPatientCreation(User user) {
-        if (user == null) {
-            throw new ValidationException("User cannot be null");
-        }
-
-        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
-            throw new ValidationException("Email is required");
-        }
-
-        // Validate email format using simple regex
-        String emailPattern = "^[A-Za-z0-9+_.-]+@([A-Za-z0-9.-]+\\.[A-Za-z]{2,})$";
-        if (!user.getEmail().matches(emailPattern)) {
-            throw new ValidationException("Invalid email format: " + user.getEmail());
-        }
-
+        return PatientProfileResponse.from(patient);
     }
 
     @Override
-    public Patient getPatientByNumber(String patientNumber) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getPatientByNumber'");
+    @Transactional
+    public PatientProfileResponse updateProfile(UUID authId, String username, UpdatePatientRequest req) {
+        Patient patient = requirePatient(authId);
+
+        if (req.phone() != null)            patient.setPhone(req.phone());
+        if (req.emergencyContact() != null) patient.setEmergencyContact(req.emergencyContact());
+        if (req.address() != null)          patient.setAddress(req.address());
+        if (req.city() != null)             patient.setCity(req.city());
+        if (req.state() != null)            patient.setState(req.state());
+        if (req.zip() != null)              patient.setZip(req.zip());
+        if (req.notes() != null)            patient.setNotes(req.notes());
+
+        patient.setUpdatedBy(username);
+        patient = patientDao.save(patient);
+
+        auditLogDao.insert(new AuditLog(ActionType.UPDATE, RESOURCE_PATIENTS, Outcome.SUCCESS)
+                .withAuthId(authId.toString())
+                .withUserRole(UserRole.PATIENT)
+                .withResourceId(patient.getId()));
+
+        return PatientProfileResponse.from(patient);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<EncounterResponse> getEncounters(UUID authId, Pageable pageable) {
+        Patient patient = requirePatient(authId);
+
+        List<EncounterResponse> all = encounterDao.findByPatientId(patient.getId())
+                .stream()
+                .map(EncounterResponse::from)
+                .collect(Collectors.toList());
+
+        int start  = (int) pageable.getOffset();
+        int end    = Math.min(start + pageable.getPageSize(), all.size());
+        List<EncounterResponse> slice = (start >= all.size()) ? List.of() : all.subList(start, end);
+
+        Page<EncounterResponse> page = new PageImpl<>(slice, pageable, all.size());
+        return PageResponse.from(page);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ConditionResponse> getConditions(UUID authId) {
+        Patient patient = requirePatient(authId);
+        return conditionDao.findByIdPatientId(patient.getId())
+                .stream()
+                .map(ConditionResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AllergyResponse> getAllergies(UUID authId) {
+        Patient patient = requirePatient(authId);
+        return allergyDao.findByIdPatientId(patient.getId())
+                .stream()
+                .map(AllergyResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    // -------------------------------------------------------------------------
+
+    private Patient requirePatient(UUID authId) {
+        return patientDao.findByAuthId(authId)
+                .orElseThrow(() -> {
+                    log.warn("Patient not found for authId={}", authId);
+                    auditLogDao.insert(new AuditLog(ActionType.READ, RESOURCE_PATIENTS, Outcome.FAILURE)
+                            .withAuthId(authId.toString())
+                            .withUserRole(UserRole.PATIENT));
+                    return new PatientServiceException(
+                            HttpStatus.NOT_FOUND,
+                            PatientServiceException.PATIENT_NOT_FOUND,
+                            "Patient not found for authId=" + authId);
+                });
     }
 }

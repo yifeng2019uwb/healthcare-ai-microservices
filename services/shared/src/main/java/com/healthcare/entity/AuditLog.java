@@ -101,7 +101,7 @@ public class AuditLog {
 
     /** For JPA only. */
     @SuppressWarnings(AppConstants.SUPPRESS_UNUSED)
-    private AuditLog() {}
+    protected AuditLog() {}
 
     /**
      * Create an audit log entry.
