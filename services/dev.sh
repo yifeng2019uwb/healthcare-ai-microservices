@@ -209,6 +209,10 @@ else
 
         "test")
             echo "🧪 Testing $SERVICE..."
+            if [ "$SERVICE" != "shared" ] && [ -f "shared/pom.xml" ]; then
+                echo "📦 Installing shared module first..."
+                run_maven "shared" install -DskipTests -q
+            fi
             run_maven "$SERVICE" test
             echo "✅ Tests completed"
             ;;

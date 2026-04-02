@@ -47,6 +47,23 @@ resource "google_project_iam_member" "github_actions_cloudbuild" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
+data "google_project" "project" {
+  project_id = var.project_id
+}
+
+# Cloud Build SAs — both legacy and Compute Engine default SA used in newer projects
+resource "google_project_iam_member" "cloudbuild_registry_writer" {
+  project = var.project_id
+  role    = "roles/artifactregistry.writer"
+  member  = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
+}
+
+resource "google_project_iam_member" "compute_sa_registry_writer" {
+  project = var.project_id
+  role    = "roles/artifactregistry.writer"
+  member  = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+}
+
 # =============================================================================
 # Cloud Run Runtime — roles
 # =============================================================================

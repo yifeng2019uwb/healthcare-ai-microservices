@@ -16,19 +16,19 @@ output "artifact_registry_url" {
   value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.healthcare.repository_id}"
 }
 
-output "gateway_url" {
-  description = "Gateway Cloud Run public URL"
-  value       = google_cloud_run_v2_service.gateway.uri
+output "redis_host" {
+  description = "Memorystore Redis host (VPC-internal)"
+  value       = google_redis_instance.cache.host
 }
 
-output "patient_service_url" {
-  description = "Patient service Cloud Run URL (internal only)"
-  value       = google_cloud_run_v2_service.patient_service.uri
+output "vpc_connector_id" {
+  description = "Serverless VPC Access Connector ID — used in gcloud run deploy"
+  value       = google_vpc_access_connector.connector.id
 }
 
-output "appointment_service_url" {
-  description = "Appointment service Cloud Run URL (internal only)"
-  value       = google_cloud_run_v2_service.appointment_service.uri
+output "cloud_run_sa_email" {
+  description = "Cloud Run runtime service account email"
+  value       = google_service_account.cloud_run_sa.email
 }
 
 output "wif_provider" {

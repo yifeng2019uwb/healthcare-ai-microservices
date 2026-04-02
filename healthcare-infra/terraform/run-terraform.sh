@@ -54,7 +54,7 @@ ok "All required env vars present"
 # Skip in CI — secrets managed via GitHub Secrets
 # =============================================================================
 if [[ -z "$CI" ]]; then
-  required_secrets=("db-password" "jwt-secret" "firebase-service-account" "firebase-project-id")
+  required_secrets=("db-password" "jwt-private-key" "jwt-public-key")
   for secret in "${required_secrets[@]}"; do
     count=$(gcloud secrets versions list "$secret" \
       --project="$TF_VAR_project_id" \

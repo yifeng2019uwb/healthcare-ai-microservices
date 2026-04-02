@@ -69,3 +69,20 @@ resource "google_secret_manager_secret" "db_password_appointment_service" {
     auto {}
   }
 }
+
+resource "google_secret_manager_secret" "jwt_private_key" {
+  secret_id = "jwt-private-key"
+  project   = var.project_id
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret" "jwt_public_key" {
+  secret_id = "jwt-public-key"
+  project   = var.project_id
+  replication {
+    auto {}
+  }
+}
+

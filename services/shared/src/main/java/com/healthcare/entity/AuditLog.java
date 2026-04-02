@@ -8,6 +8,7 @@ import com.healthcare.enums.UserRole;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.validation.constraints.Size;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
@@ -15,7 +16,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.net.InetAddress;
@@ -59,13 +59,11 @@ public class AuditLog {
     private String authId;
 
     @Enumerated(EnumType.STRING)
-    @Size(max = DatabaseConstants.LEN_ROLE)
     @Column(name = DatabaseConstants.COL_USER_ROLE)
     private UserRole userRole;
 
     // WHAT
     @Enumerated(EnumType.STRING)
-    @Size(max = DatabaseConstants.LEN_ACTION)
     @Column(name = DatabaseConstants.COL_ACTION)
     private ActionType action;
 
@@ -78,7 +76,6 @@ public class AuditLog {
 
     // OUTCOME
     @Enumerated(EnumType.STRING)
-    @Size(max = DatabaseConstants.LEN_OUTCOME)
     @Column(name = DatabaseConstants.COL_OUTCOME)
     private Outcome outcome;
 

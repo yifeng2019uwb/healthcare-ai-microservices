@@ -33,18 +33,20 @@ set -e
 # =============================================================================
 # CONFIG — edit for your project
 # =============================================================================
-GCP_PROJECT_ID="your-healthcare-project"
+GCP_PROJECT_ID="healthcare-ai-yifeng"
 GCP_REGION="us-west1"
-CLOUD_SQL_INSTANCE="$GCP_PROJECT_ID:$GCP_REGION:healthcare-db"
+ENVIRONMENT="${ENVIRONMENT:-dev}"
+CLOUD_SQL_INSTANCE="$GCP_PROJECT_ID:$GCP_REGION:healthcare-db-$ENVIRONMENT"
 DB_NAME="healthcare"
 DB_USER="postgres"
 ARTIFACT_REGISTRY="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/healthcare"
-SYNTHEA_JAR="./tools/synthea-with-dependencies.jar"
-SYNTHEA_OUTPUT="./data/synthea/output"
-TERRAFORM_DIR="./healthcare-infra/terraform/gcp"
+SYNTHEA_JAR="./healthcare-infra/synthea/synthea-with-dependencies.jar"
+SYNTHEA_OUTPUT="./healthcare-infra/synthea/output"
+TERRAFORM_DIR="./healthcare-infra/terraform"
 SERVICES_DIR="./services"
-# Services to build/deploy — matches existing project structure
-SERVICES=("gateway" "patient-service" "appointment-service")
+GATEWAY_URL="${GATEWAY_URL:-https://gateway-dev-qgjl6kwqia-uw.a.run.app}"
+# Services to build/deploy
+SERVICES=("auth-service" "gateway")
 PROXY_PID=""
 # =============================================================================
 
@@ -162,6 +164,7 @@ preflight() {
 
   # Java + Maven only needed for build/test/integration
   if $RUN_BUILD || $RUN_TEST || $RUN_INTEGRATION; then
+    [[ -z "$JAVA_HOME" ]] && export JAVA_HOME=$(/usr/libexec/java_home 2>/dev/null)
     command -v java >/dev/null 2>&1 || fail "Java not found — run: ./scripts/local-ci.sh --setup"
     java -version 2>&1 | grep -qE "17|21|25" || warn "Java may not be 17+ — check: java -version"
     command -v mvn >/dev/null 2>&1 || fail "Maven not found — run: ./scripts/local-ci.sh --setup"
@@ -226,8 +229,10 @@ run_build() {
   echo "Installing shared module..."
   cd shared && mvn clean install -q && cd ..
 
-  echo "Building all services..."
-  ./dev.sh all build
+  echo "Building services..."
+  for svc in "${SERVICES[@]}"; do
+    ./dev.sh "$svc" build
+  done
 
   cd ..
   ok "All services compiled"
@@ -253,41 +258,14 @@ run_test() {
 
 run_terraform() {
   stage "Terraform"
-  cd "$TERRAFORM_DIR"
-
-  terraform init -input=false -upgrade -reconfigure 2>/dev/null || \
-  terraform init -input=false -upgrade
-  ok "Initialized"
-
-  terraform validate && ok "Config valid"
-
-  terraform plan -input=false -out=tfplan
-  ok "Plan complete"
-
-  if $TERRAFORM_APPLY; then
-    warn "Applying changes to GCP..."
-    terraform apply -input=false tfplan
-    ok "Applied"
-  else
-    warn "Plan only — pass --apply to make real changes"
-    rm -f tfplan
-  fi
-
-  cd - >/dev/null
+  COMMAND="plan"
+  $TERRAFORM_APPLY && COMMAND="apply"
+  (cd "$TERRAFORM_DIR" && ./run-terraform.sh "$COMMAND")
 }
 
 run_schema() {
   stage "Database schema"
-  start_proxy
-
-  DB_PASS="$(gcloud secrets versions access latest \
-    --secret=db-password --project="$GCP_PROJECT_ID")"
-
-  PGPASSWORD="$DB_PASS" psql \
-    -h 127.0.0.1 -U "$DB_USER" -d "$DB_NAME" \
-    -f healthcare-infra/sql/schema.sql
-
-  ok "Schema deployed"
+  (cd healthcare-infra/schema && ./run-schema.sh "$@")
 }
 
 run_data() {
@@ -326,39 +304,35 @@ run_deploy() {
 
   GIT_SHA=$(git rev-parse --short HEAD)
 
+  # Install parent POM + shared once before building any service
+  (cd services && mvn install -N -q && cd shared && mvn install -DskipTests -q)
+
   for svc in "${SERVICES[@]}"; do
     [[ -d "services/$svc" ]] || { warn "services/$svc not found — skipped"; continue; }
+    warn "Building $svc..."
+
+    (cd "services/$svc" && mvn clean package -DskipTests -q)
+
+    IMAGE="$ARTIFACT_REGISTRY/$svc:$GIT_SHA"
+    gcloud builds submit --tag "$IMAGE" "services/$svc/"
+
     warn "Deploying $svc..."
+    ./scripts/deploy-services.sh "$svc" "$IMAGE"
 
-    gcloud builds submit \
-      --tag "$ARTIFACT_REGISTRY/$svc:$GIT_SHA" \
-      "services/$svc/"
-
-    gcloud run deploy "$svc" \
-      --image "$ARTIFACT_REGISTRY/$svc:$GIT_SHA" \
-      --region "$GCP_REGION" \
-      --platform managed \
-      --no-allow-unauthenticated \
-      --set-secrets="DB_PASSWORD=db-password:latest" \
-      --set-secrets="FIREBASE_SA=firebase-service-account:latest" \
-      --quiet
-
-    ok "$svc deployed"
+    ok "$svc deployed → $svc-$ENVIRONMENT"
   done
 }
 
 run_integration() {
   stage "Integration tests"
-  start_proxy
+  command -v python3 >/dev/null 2>&1 || fail "python3 not found"
+  python3 -c "import requests" 2>/dev/null || fail "requests not installed — run: pip install requests"
 
-  cd "$SERVICES_DIR"
-  mvn -B verify \
-    -Dspring.profiles.active=integration \
-    -Dspring.datasource.url=jdbc:postgresql://127.0.0.1:5432/$DB_NAME \
-    -Dspring.datasource.username=$DB_USER
-  cd ..
-
-  ok "Integration tests passed"
+  for test in integration_tests/**/*.py; do
+    [[ -f "$test" ]] || continue
+    warn "Running $test..."
+    GATEWAY_URL="$GATEWAY_URL" python3 "$test" && ok "$test passed" || fail "$test failed"
+  done
 }
 
 run_zap() {
