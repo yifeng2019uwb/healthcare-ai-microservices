@@ -291,14 +291,16 @@ Every access written to `audit_logs`:
 
 ## Phase Status
 
-- [ ] Patient entity + repository
-- [ ] Conditions entity + repository
-- [ ] Allergies entity + repository
-- [ ] GET /me endpoint
-- [ ] PUT /me endpoint
-- [ ] GET /me/encounters endpoint
-- [ ] GET /me/conditions endpoint
-- [ ] GET /me/allergies endpoint
-- [ ] Audit logging integration
-- [ ] Unit tests
-- [ ] Deploy to Cloud Run
+- [x] Patient entity + repository
+- [x] Conditions entity + repository
+- [x] Allergies entity + repository
+- [x] GET /api/patients/me
+- [x] PUT /api/patients/me
+- [x] GET /api/patients/me/encounters
+- [x] GET /api/patients/me/conditions
+- [x] GET /api/patients/me/allergies
+- [x] Audit logging
+- [x] Deploy to Cloud Run
+- [ ] GET /api/patients/{id} — provider access (Phase 2)
+- [ ] POST /api/patients/{id}/conditions — provider write (Phase 2)
+- [ ] POST /api/patients/{id}/allergies — provider write (Phase 2)

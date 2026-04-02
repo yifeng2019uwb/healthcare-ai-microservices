@@ -1,36 +1,46 @@
-# Backend Services
+# Services
 
-This directory contains all the Java/Spring Boot microservices and one Python AI service for the Healthcare AI platform.
+Spring Boot microservices for the Healthcare AI platform.
 
-## Service Structure
-
-- `shared/` - Common data access layer and utilities (Java)
-- `gateway/` - Spring Cloud Gateway (Port 8080) - Java
-- `auth-service/` - Authentication and JWT validation (Port 8001) - Java
-- `patient-service/` - Patient management (Port 8002) - Java
-- `provider-service/` - Provider management (Port 8003) - Java
-- `appointment-service/` - Appointment management (Port 8004) - Java
-- `ai-service/` - AI features (Port 8005) - Python/FastAPI
-- `file-storage-service/` - File management (Port 8006) - Java
-
-## Technology Stack
-
-- **Java Services**: Spring Boot 3.2+ with Java 17, Maven build system
-- **Python Service**: FastAPI with Python 3.11+, pip/poetry for dependencies
-- **Shared Infrastructure**: Docker containers, Kubernetes orchestration
-- **Data Layer**: PostgreSQL with shared access patterns
-
-## Project Structure
+## Structure
 
 ```
 services/
-├── pom.xml                    # Parent POM for Java services
-├── shared/                    # Shared Java library module
-├── gateway/                   # Spring Cloud Gateway
-├── auth-service/              # Authentication service
-├── patient-service/           # Patient management
-├── provider-service/          # Provider management
-├── appointment-service/        # Appointment management
-├── ai-service/                # AI features (Python)
-└── file-storage-service/      # File management
+├── pom.xml            # parent POM
+├── dev.sh             # local build/test/run script
+├── shared/            # shared JPA entities, DAOs, enums (library, not deployable)
+├── gateway/           # Spring Cloud Gateway — JWT auth + routing
+├── auth-service/      # register, login, refresh, logout
+├── patient-service/   # patient profile, encounters, conditions, allergies
+└── provider-service/  # (planned)
 ```
+
+## Status
+
+| Service | Port (local) | Cloud Run | Endpoints |
+|---------|-------------|-----------|-----------|
+| gateway | 8080 | ✅ | /api/auth/**, /api/patients/** |
+| auth-service | 8082 | ✅ | /api/auth/register, /login, /refresh, /logout |
+| patient-service | 8081 | ✅ | /api/patients/me, /encounters, /conditions, /allergies |
+| provider-service | 8083 | ⏳ | — |
+
+## Common Commands
+
+```bash
+# build/test a single service
+./dev.sh patient-service build
+./dev.sh patient-service test
+
+# build all
+./dev.sh all build
+
+# run locally (installs shared first)
+./dev.sh auth-service run
+```
+
+## Adding a New Service
+
+1. Create `services/<name>/` with `pom.xml`, `Dockerfile`, `.gcloudignore`
+2. Add entity/DAO to `shared/` if needed
+3. Add `build_<name>()` and `deploy_<name>()` to `scripts/deploy-services.sh`
+4. Add route to `gateway/src/main/resources/application.yml`

@@ -446,41 +446,6 @@ On /api/auth/refresh:
 
 ---
 
-## Class Structure
-
-```
-auth-service/src/main/java/com/healthcare/
-├── AuthServiceApplication.java
-├── config/
-│   ├── SecurityConfig.java         — disable filter chain, expose endpoints, BCrypt bean
-│   ├── JwtConfig.java              — loads RS256 keys from Secret Manager
-│   └── RedisConfig.java            — Redis connection + serialization
-├── controller/
-│   ├── RegistrationController.java — POST /api/auth/register/patient
-│   │                                  POST /api/auth/register/provider
-│   ├── AuthController.java         — POST /api/auth/login
-│   │                                  POST /api/auth/logout
-│   │                                  POST /api/auth/refresh
-│   └── TokenController.java        — GET  /.well-known/jwks.json
-├── service/
-│   ├── AuthService.java            — registration + login + logout logic
-│   └── TokenBlacklistService.java  — Redis blacklist operations
-├── jwt/
-│   └── JwtService.java             — issue + validate + extract claims (RS256)
-├── dto/
-│   ├── RegisterPatientRequest.java
-│   ├── RegisterProviderRequest.java
-│   ├── LoginRequest.java
-│   ├── LoginResponse.java
-│   ├── RefreshRequest.java
-│   ├── LogoutRequest.java
-│   └── JwksResponse.java           — JWKS format response (RFC 7517)
-└── exception/
-    ├── AuthServiceException.java   — auth-specific base: HttpStatus + internal errorCode
-    └── AuthExceptionHandler.java   — @RestControllerAdvice, maps all exceptions to HTTP
-```
-
----
 
 ## Exception Design
 
@@ -581,28 +546,20 @@ ERROR Auth error [DB_CONNECTION]: Could not reach Cloud SQL after 3 retries
 
 ## Phase Status
 
-### Shared module updates
-- [ ] Delete `HealthcareException`
-- [ ] Add `HttpStatus` + `errorCode` to `InternalException`
-- [ ] Update `ValidationException`, `ConflictException`, `ResourceNotFoundException`
-- [ ] Update all shared exception tests
+### Shared module
+- [x] `AuthServiceException` with HttpStatus + internal errorCode
+- [x] `AuthExceptionHandler` — never leaks internal detail to client
 
 ### Auth service
-- [ ] Update pom.xml (jpa, security, redis, postgresql, secret manager)
-- [ ] Update application.yml (datasource, redis, jwt config)
-- [ ] `SecurityConfig` — disable filter chain, BCrypt bean
-- [ ] `JwtConfig` — load RS256 keys from Secret Manager
-- [ ] `RedisConfig` — Cloud Memorystore connection
-- [ ] `JwtService` — RS256 issue + validate + extract claims
-- [ ] `TokenBlacklistService` — Redis blacklist operations
-- [ ] DTOs — all request/response records
-- [ ] `AuthServiceException` + `AuthExceptionHandler`
-- [ ] `AuthService` — registration + login + logout logic
-- [ ] `RegistrationController`, `AuthController`, `TokenController`
-- [ ] Audit logging integration
-- [ ] Unit tests
+- [x] pom.xml, application.yml
+- [x] `SecurityConfig`, `JwtService`, `TokenBlacklistService`, `RedisConfig`
+- [x] DTOs — RegisterPatientRequest, RegisterProviderRequest, LoginRequest, LoginResponse, RefreshRequest, LogoutRequest, JwksResponse
+- [x] `AuthService` — registration + login + refresh + logout
+- [x] `RegistrationController`, `AuthController`, `TokenController`
+- [x] Audit logging
+- [x] Unit tests
 
 ### Infrastructure
-- [ ] Cloud Memorystore Terraform config
-- [ ] RS256 key pair generation + Secret Manager storage
-- [ ] Deploy to Cloud Run
+- [x] Cloud Memorystore (Redis) — Terraform
+- [x] RS256 key pair in Secret Manager
+- [x] Deploy to Cloud Run

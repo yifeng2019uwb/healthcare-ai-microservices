@@ -1,6 +1,6 @@
 # Gateway Service Design
 
-> Version: 2.0 | Status: Active | Last Updated: April 2026
+> Version: 3.0 | Status: ✅ Deployed | Last Updated: April 2026
 
 ---
 
@@ -141,25 +141,6 @@ Downstream services trust these headers — they only accept requests via gatewa
 
 ---
 
-## Class Structure
-
-```
-gateway/src/main/java/com/healthcare/
-├── GatewayApplication.java
-├── config/
-│   ├── RouteConfig.java         — Spring Cloud Gateway route definitions
-│   ├── RedisConfig.java         — Cloud Memorystore connection
-│   └── JwksConfig.java          — JWKS fetch + cache initialization
-├── filter/
-│   └── JwtAuthFilter.java       — GlobalFilter: validates JWT, checks blacklist, injects headers
-├── jwks/
-│   ├── JwksCache.java           — in-memory JWKS cache with TTL + rate-limited refresh
-│   └── JwksClient.java          — fetches JWKS from auth-service
-└── exception/
-    └── GatewayExceptionHandler.java — maps errors to 401/502/503
-```
-
----
 
 ## Infrastructure
 

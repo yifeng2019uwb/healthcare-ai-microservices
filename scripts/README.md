@@ -53,13 +53,30 @@ chmod +x scripts/local-ci.sh
 
 ---
 
+## deploy-services.sh — Service Deployment
+
+Build JAR + Docker image + deploy to Cloud Run for any combination of services.
+
+```bash
+# deploy one service
+./scripts/deploy-services.sh patient-service
+
+# deploy multiple (order doesn't matter — gateway always deploys last)
+./scripts/deploy-services.sh auth-service patient-service
+
+# deploy all
+./scripts/deploy-services.sh all
+```
+
+To add a new service: add `build_<name>()` and `deploy_<name>()` functions, then add to `ALL_SERVICES` and `DEPLOY_ORDER`.
+
+---
+
 ## Other scripts
 
 | Script | Purpose |
 |---|---|
 | `setup-dev.sh` | Install Java + Maven (same as `local-ci.sh --setup`) |
-| `debug-ci.sh` | Debug failing CI issues — check structure, Maven, Java |
-| `test-ci.sh` | **TODO: delete after verifying `local-ci.sh --build --test` produces same results** |
 
 ---
 

@@ -22,7 +22,7 @@ Internet
 Cloud Armor (WAF)           ← OWASP Top 10 blocking
     │
     ▼
-Cloud Run — API Gateway     ← Firebase JWT validation, routing
+Cloud Run — API Gateway     ← RS256 JWT validation, routing
     │
     ├──────────────────────────────────┐
     ▼                                  ▼
@@ -59,7 +59,7 @@ Cloud Audit Logs    ← GCP API audit trail
 | Cloud | GCP (us-west1) |
 | Compute | Cloud Run |
 | Database | Cloud SQL PostgreSQL 15 |
-| Auth | Firebase Auth + JWT |
+| Auth | RS256 JWT (self-issued, JWKS endpoint) |
 | Secrets | GCP Secret Manager |
 | WAF | Cloud Armor |
 | IaC | Terraform |
@@ -73,7 +73,7 @@ Cloud Audit Logs    ← GCP API audit trail
 
 ```
 Layer 1 — Network:   Cloud Armor WAF
-Layer 2 — Auth:      Firebase JWT validation at Gateway
+Layer 2 — Auth:      RS256 JWT validation at Gateway (self-issued)
 Layer 3 — Access:    RBAC (patient Phase 1, provider Phase 2)
 Layer 4 — Secrets:   GCP Secret Manager
 Layer 5 — Data:      Cloud SQL in private VPC, TLS in transit
@@ -108,8 +108,9 @@ See `healthcare-infra/` for Terraform configs and deployment scripts.
 
 - [x] Phase 1 — GCP infrastructure (Cloud SQL, Cloud Run, Secret Manager, VPC)
 - [x] Phase 1 — Synthea data loaded into Cloud SQL
-- [ ] Phase 1 — Spring Boot services deployed to Cloud Run
-- [ ] Phase 1 — Firebase Auth integration
-- [ ] Phase 2 — Cloud Armor WAF, OWASP ZAP, STRIDE threat model
-- [ ] Phase 2 — Vertex AI Gemini analysis endpoint
+- [x] Phase 1 — Gateway deployed to Cloud Run (RS256 JWT, Redis blacklist)
+- [x] Phase 1 — Auth service deployed (register, login, refresh, logout)
+- [x] Phase 1 — Patient service deployed (profile, encounters, conditions, allergies)
 - [ ] Phase 2 — Provider service + RBAC
+- [ ] Phase 2 — Cloud Armor WAF, OWASP ZAP
+- [ ] Phase 3 — Vertex AI Gemini analysis endpoint

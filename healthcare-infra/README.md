@@ -1,48 +1,49 @@
 # Healthcare Infrastructure
 
-> **Status**: Only Supabase PostgreSQL is implemented. Other infrastructure is under research.
+GCP infrastructure managed with Terraform + Cloud SQL schema scripts.
 
-## ✅ **What's Implemented**
+## What's Running
 
-**Supabase PostgreSQL Database** - Fully configured
-- Location: `terraform/supabase/`
-- 6 database tables configured
-- Deployment scripts ready
-- See: `CURRENT_INFRASTRUCTURE.md` for details
+| Component | Service | Notes |
+|-----------|---------|-------|
+| Database | Cloud SQL PostgreSQL (healthcare-db-dev) | Private IP, VPC only |
+| Cache | Memorystore Redis | Token blacklist |
+| Network | VPC + Serverless VPC connector | Services → DB |
+| Secrets | Secret Manager | db-password, jwt-private-key, jwt-public-key |
+| Registry | Artifact Registry | Docker images |
+| IAM | Cloud Run service account | Least-privilege |
 
-## ❌ **What's NOT Implemented**
-
-### Deprecated Design (AWS-based)
-- `INFRASTRUCTURE_DESIGN.md` - ⚠️ **DEPRECATED**
-  - Contains AWS design (S3, IAM, CloudWatch)
-  - **Not implemented** - Design docs only
-  - Kept for reference
-
-### Research Only (No Implementation Yet)
-- Other infrastructure options (Railway, Azure, etc.) - Under research
-- No implementation decisions made yet
-- See `CURRENT_INFRASTRUCTURE.md` for details
-
-## 📁 **Directory Structure**
+## Directory Structure
 
 ```
 healthcare-infra/
-├── README.md                      # This file
-├── CURRENT_INFRASTRUCTURE.md      # Actual implementation status
-├── INFRASTRUCTURE_DESIGN.md       # ⚠️ Deprecated AWS design (reference only)
-├── terraform/
-│   └── supabase/                  # ✅ Only implemented infrastructure
-│       ├── deploy-supabase.sh
-│       ├── 01_users.tf
-│       └── ... (other table files)
-└── scripts/                       # Deployment scripts
+├── terraform/          # GCP infra — VPC, Cloud SQL, Redis, IAM, Artifact Registry
+│   ├── run-terraform.sh
+│   └── *.tf
+├── schema/             # PostgreSQL DDL
+│   ├── run-schema.sh
+│   └── sql/            # one file per table
+└── synthea/            # Synthetic patient data (HIPAA-safe test data)
+    └── synthea-with-dependencies.jar
 ```
 
-## 🎯 **Next Steps**
+## Common Commands
 
-1. ✅ Use Supabase PostgreSQL (already configured)
-2. 🔍 Research deployment options (Railway, Docker, Azure, etc.)
-3. 🔍 Research file storage options (when needed for Phase 2)
-4. 🔍 Research monitoring options (when needed)
+```bash
+# Plan infra changes (safe, no changes applied)
+./scripts/local-ci.sh --terraform
 
-**No rush** - Take time to research and make informed decisions.
+# Apply infra changes
+./scripts/local-ci.sh --terraform --apply
+
+# Deploy DB schema
+./scripts/local-ci.sh --schema
+
+# Generate + load Synthea test data
+./scripts/local-ci.sh --data
+```
+
+## Cloud Run Services
+
+Managed by `scripts/deploy-services.sh` — NOT by Terraform.
+Terraform only manages IAM bindings for Cloud Run (not the services themselves).
