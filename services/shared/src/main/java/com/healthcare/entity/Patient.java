@@ -186,7 +186,7 @@ public class Patient extends ProfileBaseEntity {
      * Used for patient registration: MRN + first_name + last_name must match.
      */
     @Size(max = DatabaseConstants.LEN_MRN)
-    @Column(name = DatabaseConstants.COL_MRN, unique = true)
+    @Column(name = DatabaseConstants.COL_MRN, unique = true, insertable = false, updatable = false)
     private String mrn;
 
     @Size(max = DatabaseConstants.LEN_PHONE)
@@ -237,12 +237,15 @@ public class Patient extends ProfileBaseEntity {
      * @param firstName patient first name
      * @param lastName  patient last name
      */
-    public Patient(String firstName, String lastName) {
+    public Patient(String mrn, String firstName, String lastName) {
+        if (mrn == null || mrn.isBlank())
+            throw new ValidationException("MRN is required");
         if (firstName == null || firstName.isBlank())
             throw new ValidationException(FIELD_FIRST_NAME + " is required");
         if (lastName == null || lastName.isBlank())
             throw new ValidationException(FIELD_LAST_NAME + " is required");
 
+        this.mrn       = mrn;
         this.firstName = firstName;
         this.lastName  = lastName;
     }

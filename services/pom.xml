@@ -26,6 +26,7 @@
         <module>gateway</module>
         <module>auth-service</module>
         <module>patient-service</module>
+        <module>provider-service</module>
     </modules>
 
     <dependencyManagement>

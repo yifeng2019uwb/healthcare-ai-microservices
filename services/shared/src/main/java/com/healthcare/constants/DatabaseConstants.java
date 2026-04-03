@@ -12,7 +12,7 @@ public final class DatabaseConstants {
 
     public static final String TABLE_USERS          = "users";
     public static final String TABLE_PATIENTS       = "patients";
-    public static final String TABLE_PROVIDERS      = "provider_profiles";
+    public static final String TABLE_PROVIDERS      = "providers";
     public static final String TABLE_ENCOUNTERS     = "encounters";
     public static final String TABLE_CONDITIONS     = "conditions";
     public static final String TABLE_ALLERGIES       = "allergies";

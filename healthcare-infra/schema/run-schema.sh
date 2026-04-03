@@ -114,6 +114,7 @@ ALL_TABLES=(
   "allergies"
   "audit_logs"
   "permissions"
+  "triggers"
 )
 
 run_sql() {

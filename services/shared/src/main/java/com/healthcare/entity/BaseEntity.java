@@ -8,8 +8,6 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
 
@@ -35,19 +33,13 @@ public abstract class BaseEntity {
      * Set by Hibernate on INSERT via @CreationTimestamp.
      * DB column has no NOT NULL — permissive for imported data.
      */
-    @CreationTimestamp
     @Column(name = DatabaseConstants.COL_CREATED_AT,
-            updatable = false,
+            insertable = false, updatable = false,
             columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TIMESTAMPTZ)
     private OffsetDateTime createdAt;
 
-    /**
-     * Timestamp when this record was last modified.
-     * Updated by Hibernate on every UPDATE via @UpdateTimestamp.
-     * DB column has no NOT NULL — permissive for imported data.
-     */
-    @UpdateTimestamp
     @Column(name = DatabaseConstants.COL_UPDATED_AT,
+            insertable = false, updatable = false,
             columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TIMESTAMPTZ)
     private OffsetDateTime updatedAt;
 

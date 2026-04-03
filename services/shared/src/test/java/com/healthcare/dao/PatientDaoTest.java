@@ -23,7 +23,7 @@ class PatientDaoTest {
     private PatientDao patientDao;
 
     private Patient newPatient() {
-        return new Patient("John", "Doe");
+        return new Patient("MRN-000001", "John", "Doe");
     }
 
     @Test

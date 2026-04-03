@@ -54,6 +54,8 @@ spring-cloud-gcp-starter-secretmanager
 | POST | `/api/auth/logout` | Yes | auth-service |
 | GET  | `/api/patients/**` | Yes | patient-service |
 | PUT  | `/api/patients/**` | Yes | patient-service |
+| GET  | `/api/provider/**`   | Yes | provider-service |
+| POST | `/api/provider/**`   | Yes | provider-service |
 | GET  | `/api/encounters/**` | Yes | appointment-service |
 | POST | `/api/encounters/**` | Yes | appointment-service |
 | PUT  | `/api/encounters/**` | Yes | appointment-service |

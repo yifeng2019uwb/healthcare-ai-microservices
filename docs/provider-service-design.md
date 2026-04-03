@@ -229,15 +229,15 @@ Provider patient access validation:
 
 ## Phase Status
 
-- [ ] Provider entity + repository
-- [ ] Organization entity + repository
-- [ ] GET /me endpoint
-- [ ] POST /patients/register endpoint
-- [ ] GET /patients list endpoint
-- [ ] GET /patients/{id} endpoint
-- [ ] GET /patients/{id}/conditions endpoint
-- [ ] GET /patients/{id}/allergies endpoint
-- [ ] Provider encounter authorization check
-- [ ] Audit logging integration
+- [x] Provider entity + repository
+- [x] Organization entity + repository
+- [x] GET /me endpoint
+- [x] POST /patients/register endpoint
+- [x] GET /patients list endpoint
+- [x] GET /patients/{id} endpoint
+- [x] GET /patients/{id}/conditions endpoint
+- [x] GET /patients/{id}/allergies endpoint
+- [x] Provider encounter authorization check
+- [x] Audit logging integration
 - [ ] Unit tests
 - [ ] Deploy to Cloud Run

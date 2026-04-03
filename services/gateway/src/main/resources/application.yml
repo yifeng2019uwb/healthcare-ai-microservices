@@ -31,6 +31,10 @@ spring:
           uri: "${PATIENT_SERVICE_URL:http://localhost:8081}"
           predicates:
             - Path=/api/patients/**
+        - id: provider-service
+          uri: "${PROVIDER_SERVICE_URL:http://localhost:8083}"
+          predicates:
+            - Path=/api/provider/**
 
 management:
   endpoints:

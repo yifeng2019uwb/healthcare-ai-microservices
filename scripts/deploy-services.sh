@@ -28,8 +28,8 @@ TERRAFORM_DIR="./healthcare-infra/terraform"
 SERVICES_DIR="./services"
 
 # Deployment order — gateway must be last
-ALL_SERVICES=("auth-service" "patient-service" "gateway")
-DEPLOY_ORDER=("auth-service" "patient-service" "gateway")
+ALL_SERVICES=("auth-service" "patient-service" "provider-service" "gateway")
+DEPLOY_ORDER=("auth-service" "patient-service" "provider-service" "gateway")
 
 # Colors
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
@@ -135,6 +135,10 @@ build_patient_service() {
   (cd "$SERVICES_DIR/patient-service" && mvn clean package -DskipTests -q)
 }
 
+build_provider_service() {
+  (cd "$SERVICES_DIR/provider-service" && mvn clean package -DskipTests -q)
+}
+
 build_gateway() {
   (cd "$SERVICES_DIR/gateway" && mvn clean package -DskipTests -q)
 }
@@ -181,6 +185,24 @@ deploy_patient_service() {
     --quiet
 }
 
+deploy_provider_service() {
+  local image="$ARTIFACT_REGISTRY/provider-service:$GIT_SHA"
+  gcloud builds submit --tag "$image" "$SERVICES_DIR/provider-service/" --quiet
+  gcloud run deploy "provider-service-${ENVIRONMENT}" \
+    --image "$image" \
+    --region "$GCP_REGION" \
+    --project "$GCP_PROJECT_ID" \
+    --service-account "$CLOUD_RUN_SA" \
+    --set-env-vars "ENVIRONMENT=${ENVIRONMENT}" \
+    --set-env-vars "SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_PRIVATE_IP}/healthcare" \
+    --set-env-vars "SPRING_DATASOURCE_USERNAME=postgres" \
+    --set-secrets "SPRING_DATASOURCE_PASSWORD=db-password:latest" \
+    --vpc-connector "$VPC_CONNECTOR" \
+    --ingress internal \
+    --allow-unauthenticated \
+    --quiet
+}
+
 deploy_gateway() {
   local image="$ARTIFACT_REGISTRY/gateway:$GIT_SHA"
 
@@ -194,6 +216,11 @@ deploy_gateway() {
     --format="value(status.url)" 2>/dev/null)
   [[ -z "$PATIENT_SERVICE_URL" ]] && fail "patient-service-${ENVIRONMENT} not deployed yet — deploy patient-service first"
 
+  PROVIDER_SERVICE_URL=$(gcloud run services describe "provider-service-${ENVIRONMENT}" \
+    --region "$GCP_REGION" --project "$GCP_PROJECT_ID" \
+    --format="value(status.url)" 2>/dev/null)
+  [[ -z "$PROVIDER_SERVICE_URL" ]] && fail "provider-service-${ENVIRONMENT} not deployed yet — deploy provider-service first"
+
   gcloud builds submit --tag "$image" "$SERVICES_DIR/gateway/" --quiet
   gcloud run deploy "gateway-${ENVIRONMENT}" \
     --image "$image" \
@@ -203,6 +230,7 @@ deploy_gateway() {
     --set-env-vars "ENVIRONMENT=${ENVIRONMENT}" \
     --set-env-vars "AUTH_SERVICE_URL=${AUTH_SERVICE_URL}" \
     --set-env-vars "PATIENT_SERVICE_URL=${PATIENT_SERVICE_URL}" \
+    --set-env-vars "PROVIDER_SERVICE_URL=${PROVIDER_SERVICE_URL}" \
     --set-env-vars "REDIS_HOST=${REDIS_HOST},REDIS_PORT=6379" \
     --set-secrets "JWT_PUBLIC_KEY=jwt-public-key:latest" \
     --vpc-connector "$VPC_CONNECTOR" \

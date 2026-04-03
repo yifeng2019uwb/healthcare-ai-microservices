@@ -1,10 +1,9 @@
 server:
-  port: ${PORT:8082}
+  port: ${PORT:8083}
 
 spring:
   application:
-    name: auth-service
-
+    name: provider-service
   datasource:
     url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:54322/postgres}"
     username: "${SPRING_DATASOURCE_USERNAME:postgres}"
@@ -13,24 +12,11 @@ spring:
     hikari:
       maximum-pool-size: 2
       minimum-idle: 1
-
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: none
     show-sql: true
-
-  data:
-    redis:
-      host: "${REDIS_HOST:localhost}"
-      port: "${REDIS_PORT:6379}"
-      # Password is optional — omit for local dev, set for GCP Cloud Memorystore
-      password: "${REDIS_PASSWORD:}"
-
-jwt:
-  private-key: "${JWT_PRIVATE_KEY}"
-  public-key: "${JWT_PUBLIC_KEY}"
-  key-id: "${JWT_KEY_ID:auth-key-v1}"
 
 management:
   endpoints:
