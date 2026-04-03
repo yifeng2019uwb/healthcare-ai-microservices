@@ -1,5 +1,6 @@
 package com.healthcare.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.healthcare.constants.AuthConstants;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -32,13 +33,16 @@ public record RegisterProviderRequest(
                  message = "Password must contain at least one uppercase letter, one lowercase letter, one number and one special character (@$!%*?&^#)")
         String password,
 
+        @JsonProperty("provider_code")
         @NotBlank(message = "Provider code is required")
         String providerCode,
 
+        @JsonProperty("first_name")
         @NotBlank(message = "First name is required")
         @Size(max = 50, message = "First name cannot exceed 50 characters")
         String firstName,
 
+        @JsonProperty("last_name")
         @NotBlank(message = "Last name is required")
         @Size(max = 50, message = "Last name cannot exceed 50 characters")
         String lastName
