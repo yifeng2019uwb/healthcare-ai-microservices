@@ -239,5 +239,5 @@ Provider patient access validation:
 - [x] GET /patients/{id}/allergies endpoint
 - [x] Provider encounter authorization check
 - [x] Audit logging integration
-- [ ] Unit tests
-- [ ] Deploy to Cloud Run
+- [x] Unit tests
+- [x] Deploy to Cloud Run

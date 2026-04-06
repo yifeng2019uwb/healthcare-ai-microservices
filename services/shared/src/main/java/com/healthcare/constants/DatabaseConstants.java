@@ -293,6 +293,7 @@ public final class DatabaseConstants {
     public static final int LEN_SPECIALITY        = 100;
     public static final int LEN_PROVIDER_CODE     = 20;
     public static final int LEN_LICENSE_NUMBER    = 50;
+    public static final int LEN_NPI               = 10;
 
     // organizations
     public static final int LEN_ORGANIZATION_NAME = 255;

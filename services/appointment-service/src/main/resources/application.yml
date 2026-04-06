@@ -1,0 +1,25 @@
+server:
+  port: ${PORT:8084}
+
+spring:
+  application:
+    name: appointment-service
+  datasource:
+    url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:54322/postgres}"
+    username: "${SPRING_DATASOURCE_USERNAME:postgres}"
+    password: "${SPRING_DATASOURCE_PASSWORD:postgres}"
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 2
+      minimum-idle: 1
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

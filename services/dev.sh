@@ -10,7 +10,7 @@ set -e
 
 MAVEN_CMD="mvn"
 JAVA_VERSION="17"
-SERVICES=("shared" "auth-service" "gateway" "patient-service" "provider-service")
+SERVICES=("shared" "auth-service" "gateway" "patient-service" "provider-service" "appointment-service")
 
 echo "🏥 Healthcare Services - Development Script"
 echo "==========================================="
@@ -137,7 +137,7 @@ if [ "$SERVICE" = "all" ]; then
             run_maven "shared" clean install -DskipTests
             echo "✅ shared built"
             echo ""
-            for service in auth-service gateway patient-service provider-service; do
+            for service in auth-service gateway patient-service provider-service appointment-service; do
                 if [ -f "$service/pom.xml" ]; then
                     echo "🔨 Building $service..."
                     if run_maven "$service" clean compile; then
@@ -154,7 +154,7 @@ if [ "$SERVICE" = "all" ]; then
         "test")
             echo "🧪 Testing all services..."
             echo ""
-            for service in shared auth-service gateway patient-service provider-service; do
+            for service in shared auth-service gateway patient-service provider-service appointment-service; do
                 if [ -f "$service/pom.xml" ]; then
                     echo "🧪 Testing $service..."
                     if run_maven "$service" test; then
@@ -171,7 +171,7 @@ if [ "$SERVICE" = "all" ]; then
         "coverage")
             echo "📊 Coverage for all services..."
             echo ""
-            for service in shared auth-service gateway patient-service provider-service; do
+            for service in shared auth-service gateway patient-service provider-service appointment-service; do
                 if [ -f "$service/pom.xml" ]; then
                     echo "📊 Coverage for $service..."
                     run_maven "$service" clean test jacoco:report

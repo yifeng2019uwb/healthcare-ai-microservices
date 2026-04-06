@@ -36,6 +36,11 @@ public interface EncounterDao extends JpaRepository<Encounter, UUID> {
     List<Encounter> findByProviderIdAndStartTimeBetween(
             UUID providerId, OffsetDateTime start, OffsetDateTime end);
 
+    List<Encounter> findByPatientIdAndStartTimeBetween(
+            UUID patientId, OffsetDateTime start, OffsetDateTime end);
+
+    List<Encounter> findByProviderIdAndPatientId(UUID providerId, UUID patientId);
+
     /**
      * Check if a provider has at least one encounter with a patient.
      * Used for provider access authorization.

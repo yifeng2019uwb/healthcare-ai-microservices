@@ -14,6 +14,7 @@ public record ProviderProfileResponse(
         @JsonProperty("organization")   OrganizationResponse organization,
         @JsonProperty("phone")          String phone,
         @JsonProperty("license_number") String licenseNumber,
+        @JsonProperty("npi")            String npi,
         @JsonProperty("bio")            String bio,
         @JsonProperty("is_active")      boolean isActive) {
 
@@ -27,6 +28,7 @@ public record ProviderProfileResponse(
                 OrganizationResponse.from(p.getOrganization()),
                 p.getPhone(),
                 p.getLicenseNumber(),
+                p.getNpi(),
                 p.getBio(),
                 p.isActive());
     }

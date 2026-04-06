@@ -17,6 +17,7 @@ class ProviderProfileResponseTest {
         provider.setSpeciality("Cardiology");
         provider.setPhone("+15551234567");
         provider.setLicenseNumber("LIC-12345");
+        provider.setNpi("1234567890");
         provider.setBio("Experienced cardiologist");
 
         ProviderProfileResponse response = ProviderProfileResponse.from(provider);
@@ -26,6 +27,7 @@ class ProviderProfileResponseTest {
         assertThat(response.speciality()).isEqualTo("Cardiology");
         assertThat(response.phone()).isEqualTo("+15551234567");
         assertThat(response.licenseNumber()).isEqualTo("LIC-12345");
+        assertThat(response.npi()).isEqualTo("1234567890");
         assertThat(response.bio()).isEqualTo("Experienced cardiologist");
         assertThat(response.isActive()).isTrue();
     }
@@ -57,6 +59,7 @@ class ProviderProfileResponseTest {
         assertThat(response.speciality()).isNull();
         assertThat(response.phone()).isNull();
         assertThat(response.licenseNumber()).isNull();
+        assertThat(response.npi()).isNull();
         assertThat(response.bio()).isNull();
         assertThat(response.providerCode()).isNull();
     }

@@ -51,6 +51,7 @@ public class Provider extends ProfileBaseEntity {
 
     private static final String FIELD_PROVIDER_NAME  = "Provider name";
     private static final String FIELD_LICENSE_NUMBER  = "License number";
+    private static final String FIELD_NPI             = "NPI";
     private static final String FIELD_PHONE = "Phone";
     private static final String FIELD_ORGANIZATION_ID = "Organization ID";
 
@@ -110,6 +111,16 @@ public class Provider extends ProfileBaseEntity {
     @Size(max = DatabaseConstants.LEN_LICENSE_NUMBER)
     @Column(name = DatabaseConstants.COL_LICENSE_NUMBER)
     private String licenseNumber;
+
+    /**
+     * NPI (National Provider Identifier) — 10-digit federal CMS identifier.
+     * Required for Medicare/Medicaid billing. Verified against NPPES registry on registration.
+     */
+    @Size(max = DatabaseConstants.LEN_NPI)
+    @Pattern(regexp = ValidationPatterns.NPI,
+             message = "NPI must be a 10-digit number")
+    @Column(name = DatabaseConstants.COL_NPI_NUMBER, unique = true)
+    private String npi;
 
     @Column(name = DatabaseConstants.COL_IS_ACTIVE)
     private Boolean isActive = true;
@@ -224,6 +235,7 @@ public class Provider extends ProfileBaseEntity {
     public String getProviderCode()   { return providerCode; }
     public String getPhone()          { return phone; }
     public String getLicenseNumber()  { return licenseNumber; }
+    public String getNpi()            { return npi; }
     public Boolean getIsActive()      { return isActive; }
     public String getBio()            { return bio; }
     public Organization getOrganization() { return organization; }
@@ -256,6 +268,11 @@ public class Provider extends ProfileBaseEntity {
     public void setLicenseNumber(String licenseNumber) {
         this.licenseNumber = ValidationUtils.validateAndNormalizeString(
                 licenseNumber, FIELD_LICENSE_NUMBER, DatabaseConstants.LEN_LICENSE_NUMBER);
+    }
+
+    public void setNpi(String npi) {
+        this.npi = ValidationUtils.validateAndNormalizeString(
+                npi, FIELD_NPI, DatabaseConstants.LEN_NPI);
     }
 
     public void setIsActive(Boolean isActive) {

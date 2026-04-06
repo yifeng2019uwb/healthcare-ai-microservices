@@ -46,7 +46,7 @@ class ProviderControllerTest {
     private ProviderProfileResponse providerProfile() {
         return new ProviderProfileResponse(
                 UUID.randomUUID(), "PRV-000001", "Dr. Smith", "M",
-                "Cardiology", null, "+15551234567", "LIC-001", "Bio text", true);
+                "Cardiology", null, "+15551234567", "LIC-001", null, "Bio text", true);
     }
 
     private PatientProfileResponse patientProfile() {

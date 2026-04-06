@@ -27,6 +27,7 @@
         <module>auth-service</module>
         <module>patient-service</module>
         <module>provider-service</module>
+        <module>appointment-service</module>
     </modules>
 
     <dependencyManagement>
