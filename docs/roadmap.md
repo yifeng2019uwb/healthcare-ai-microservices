@@ -24,19 +24,19 @@
 
 **Goal**: Add federally-recognized standards and CMS API integrations that directly signal domain knowledge for GS-2210 / CMS contractor roles.
 
-- [ ] **FHIR R4 responses** — same endpoints, second response format via content negotiation
+- [x] **FHIR R4 responses** — same endpoints, second response format via content negotiation
   - Client sends `Accept: application/fhir+json` → gets FHIR R4 shape
   - Client sends `Accept: application/json` → gets existing response (default)
   - Applies to: `GET /api/patients/me`, `/me/encounters`, `/me/conditions`, `/me/allergies`
-  - Implementation: add FHIR mapper classes + second `@GetMapping(produces="application/fhir+json")` per endpoint in patient-service. No changes to service layer or DAOs.
+  - Implementation: `FhirMapper.java` + second `@GetMapping(produces="application/fhir+json")` per endpoint in patient-service. No changes to service layer or DAOs.
   - FHIR resources covered: `Patient`, `Encounter`, `Condition`, `AllergyIntolerance`
   - Demonstrates knowledge of CMS Interoperability and Patient Access Rule (CMS-9115-F)
 
-- [ ] **NPI registry verification** — add `npi` field to Provider and verify against NPPES public API on provider registration
-  - Add `npi` column to `providers` table (10-digit string, unique) — keep existing `license_number` for state licensing
-  - On provider registration in auth-service, call `https://npiregistry.cms.hhs.gov/api/?number={npi}` to verify NPI + name match
-  - Add `npi` to `ProviderProfileResponse`
-  - DB migration: `ALTER TABLE providers ADD COLUMN npi VARCHAR(10) UNIQUE`
+- [x] **NPI registry verification** — `npi` field added to Provider, verified against NPPES public API on provider registration
+  - `npi VARCHAR(10) UNIQUE` column added via migration `V001__add_npi_to_providers.sql`
+  - On provider registration in auth-service, `NpiVerificationService` calls `https://npiregistry.cms.hhs.gov/api/?number={npi}` to verify NPI exists + name matches
+  - `npi` added to `ProviderProfileResponse`
+  - NPI is optional at registration — providers without NPI can still register
   - Demonstrates integration with federal identity systems
 
 - [ ] **RBAC enforcement at gateway** — reject requests where JWT role doesn't match path

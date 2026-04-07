@@ -46,6 +46,7 @@ class AuthServiceTest {
     @Mock private JwtService jwtService;
     @Mock private TokenBlacklistService blacklistService;
     @Mock private PasswordEncoder passwordEncoder;
+    @Mock private NpiVerificationService npiVerificationService;
 
     @InjectMocks
     private AuthService authService;
@@ -139,7 +140,7 @@ class AuthServiceTest {
         when(jwtService.issueRefreshToken(mockUser)).thenReturn("refresh-token");
 
         RegisterProviderRequest request = new RegisterProviderRequest(
-                "jane_doe", "jane@example.com", "Password1@", "PRV-000001", "Jane", "Doe");
+                "jane_doe", "jane@example.com", "Password1@", "PRV-000001", "Jane", "Doe", null);
 
         LoginResponse response = authService.registerProvider(request);
 

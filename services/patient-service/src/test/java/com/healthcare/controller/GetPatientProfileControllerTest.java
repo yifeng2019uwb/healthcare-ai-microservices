@@ -57,7 +57,8 @@ class GetPatientProfileControllerTest {
         when(patientService.getProfile(AUTH_ID)).thenReturn(profile());
 
         mockMvc.perform(get("/api/patients/me")
-                        .header("X-User-Id", AUTH_ID.toString()))
+                        .header("X-User-Id", AUTH_ID.toString())
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.mrn").value("MRN-000001"))
                 .andExpect(jsonPath("$.first_name").value("John"));
@@ -120,7 +121,8 @@ class GetPatientProfileControllerTest {
         when(patientService.getEncounters(eq(AUTH_ID), any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/api/patients/me/encounters")
-                        .header("X-User-Id", AUTH_ID.toString()))
+                        .header("X-User-Id", AUTH_ID.toString())
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(0));
     }
@@ -140,7 +142,8 @@ class GetPatientProfileControllerTest {
         when(patientService.getConditions(AUTH_ID)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/patients/me/conditions")
-                        .header("X-User-Id", AUTH_ID.toString()))
+                        .header("X-User-Id", AUTH_ID.toString())
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
@@ -160,7 +163,8 @@ class GetPatientProfileControllerTest {
         when(patientService.getAllergies(AUTH_ID)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/patients/me/allergies")
-                        .header("X-User-Id", AUTH_ID.toString()))
+                        .header("X-User-Id", AUTH_ID.toString())
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }

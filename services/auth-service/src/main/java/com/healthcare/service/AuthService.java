@@ -52,6 +52,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final TokenBlacklistService blacklistService;
     private final PasswordEncoder passwordEncoder;
+    private final NpiVerificationService npiVerificationService;
 
     public AuthService(UserDao userDao,
                        PatientDao patientDao,
@@ -59,7 +60,8 @@ public class AuthService {
                        AuditLogDao auditLogDao,
                        JwtService jwtService,
                        TokenBlacklistService blacklistService,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       NpiVerificationService npiVerificationService) {
         this.userDao = userDao;
         this.patientDao = patientDao;
         this.providerDao = providerDao;
@@ -67,6 +69,7 @@ public class AuthService {
         this.jwtService = jwtService;
         this.blacklistService = blacklistService;
         this.passwordEncoder = passwordEncoder;
+        this.npiVerificationService = npiVerificationService;
     }
 
     // =========================================================================
@@ -155,12 +158,19 @@ public class AuthService {
                     "Provider code already linked to an account: " + request.providerCode());
         }
 
+        // NPI verification — optional field; if provided, must match NPPES registry
+        if (request.npi() != null && !request.npi().isBlank()) {
+            npiVerificationService.verify(request.npi(), request.firstName(), request.lastName());
+            provider.setNpi(request.npi());
+        }
+
         User user = createUser(request.username(), request.email(), request.password(), UserRole.PROVIDER);
         provider.linkAuthAccount(user.getId());
         providerDao.save(provider);
 
         auditLogDao.insert(buildAuditLog(user, ActionType.CREATE, Outcome.SUCCESS));
-        log.info("Provider registered: username={} providerCode={}", request.username(), request.providerCode());
+        log.info("Provider registered: username={} providerCode={} npi={}",
+                request.username(), request.providerCode(), request.npi());
 
         return issueTokenPair(user);
     }
