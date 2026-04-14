@@ -54,12 +54,17 @@ spring-cloud-gcp-starter-secretmanager
 | POST | `/api/auth/logout` | Yes | auth-service |
 | GET  | `/api/patients/**` | Yes | patient-service |
 | PUT  | `/api/patients/**` | Yes | patient-service |
-| GET  | `/api/provider/**`   | Yes | provider-service |
-| POST | `/api/provider/**`   | Yes | provider-service |
+| GET  | `/api/provider/**` | Yes | provider-service |
+| POST | `/api/provider/**` | Yes | provider-service |
 | GET  | `/api/encounters/**` | Yes | appointment-service |
-| POST | `/api/encounters/**` | Yes | appointment-service |
-| PUT  | `/api/encounters/**` | Yes | appointment-service |
+| GET  | `/api/appointments/**` | Yes | appointment-service |
+| POST | `/api/appointments/**` | Yes | appointment-service |
+| PUT  | `/api/appointments/**` | Yes | appointment-service |
 | GET  | `/actuator/health` | No | gateway (self) |
+
+> `/api/encounters/**` and `/api/appointments/**` both route to the same appointment-service.
+> Encounters = clinical history (Phase 1). Appointments = booking/scheduling (Phase 2).
+> Following FHIR R4 / Epic conventions — these are distinct resources.
 
 ---
 
@@ -152,6 +157,27 @@ Downstream services trust these headers — they only accept requests via gatewa
 | JWKS source | auth-service `/.well-known/jwks.json` (VPC-internal) |
 | Token blacklist | Cloud Memorystore Redis (shared with auth-service) |
 | Secret storage | GCP Secret Manager (Redis password via Workload Identity) |
+
+---
+
+## RBAC — Role-to-Path Enforcement (Planned)
+
+> STATUS: Not yet implemented. Tracked as a security layer item.
+
+The gateway injects `X-User-Role` (PATIENT / PROVIDER / ADMIN) into every forwarded request.
+Currently, role enforcement is handled implicitly downstream via DB lookups.
+
+Planned: add explicit role checks in `JwtAuthFilter` before forwarding:
+
+```
+/api/patients/**              → PATIENT role only
+/api/provider/**              → PROVIDER role only
+/api/encounters/me/**         → PATIENT role only
+/api/encounters/provider/**   → PROVIDER role only
+/api/appointments/**          → PATIENT or PROVIDER (fine-grained per endpoint)
+```
+
+Wrong-role requests should return `403 Forbidden` at the gateway, not a `404` from a downstream DB miss.
 
 ---
 
