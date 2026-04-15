@@ -16,7 +16,7 @@ public interface ProviderService {
 
     ProviderProfileResponse getProfile(UUID authId);
 
-    RegisterPatientResponse registerPatient(UUID authId, String username, RegisterPatientRequest request);
+    RegisterPatientResponse onboardPatient(UUID authId, String username, RegisterPatientRequest request);
 
     List<PatientSummaryResponse> getPatients(UUID authId, Pageable pageable);
 

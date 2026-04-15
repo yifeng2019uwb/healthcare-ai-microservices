@@ -101,11 +101,11 @@ class ProviderServiceImplTest {
     }
 
     // -------------------------------------------------------------------------
-    // registerPatient
+    // onboardPatient
     // -------------------------------------------------------------------------
 
     @Test
-    void registerPatient_createsPatient_andReturnsResponse() {
+    void onboardPatient_createsPatient_andReturnsResponse() {
         when(providerDao.findByAuthId(authId)).thenReturn(Optional.of(mockProvider));
         when(patientDao.saveAndFlush(any(Patient.class))).thenReturn(patient);
 
@@ -113,7 +113,7 @@ class ProviderServiceImplTest {
                 "John", null, "Doe", LocalDate.of(1990, 1, 15),
                 "M", null, null, null, null, null, null, null, null, null, null);
 
-        RegisterPatientResponse response = service.registerPatient(authId, "dr_smith", req);
+        RegisterPatientResponse response = service.onboardPatient(authId, "dr_smith", req);
 
         assertThat(response.firstName()).isEqualTo("John");
         assertThat(response.lastName()).isEqualTo("Doe");
@@ -122,14 +122,14 @@ class ProviderServiceImplTest {
     }
 
     @Test
-    void registerPatient_throws404_whenProviderNotFound() {
+    void onboardPatient_throws404_whenProviderNotFound() {
         when(providerDao.findByAuthId(authId)).thenReturn(Optional.empty());
 
         RegisterPatientRequest req = new RegisterPatientRequest(
                 "John", null, "Doe", null, null, null, null,
                 null, null, null, null, null, null, null, null);
 
-        assertThatThrownBy(() -> service.registerPatient(authId, "dr_smith", req))
+        assertThatThrownBy(() -> service.onboardPatient(authId, "dr_smith", req))
                 .isInstanceOf(ProviderServiceException.class)
                 .satisfies(e -> assertThat(((ProviderServiceException) e).getStatus())
                         .isEqualTo(HttpStatus.NOT_FOUND));

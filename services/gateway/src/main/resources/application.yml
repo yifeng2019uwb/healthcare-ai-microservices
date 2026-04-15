@@ -35,6 +35,10 @@ spring:
           uri: "${PROVIDER_SERVICE_URL:http://localhost:8083}"
           predicates:
             - Path=/api/provider/**
+        - id: encounter-service
+          uri: "${APPOINTMENT_SERVICE_URL:http://localhost:8084}"
+          predicates:
+            - Path=/api/encounters/**
         - id: appointment-service
           uri: "${APPOINTMENT_SERVICE_URL:http://localhost:8084}"
           predicates:

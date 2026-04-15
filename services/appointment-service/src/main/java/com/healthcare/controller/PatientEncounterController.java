@@ -16,21 +16,23 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Patient-facing appointment endpoints.
+ * Patient-facing encounter history endpoints.
  * Auth enforced at gateway — X-User-Id is the patient's auth UUID.
+ *
+ * Path: /api/encounters/me
  */
 @RestController
-@RequestMapping("/api/appointments/me")
-public class PatientAppointmentController {
+@RequestMapping("/api/encounters/me")
+public class PatientEncounterController {
 
     private final AppointmentService appointmentService;
 
-    public PatientAppointmentController(AppointmentService appointmentService) {
+    public PatientEncounterController(AppointmentService appointmentService) {
         this.appointmentService = appointmentService;
     }
 
-    /** GET /api/appointments/me/encounters */
-    @GetMapping("/encounters")
+    /** GET /api/encounters/me */
+    @GetMapping
     public ResponseEntity<EncounterPageResponse> getEncounters(
             @RequestHeader("X-User-Id") UUID authId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -43,8 +45,8 @@ public class PatientAppointmentController {
                 appointmentService.getPatientEncounters(authId, from, to, encounterClass, page, size));
     }
 
-    /** GET /api/appointments/me/encounters/{id} */
-    @GetMapping("/encounters/{id}")
+    /** GET /api/encounters/me/{id} */
+    @GetMapping("/{id}")
     public ResponseEntity<EncounterDetailResponse> getEncounterDetail(
             @RequestHeader("X-User-Id") UUID authId,
             @PathVariable UUID id) {

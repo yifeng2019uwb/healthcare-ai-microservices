@@ -24,9 +24,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(PatientAppointmentController.class)
+@WebMvcTest(PatientEncounterController.class)
 @Import(AppointmentExceptionHandler.class)
-class PatientAppointmentControllerTest {
+class PatientEncounterControllerTest {
 
     @Autowired MockMvc mockMvc;
     @MockBean  AppointmentService appointmentService;
@@ -35,7 +35,7 @@ class PatientAppointmentControllerTest {
     private static final UUID ENCOUNTER_ID = UUID.randomUUID();
 
     // -------------------------------------------------------------------------
-    // GET /api/appointments/me/encounters
+    // GET /api/encounters/me
     // -------------------------------------------------------------------------
 
     @Test
@@ -44,7 +44,7 @@ class PatientAppointmentControllerTest {
         when(appointmentService.getPatientEncounters(eq(AUTH_ID), isNull(), isNull(), isNull(), eq(1), eq(10)))
                 .thenReturn(page);
 
-        mockMvc.perform(get("/api/appointments/me/encounters")
+        mockMvc.perform(get("/api/encounters/me")
                         .header("X-User-Id", AUTH_ID.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(0))
@@ -57,7 +57,7 @@ class PatientAppointmentControllerTest {
         when(appointmentService.getPatientEncounters(any(), any(), any(), eq("ambulatory"), eq(1), eq(10)))
                 .thenReturn(page);
 
-        mockMvc.perform(get("/api/appointments/me/encounters")
+        mockMvc.perform(get("/api/encounters/me")
                         .header("X-User-Id", AUTH_ID.toString())
                         .param("from", "2023-01-01")
                         .param("to", "2023-12-31")
@@ -67,7 +67,7 @@ class PatientAppointmentControllerTest {
 
     @Test
     void getEncounters_returns400_whenMissingHeader() throws Exception {
-        mockMvc.perform(get("/api/appointments/me/encounters"))
+        mockMvc.perform(get("/api/encounters/me"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -77,13 +77,13 @@ class PatientAppointmentControllerTest {
                 .thenThrow(new AppointmentServiceException(
                         HttpStatus.NOT_FOUND, AppointmentServiceException.PATIENT_NOT_FOUND, "Not found"));
 
-        mockMvc.perform(get("/api/appointments/me/encounters")
+        mockMvc.perform(get("/api/encounters/me")
                         .header("X-User-Id", AUTH_ID.toString()))
                 .andExpect(status().isNotFound());
     }
 
     // -------------------------------------------------------------------------
-    // GET /api/appointments/me/encounters/{id}
+    // GET /api/encounters/me/{id}
     // -------------------------------------------------------------------------
 
     @Test
@@ -94,7 +94,7 @@ class PatientAppointmentControllerTest {
                 null, null, null, null, null);
         when(appointmentService.getPatientEncounterDetail(AUTH_ID, ENCOUNTER_ID)).thenReturn(detail);
 
-        mockMvc.perform(get("/api/appointments/me/encounters/{id}", ENCOUNTER_ID)
+        mockMvc.perform(get("/api/encounters/me/{id}", ENCOUNTER_ID)
                         .header("X-User-Id", AUTH_ID.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.encounter_class").value("ambulatory"))
@@ -107,14 +107,14 @@ class PatientAppointmentControllerTest {
                 .thenThrow(new AppointmentServiceException(
                         HttpStatus.FORBIDDEN, AppointmentServiceException.ACCESS_DENIED, "Forbidden"));
 
-        mockMvc.perform(get("/api/appointments/me/encounters/{id}", ENCOUNTER_ID)
+        mockMvc.perform(get("/api/encounters/me/{id}", ENCOUNTER_ID)
                         .header("X-User-Id", AUTH_ID.toString()))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void getEncounterDetail_returns400_whenMissingHeader() throws Exception {
-        mockMvc.perform(get("/api/appointments/me/encounters/{id}", ENCOUNTER_ID))
+        mockMvc.perform(get("/api/encounters/me/{id}", ENCOUNTER_ID))
                 .andExpect(status().isBadRequest());
     }
 }

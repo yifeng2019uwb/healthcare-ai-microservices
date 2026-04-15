@@ -1,6 +1,6 @@
 package com.healthcare.exception;
 
-import com.healthcare.controller.PatientAppointmentController;
+import com.healthcare.controller.PatientEncounterController;
 import com.healthcare.service.AppointmentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(PatientAppointmentController.class)
+@WebMvcTest(PatientEncounterController.class)
 @Import(AppointmentExceptionHandler.class)
 class AppointmentExceptionHandlerTest {
 
@@ -33,7 +33,7 @@ class AppointmentExceptionHandlerTest {
                 .thenThrow(new AppointmentServiceException(
                         HttpStatus.NOT_FOUND, AppointmentServiceException.PATIENT_NOT_FOUND, "Not found"));
 
-        mockMvc.perform(get("/api/appointments/me/encounters")
+        mockMvc.perform(get("/api/encounters/me")
                         .header("X-User-Id", AUTH_ID.toString()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
@@ -46,7 +46,7 @@ class AppointmentExceptionHandlerTest {
                 .thenThrow(new AppointmentServiceException(
                         HttpStatus.FORBIDDEN, AppointmentServiceException.ACCESS_DENIED, "Forbidden"));
 
-        mockMvc.perform(get("/api/appointments/me/encounters/{id}", UUID.randomUUID())
+        mockMvc.perform(get("/api/encounters/me/{id}", UUID.randomUUID())
                         .header("X-User-Id", AUTH_ID.toString()))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403))
@@ -58,7 +58,7 @@ class AppointmentExceptionHandlerTest {
         when(appointmentService.getPatientEncounters(any(), any(), any(), any(), any(int.class), any(int.class)))
                 .thenThrow(new RuntimeException("Unexpected"));
 
-        mockMvc.perform(get("/api/appointments/me/encounters")
+        mockMvc.perform(get("/api/encounters/me")
                         .header("X-User-Id", AUTH_ID.toString()))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.status").value(500))
@@ -67,7 +67,7 @@ class AppointmentExceptionHandlerTest {
 
     @Test
     void returns400_forMissingHeader() throws Exception {
-        mockMvc.perform(get("/api/appointments/me/encounters"))
+        mockMvc.perform(get("/api/encounters/me"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
     }

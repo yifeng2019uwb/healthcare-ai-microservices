@@ -18,21 +18,23 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Provider-facing appointment endpoints.
+ * Provider-facing encounter history endpoints.
  * Auth enforced at gateway — X-User-Id is the provider's auth UUID.
+ *
+ * Path: /api/encounters/provider
  */
 @RestController
-@RequestMapping("/api/appointments/provider")
-public class ProviderAppointmentController {
+@RequestMapping("/api/encounters/provider")
+public class ProviderEncounterController {
 
     private final AppointmentService appointmentService;
 
-    public ProviderAppointmentController(AppointmentService appointmentService) {
+    public ProviderEncounterController(AppointmentService appointmentService) {
         this.appointmentService = appointmentService;
     }
 
-    /** GET /api/appointments/provider/encounters */
-    @GetMapping("/encounters")
+    /** GET /api/encounters/provider */
+    @GetMapping
     public ResponseEntity<EncounterPageResponse> getEncounters(
             @RequestHeader("X-User-Id") UUID authId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -45,8 +47,8 @@ public class ProviderAppointmentController {
                 appointmentService.getProviderEncounters(authId, from, to, patientId, page, size));
     }
 
-    /** GET /api/appointments/provider/encounters/{id} */
-    @GetMapping("/encounters/{id}")
+    /** GET /api/encounters/provider/{id} */
+    @GetMapping("/{id}")
     public ResponseEntity<EncounterDetailResponse> getEncounterDetail(
             @RequestHeader("X-User-Id") UUID authId,
             @PathVariable UUID id) {
@@ -54,12 +56,12 @@ public class ProviderAppointmentController {
         return ResponseEntity.ok(appointmentService.getProviderEncounterDetail(authId, id));
     }
 
-    /** GET /api/appointments/provider/patients/{id}/encounters */
-    @GetMapping("/patients/{id}/encounters")
+    /** GET /api/encounters/provider/patients/{patientId} */
+    @GetMapping("/patients/{patientId}")
     public ResponseEntity<List<EncounterSummaryResponse>> getPatientEncounters(
             @RequestHeader("X-User-Id") UUID authId,
-            @PathVariable UUID id) {
+            @PathVariable UUID patientId) {
 
-        return ResponseEntity.ok(appointmentService.getPatientEncountersByProvider(authId, id));
+        return ResponseEntity.ok(appointmentService.getPatientEncountersByProvider(authId, patientId));
     }
 }

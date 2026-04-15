@@ -84,7 +84,7 @@ class ProviderExceptionHandlerTest {
                 "", null, "Doe", null, null, null, null,
                 null, null, null, null, null, null, null, null);
 
-        mockMvc.perform(post("/api/provider/patients/register")
+        mockMvc.perform(post("/api/provider/patients/onboard")
                         .header("X-User-Id", AUTH_ID.toString())
                         .header("X-Username", "dr_smith")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -96,7 +96,7 @@ class ProviderExceptionHandlerTest {
 
     @Test
     void returns400_forMalformedRequestBody() throws Exception {
-        mockMvc.perform(post("/api/provider/patients/register")
+        mockMvc.perform(post("/api/provider/patients/onboard")
                         .header("X-User-Id", AUTH_ID.toString())
                         .header("X-Username", "dr_smith")
                         .contentType(MediaType.APPLICATION_JSON)

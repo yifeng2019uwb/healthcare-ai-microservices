@@ -89,20 +89,20 @@ class ProviderControllerTest {
     }
 
     // -------------------------------------------------------------------------
-    // POST /api/provider/patients/register
+    // POST /api/provider/patients/onboard
     // -------------------------------------------------------------------------
 
     @Test
-    void registerPatient_returns201_withResponse() throws Exception {
+    void onboardPatient_returns201_withResponse() throws Exception {
         RegisterPatientRequest req = new RegisterPatientRequest(
                 "John", null, "Doe", LocalDate.of(1990, 1, 15),
                 "M", null, null, null, null, null, null, null, null, null, null);
         RegisterPatientResponse resp = new RegisterPatientResponse(
                 PATIENT_ID, "MRN-000001", "John", "Doe",
                 LocalDate.of(1990, 1, 15), "M", null);
-        when(providerService.registerPatient(eq(AUTH_ID), any(), any())).thenReturn(resp);
+        when(providerService.onboardPatient(eq(AUTH_ID), any(), any())).thenReturn(resp);
 
-        mockMvc.perform(post("/api/provider/patients/register")
+        mockMvc.perform(post("/api/provider/patients/onboard")
                         .header("X-User-Id", AUTH_ID.toString())
                         .header("X-Username", "dr_smith")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -113,12 +113,12 @@ class ProviderControllerTest {
     }
 
     @Test
-    void registerPatient_returns400_whenMissingFirstName() throws Exception {
+    void onboardPatient_returns400_whenMissingFirstName() throws Exception {
         RegisterPatientRequest req = new RegisterPatientRequest(
                 null, null, "Doe", null, null, null, null,
                 null, null, null, null, null, null, null, null);
 
-        mockMvc.perform(post("/api/provider/patients/register")
+        mockMvc.perform(post("/api/provider/patients/onboard")
                         .header("X-User-Id", AUTH_ID.toString())
                         .header("X-Username", "dr_smith")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -127,12 +127,12 @@ class ProviderControllerTest {
     }
 
     @Test
-    void registerPatient_returns400_whenMissingHeader() throws Exception {
+    void onboardPatient_returns400_whenMissingHeader() throws Exception {
         RegisterPatientRequest req = new RegisterPatientRequest(
                 "John", null, "Doe", null, null, null, null,
                 null, null, null, null, null, null, null, null);
 
-        mockMvc.perform(post("/api/provider/patients/register")
+        mockMvc.perform(post("/api/provider/patients/onboard")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest());

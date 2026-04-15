@@ -82,7 +82,7 @@ public class ProviderServiceImpl implements ProviderService {
 
     @Override
     @Transactional
-    public RegisterPatientResponse registerPatient(UUID authId, String username, RegisterPatientRequest req) {
+    public RegisterPatientResponse onboardPatient(UUID authId, String username, RegisterPatientRequest req) {
         Provider provider = requireProvider(authId);
 
         String mrn = String.format("MRN-%06d", new java.util.Random().nextInt(999999) + 1);

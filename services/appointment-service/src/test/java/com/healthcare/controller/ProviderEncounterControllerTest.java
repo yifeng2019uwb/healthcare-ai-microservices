@@ -25,9 +25,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(ProviderAppointmentController.class)
+@WebMvcTest(ProviderEncounterController.class)
 @Import(AppointmentExceptionHandler.class)
-class ProviderAppointmentControllerTest {
+class ProviderEncounterControllerTest {
 
     @Autowired MockMvc mockMvc;
     @MockBean  AppointmentService appointmentService;
@@ -37,7 +37,7 @@ class ProviderAppointmentControllerTest {
     private static final UUID PATIENT_ID   = UUID.randomUUID();
 
     // -------------------------------------------------------------------------
-    // GET /api/appointments/provider/encounters
+    // GET /api/encounters/provider
     // -------------------------------------------------------------------------
 
     @Test
@@ -46,7 +46,7 @@ class ProviderAppointmentControllerTest {
         when(appointmentService.getProviderEncounters(eq(AUTH_ID), isNull(), isNull(), isNull(), eq(1), eq(10)))
                 .thenReturn(page);
 
-        mockMvc.perform(get("/api/appointments/provider/encounters")
+        mockMvc.perform(get("/api/encounters/provider")
                         .header("X-User-Id", AUTH_ID.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(0));
@@ -58,7 +58,7 @@ class ProviderAppointmentControllerTest {
         when(appointmentService.getProviderEncounters(any(), any(), any(), eq(PATIENT_ID), eq(1), eq(10)))
                 .thenReturn(page);
 
-        mockMvc.perform(get("/api/appointments/provider/encounters")
+        mockMvc.perform(get("/api/encounters/provider")
                         .header("X-User-Id", AUTH_ID.toString())
                         .param("patient_id", PATIENT_ID.toString()))
                 .andExpect(status().isOk());
@@ -66,7 +66,7 @@ class ProviderAppointmentControllerTest {
 
     @Test
     void getEncounters_returns400_whenMissingHeader() throws Exception {
-        mockMvc.perform(get("/api/appointments/provider/encounters"))
+        mockMvc.perform(get("/api/encounters/provider"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -76,13 +76,13 @@ class ProviderAppointmentControllerTest {
                 .thenThrow(new AppointmentServiceException(
                         HttpStatus.NOT_FOUND, AppointmentServiceException.PROVIDER_NOT_FOUND, "Not found"));
 
-        mockMvc.perform(get("/api/appointments/provider/encounters")
+        mockMvc.perform(get("/api/encounters/provider")
                         .header("X-User-Id", AUTH_ID.toString()))
                 .andExpect(status().isNotFound());
     }
 
     // -------------------------------------------------------------------------
-    // GET /api/appointments/provider/encounters/{id}
+    // GET /api/encounters/provider/{id}
     // -------------------------------------------------------------------------
 
     @Test
@@ -93,7 +93,7 @@ class ProviderAppointmentControllerTest {
                 null, null, null, null, null);
         when(appointmentService.getProviderEncounterDetail(AUTH_ID, ENCOUNTER_ID)).thenReturn(detail);
 
-        mockMvc.perform(get("/api/appointments/provider/encounters/{id}", ENCOUNTER_ID)
+        mockMvc.perform(get("/api/encounters/provider/{id}", ENCOUNTER_ID)
                         .header("X-User-Id", AUTH_ID.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.encounter_class").value("ambulatory"));
@@ -105,19 +105,19 @@ class ProviderAppointmentControllerTest {
                 .thenThrow(new AppointmentServiceException(
                         HttpStatus.FORBIDDEN, AppointmentServiceException.ACCESS_DENIED, "Forbidden"));
 
-        mockMvc.perform(get("/api/appointments/provider/encounters/{id}", ENCOUNTER_ID)
+        mockMvc.perform(get("/api/encounters/provider/{id}", ENCOUNTER_ID)
                         .header("X-User-Id", AUTH_ID.toString()))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void getEncounterDetail_returns400_whenMissingHeader() throws Exception {
-        mockMvc.perform(get("/api/appointments/provider/encounters/{id}", ENCOUNTER_ID))
+        mockMvc.perform(get("/api/encounters/provider/{id}", ENCOUNTER_ID))
                 .andExpect(status().isBadRequest());
     }
 
     // -------------------------------------------------------------------------
-    // GET /api/appointments/provider/patients/{id}/encounters
+    // GET /api/encounters/provider/patients/{patientId}
     // -------------------------------------------------------------------------
 
     @Test
@@ -125,7 +125,7 @@ class ProviderAppointmentControllerTest {
         when(appointmentService.getPatientEncountersByProvider(AUTH_ID, PATIENT_ID))
                 .thenReturn(List.of());
 
-        mockMvc.perform(get("/api/appointments/provider/patients/{id}/encounters", PATIENT_ID)
+        mockMvc.perform(get("/api/encounters/provider/patients/{patientId}", PATIENT_ID)
                         .header("X-User-Id", AUTH_ID.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
@@ -137,14 +137,14 @@ class ProviderAppointmentControllerTest {
                 .thenThrow(new AppointmentServiceException(
                         HttpStatus.FORBIDDEN, AppointmentServiceException.ACCESS_DENIED, "Forbidden"));
 
-        mockMvc.perform(get("/api/appointments/provider/patients/{id}/encounters", PATIENT_ID)
+        mockMvc.perform(get("/api/encounters/provider/patients/{patientId}", PATIENT_ID)
                         .header("X-User-Id", AUTH_ID.toString()))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void getPatientEncounters_returns400_whenMissingHeader() throws Exception {
-        mockMvc.perform(get("/api/appointments/provider/patients/{id}/encounters", PATIENT_ID))
+        mockMvc.perform(get("/api/encounters/provider/patients/{patientId}", PATIENT_ID))
                 .andExpect(status().isBadRequest());
     }
 }

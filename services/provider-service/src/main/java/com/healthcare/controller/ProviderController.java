@@ -47,14 +47,14 @@ public class ProviderController {
         return ResponseEntity.ok(providerService.getProfile(authId));
     }
 
-    /** POST /api/provider/patients/register */
-    @PostMapping("/patients/register")
-    public ResponseEntity<RegisterPatientResponse> registerPatient(
+    /** POST /api/provider/patients/onboard */
+    @PostMapping("/patients/onboard")
+    public ResponseEntity<RegisterPatientResponse> onboardPatient(
             @RequestHeader("X-User-Id") UUID authId,
             @RequestHeader("X-Username") String username,
             @Valid @RequestBody RegisterPatientRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(providerService.registerPatient(authId, username, request));
+                .body(providerService.onboardPatient(authId, username, request));
     }
 
     /** GET /api/provider/patients?page=0&size=20 */
