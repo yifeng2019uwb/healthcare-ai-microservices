@@ -22,7 +22,6 @@ import com.healthcare.entity.Patient;
 import com.healthcare.entity.Provider;
 import com.healthcare.exception.ProviderServiceException;
 import com.healthcare.service.impl.ProviderServiceImpl;
-import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,8 +39,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import org.springframework.test.util.ReflectionTestUtils;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -58,7 +55,6 @@ class ProviderServiceImplTest {
     @Mock private ConditionDao conditionDao;
     @Mock private AllergyDao   allergyDao;
     @Mock private AuditLogDao  auditLogDao;
-    @Mock private EntityManager entityManager;
 
     @InjectMocks
     private ProviderServiceImpl service;
@@ -71,8 +67,6 @@ class ProviderServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(service, "entityManager", entityManager);
-
         mockProvider = mock(Provider.class);
         lenient().when(mockProvider.getId()).thenReturn(UUID.randomUUID());
         lenient().when(mockProvider.getProviderCode()).thenReturn("PRV-000001");
@@ -125,7 +119,6 @@ class ProviderServiceImplTest {
         assertThat(response.lastName()).isEqualTo("Doe");
         assertThat(response.mrn()).isEqualTo("MRN-000001");
         verify(patientDao).saveAndFlush(any(Patient.class));
-        verify(entityManager).refresh(any(Patient.class));
     }
 
     @Test

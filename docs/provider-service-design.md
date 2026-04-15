@@ -1,13 +1,13 @@
 # Provider Service Design
 
-> Version: 1.0 | Last Updated: March 2026
+> Version: 2.0 | Last Updated: April 2026
 
 ---
 
 ## Overview
 
 Manages provider profiles, organizations, and provider access to patient data.
-Providers can create new patient records and view their patients.
+Providers onboard new patients and view their patients' clinical data.
 
 Owns: `providers`, `organizations` tables
 Reads: `patients`, `encounters`, `conditions`, `allergies` tables
@@ -16,7 +16,7 @@ Reads: `patients`, `encounters`, `conditions`, `allergies` tables
 
 ## Out of Scope (Phase 1)
 
-- Provider self-registration — use existing Synthea provider data
+- Provider account creation — providers pre-exist from Synthea data; they register an auth account via auth-service using their provider_code
 - Organization management — use existing Synthea organization data
 - Provider profile updates
 - Writing conditions/allergies — Phase 2
@@ -30,7 +30,7 @@ Reads: `patients`, `encounters`, `conditions`, `allergies` tables
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/api/provider/me` | Get own provider profile |
-| POST | `/api/provider/patients/register` | Create new patient record, generate MRN |
+| POST | `/api/provider/patients/onboard` | Onboard new patient, generate MRN |
 | GET | `/api/provider/patients` | List all my patients |
 | GET | `/api/provider/patients/{id}` | View patient profile |
 | GET | `/api/provider/patients/{id}/conditions` | View patient conditions |
@@ -68,10 +68,10 @@ Response `200`:
 
 ---
 
-### POST `/api/provider/patients/register`
+### POST `/api/provider/patients/onboard`
 
-Provider creates a new patient record. MRN auto-generated.
-Provider gives MRN to patient for account registration.
+Provider creates a new patient record and generates MRN.
+Provider gives MRN to patient so they can register an auth account via auth-service.
 
 Request:
 ```json
@@ -114,8 +114,21 @@ Errors:
 
 ### GET `/api/provider/patients`
 
-Returns all patients this provider has encounters with.
-Paginated.
+Returns all patients under this provider's care. Paginated.
+
+> **Design decision — patient list scope:**
+>
+> Two options were considered:
+>
+> - **Option A**: Return only patients with at least one encounter (encounter-based). Problem: newly onboarded patients with no visits yet would be invisible.
+> - **Option B**: Return all patients explicitly assigned to this provider via a `provider_patients` join table, regardless of whether any encounter exists yet.
+>
+> **Decision: Option B** — add a `provider_patients` join table.
+> When a provider onboards a patient (`POST /onboard`), a row is inserted into `provider_patients`.
+> `GET /patients` queries this table, not the encounters table.
+> The encounter-based access check (`requireEncounterAccess`) remains for read access to clinical data.
+>
+> **TODO (implementation)**: Create `provider_patients` table in Terraform + schema. Update `registerPatient` → `onboardPatient` in `ProviderServiceImpl` to insert into this table. Update `getPatients()` to query `provider_patients` instead of deriving from encounters.
 
 Response `200`:
 ```json
@@ -143,12 +156,12 @@ Response `200`:
 ### GET `/api/provider/patients/{id}`
 
 View full patient profile.
-Provider must have at least one encounter with this patient.
+Provider must have at least one encounter with this patient OR have onboarded them.
 
 Response `200`: full patient profile
 
 Errors:
-- `403` — provider has no encounter with this patient
+- `403` — provider has no relationship with this patient
 - `404` — patient not found
 
 ---
@@ -201,15 +214,20 @@ Response `200`:
 
 ```
 PROVIDER role:
-  - Can only see patients they have encounters with
-  - Cannot see other providers patients
-  - Cannot update patient clinical data (Phase 2)
+  - Can only see patients they have onboarded or have encounters with
+  - Cannot see other providers' patients
+  - Cannot write conditions or allergies (Phase 2)
 
-Provider patient access validation:
-  SELECT COUNT(*) FROM encounters
-  WHERE patient_id = :patientId
-  AND provider_id = (SELECT id FROM providers WHERE auth_id = :authId)
-  → 0 results = 403 Forbidden
+Patient access validation (two accepted paths):
+  1. Patient was onboarded by this provider:
+     SELECT COUNT(*) FROM provider_patients
+     WHERE provider_id = :providerId AND patient_id = :patientId
+
+  2. Provider has at least one encounter with this patient:
+     SELECT COUNT(*) FROM encounters
+     WHERE patient_id = :patientId AND provider_id = :providerId
+
+  Either condition grants access. Zero results on both = 403 Forbidden.
 ```
 
 ---
@@ -219,7 +237,7 @@ Provider patient access validation:
 | Event | Action | Resource Type |
 |---|---|---|
 | Get own profile | READ | providers |
-| Register patient | CREATE | patients |
+| Onboard patient | CREATE | patients |
 | List patients | READ | patients |
 | View patient | READ | patients |
 | View conditions | READ | conditions |
@@ -232,12 +250,16 @@ Provider patient access validation:
 - [x] Provider entity + repository
 - [x] Organization entity + repository
 - [x] GET /me endpoint
-- [x] POST /patients/register endpoint
+- [x] POST /patients/onboard endpoint (was /register — renamed)
 - [x] GET /patients list endpoint
 - [x] GET /patients/{id} endpoint
 - [x] GET /patients/{id}/conditions endpoint
 - [x] GET /patients/{id}/allergies endpoint
-- [x] Provider encounter authorization check
 - [x] Audit logging integration
 - [x] Unit tests
 - [x] Deploy to Cloud Run
+- [ ] `provider_patients` join table — schema + Terraform (Issue 4 fix)
+- [ ] Update `getPatients()` to query `provider_patients` instead of encounters
+- [ ] Update access check to accept onboard relationship OR encounter relationship
+- [ ] POST /patients/{id}/conditions — provider write (Phase 2)
+- [ ] POST /patients/{id}/allergies — provider write (Phase 2)

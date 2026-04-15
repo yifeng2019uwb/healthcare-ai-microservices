@@ -45,10 +45,5 @@ public record RegisterProviderRequest(
         @JsonProperty("last_name")
         @NotBlank(message = "Last name is required")
         @Size(max = 50, message = "Last name cannot exceed 50 characters")
-        String lastName,
-
-        // Optional — if provided, verified against the NPPES federal registry
-        @JsonProperty("npi")
-        @Pattern(regexp = "^\\d{10}$", message = "NPI must be a 10-digit number")
-        String npi
+        String lastName
 ) {}

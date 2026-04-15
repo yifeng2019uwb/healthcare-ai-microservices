@@ -10,7 +10,7 @@ Reads: encounters, providers, organizations tables.
 
 Responsibilities
 
-Admin creates patient records (generates MRN)
+Provider onboards new patients (creates patient record, generates MRN) — handled by provider-service
 Patient views and updates own profile
 Patient views own clinical history (encounters, conditions, allergies)
 Provider access to patient data — handled by provider-service
@@ -255,10 +255,6 @@ PATIENT role:
 
 PROVIDER role:
   - Access to patient data handled by provider-service
-  - See provider-service-design.md
-
-ADMIN role:
-  - Handled by provider-service
   - See provider-service-design.md
 
 ---

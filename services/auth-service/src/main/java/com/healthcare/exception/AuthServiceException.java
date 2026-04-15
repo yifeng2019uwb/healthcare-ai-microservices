@@ -25,8 +25,7 @@ public class AuthServiceException extends RuntimeException {
     public static final String TOKEN_EXPIRED       = "TOKEN_EXPIRED";
     public static final String TOKEN_BLACKLISTED   = "TOKEN_BLACKLISTED";
     public static final String SESSION_EXPIRED     = "SESSION_EXPIRED";
-    public static final String INTERNAL_ERROR          = "AUTH_INTERNAL_ERROR";
-    public static final String NPI_VERIFICATION_FAILED = "NPI_VERIFICATION_FAILED";
+    public static final String INTERNAL_ERROR = "AUTH_INTERNAL_ERROR";
 
     private final HttpStatus status;
     private final String errorCode;

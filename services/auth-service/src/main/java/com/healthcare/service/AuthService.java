@@ -16,13 +16,13 @@ import com.healthcare.enums.ActionType;
 import com.healthcare.enums.Outcome;
 import com.healthcare.enums.UserRole;
 import com.healthcare.exception.AuthServiceException;
-import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import io.jsonwebtoken.Claims;
 
 /**
  * Orchestrates all auth-service business logic.
@@ -52,7 +52,6 @@ public class AuthService {
     private final JwtService jwtService;
     private final TokenBlacklistService blacklistService;
     private final PasswordEncoder passwordEncoder;
-    private final NpiVerificationService npiVerificationService;
 
     public AuthService(UserDao userDao,
                        PatientDao patientDao,
@@ -60,8 +59,7 @@ public class AuthService {
                        AuditLogDao auditLogDao,
                        JwtService jwtService,
                        TokenBlacklistService blacklistService,
-                       PasswordEncoder passwordEncoder,
-                       NpiVerificationService npiVerificationService) {
+                       PasswordEncoder passwordEncoder) {
         this.userDao = userDao;
         this.patientDao = patientDao;
         this.providerDao = providerDao;
@@ -69,7 +67,6 @@ public class AuthService {
         this.jwtService = jwtService;
         this.blacklistService = blacklistService;
         this.passwordEncoder = passwordEncoder;
-        this.npiVerificationService = npiVerificationService;
     }
 
     // =========================================================================
@@ -158,19 +155,13 @@ public class AuthService {
                     "Provider code already linked to an account: " + request.providerCode());
         }
 
-        // NPI verification — optional field; if provided, must match NPPES registry
-        if (request.npi() != null && !request.npi().isBlank()) {
-            npiVerificationService.verify(request.npi(), request.firstName(), request.lastName());
-            provider.setNpi(request.npi());
-        }
-
         User user = createUser(request.username(), request.email(), request.password(), UserRole.PROVIDER);
         provider.linkAuthAccount(user.getId());
         providerDao.save(provider);
 
         auditLogDao.insert(buildAuditLog(user, ActionType.CREATE, Outcome.SUCCESS));
-        log.info("Provider registered: username={} providerCode={} npi={}",
-                request.username(), request.providerCode(), request.npi());
+        log.info("Provider registered: username={} providerCode={}",
+                request.username(), request.providerCode());
 
         return issueTokenPair(user);
     }

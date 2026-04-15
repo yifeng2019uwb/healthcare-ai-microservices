@@ -25,8 +25,6 @@ import com.healthcare.exception.ProviderServiceException;
 import com.healthcare.service.ProviderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -47,9 +45,6 @@ public class ProviderServiceImpl implements ProviderService {
     private static final String RESOURCE_PATIENTS   = "patients";
     private static final String RESOURCE_CONDITIONS = "conditions";
     private static final String RESOURCE_ALLERGIES  = "allergies";
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
     private final ProviderDao  providerDao;
     private final PatientDao   patientDao;
@@ -109,7 +104,6 @@ public class ProviderServiceImpl implements ProviderService {
 
         patient.setUpdatedBy(username);
         patient = patientDao.saveAndFlush(patient);
-        entityManager.refresh(patient);
 
         auditLogDao.insert(new AuditLog(ActionType.CREATE, RESOURCE_PATIENTS, Outcome.SUCCESS)
                 .withAuthId(authId.toString())
