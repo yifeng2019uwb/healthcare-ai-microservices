@@ -1,3 +1,5 @@
+package auth;
+
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 
@@ -9,7 +11,7 @@ import static org.hamcrest.Matchers.notNullValue;
  * Integration test for POST /api/auth/register/patient.
  *
  * Prerequisites:
- *   - Gateway running at gateway.url (default: http://localhost:8080)
+ *   - Gateway running at gateway.url (default: https://gateway-dev-824144893232.us-west1.run.app)
  *   - auth-service running and reachable by the gateway
  *   - A patient record exists in the DB matching the mrn / firstName / lastName below
  *
@@ -18,7 +20,7 @@ import static org.hamcrest.Matchers.notNullValue;
  *
  * Override:
  *   mvn exec:java -f integration_tests/pom.xml \
- *     -Dgateway.url=http://localhost:8080 \
+ *     -Dgateway.url=https://gateway-dev-824144893232.us-west1.run.app \
  *     -Dtest.patient.mrn=MRN001 \
  *     -Dtest.patient.firstName=John \
  *     -Dtest.patient.lastName=Doe
@@ -26,7 +28,7 @@ import static org.hamcrest.Matchers.notNullValue;
 public class RegisterPatientIT {
 
     public static void main(String[] args) {
-        RestAssured.baseURI = System.getProperty("gateway.url", "http://localhost:8080");
+        RestAssured.baseURI = System.getProperty("gateway.url", "https://gateway-dev-824144893232.us-west1.run.app");
 
         String mrn       = System.getProperty("test.patient.mrn",       "MRN001");
         String firstName = System.getProperty("test.patient.firstName", "John");

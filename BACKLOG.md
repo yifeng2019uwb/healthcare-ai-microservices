@@ -95,6 +95,28 @@
 
 ---
 
+## ✅ Completed — 2026-04-15
+
+- Java 21 + Spring Boot 3.4.4 upgrade (all services, Dockerfiles, CI)
+- Encounter endpoint rename: `/api/appointments/**` → `/api/encounters/**` (FHIR)
+- Gateway route added for `/api/encounters/**`
+- NPI removed from auth-service
+- Provider endpoint renamed: `/patients/register` → `/patients/onboard`
+- `npi_number` column constant fixed → `npi`
+- `ValidationException` returns 400 (was 500)
+- ECS structured logging added to all services
+- Integration tests passing on GCP (`run-it.sh all`)
+
+---
+
+## 🔜 Next Up
+
+- [ ] **provider_patients join table** — newly onboarded patients invisible until first encounter. Add join table, update `getPatients()`, update access check to OR logic
+- [ ] **Gateway RBAC** — enforce path-level role checks in JwtAuthFilter (design in gateway-service-design.md)
+- [ ] **MRN DB sequence** — replace `Random` with DB sequence (collision-safe, like provider_code)
+
+---
+
 ## 🎯 **Strategic Initiatives**
 
 ### **Initiative 1: Azure (Free Tier) Migration**

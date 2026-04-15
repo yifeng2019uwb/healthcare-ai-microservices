@@ -11,11 +11,11 @@
     <packaging>jar</packaging>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Override with -Dgateway.url=... -->
-        <gateway.url>http://localhost:8080</gateway.url>
+        <gateway.url>https://gateway-dev-824144893232.us-west1.run.app</gateway.url>
     </properties>
 
     <dependencies>
@@ -34,7 +34,6 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
                 <configuration>
-                    <mainClass>RegisterPatientIT</mainClass>
                     <systemProperties>
                         <systemProperty>
                             <key>gateway.url</key>

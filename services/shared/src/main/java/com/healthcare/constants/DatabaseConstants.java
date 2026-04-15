@@ -82,7 +82,7 @@ public final class DatabaseConstants {
     // ==================== PROVIDER PROFILE COLUMNS ====================
 
     public static final String COL_LICENSE_NUMBERS = "license_numbers";
-    public static final String COL_NPI_NUMBER      = "npi_number";
+    public static final String COL_NPI_NUMBER      = "npi";
     public static final String COL_SPECIALTY       = "specialty";
     public static final String COL_QUALIFICATIONS  = "qualifications";
     public static final String COL_BIO             = "bio";

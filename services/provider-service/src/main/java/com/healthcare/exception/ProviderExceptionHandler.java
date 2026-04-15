@@ -1,5 +1,6 @@
 package com.healthcare.exception;
 
+import com.healthcare.exception.ValidationException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +62,14 @@ public class ProviderExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(400, "Missing required header: " + e.getHeaderName()));
+    }
+
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(ValidationException e) {
+        log.warn("Validation error: {}", e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of(400, e.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

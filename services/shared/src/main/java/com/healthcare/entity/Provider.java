@@ -51,7 +51,6 @@ public class Provider extends ProfileBaseEntity {
 
     private static final String FIELD_PROVIDER_NAME  = "Provider name";
     private static final String FIELD_LICENSE_NUMBER  = "License number";
-    private static final String FIELD_NPI             = "NPI";
     private static final String FIELD_PHONE = "Phone";
     private static final String FIELD_ORGANIZATION_ID = "Organization ID";
 
@@ -114,11 +113,10 @@ public class Provider extends ProfileBaseEntity {
 
     /**
      * NPI (National Provider Identifier) — 10-digit federal CMS identifier.
-     * Required for Medicare/Medicaid billing. Verified against NPPES registry on registration.
+     * Set during provider onboarding, not during auth registration.
      */
     @Size(max = DatabaseConstants.LEN_NPI)
-    @Pattern(regexp = ValidationPatterns.NPI,
-             message = "NPI must be a 10-digit number")
+    @Pattern(regexp = ValidationPatterns.NPI, message = "NPI must be a 10-digit number")
     @Column(name = DatabaseConstants.COL_NPI_NUMBER, unique = true)
     private String npi;
 
@@ -271,8 +269,7 @@ public class Provider extends ProfileBaseEntity {
     }
 
     public void setNpi(String npi) {
-        this.npi = ValidationUtils.validateAndNormalizeString(
-                npi, FIELD_NPI, DatabaseConstants.LEN_NPI);
+        this.npi = npi;
     }
 
     public void setIsActive(Boolean isActive) {

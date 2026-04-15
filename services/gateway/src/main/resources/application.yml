@@ -44,6 +44,11 @@ spring:
           predicates:
             - Path=/api/appointments/**
 
+logging:
+  structured:
+    format:
+      console: ecs
+
 management:
   endpoints:
     web:

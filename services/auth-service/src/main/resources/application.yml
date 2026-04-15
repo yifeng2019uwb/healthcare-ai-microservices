@@ -32,6 +32,11 @@ jwt:
   public-key: "${JWT_PUBLIC_KEY}"
   key-id: "${JWT_KEY_ID:auth-key-v1}"
 
+logging:
+  structured:
+    format:
+      console: ecs
+
 management:
   endpoints:
     web:
