@@ -1,75 +1,105 @@
 package encounter;
 
-import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import util.ApiPaths;
+import util.BaseIT;
 import util.LoginHelper;
 
+import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-/**
- * Integration test for patient encounter endpoints (Phase 1).
- *
- * Verifies:
- *   GET /api/encounters/me              — patient views own encounter list
- *   GET /api/encounters/me/{id}         — patient views encounter detail
- *
- * Prerequisites:
- *   - Seed accounts exist: run util.SeedAccounts first
- *
- * Run:
- *   mvn exec:java -f integration_tests/pom.xml -Dexec.mainClass=encounter.PatientEncountersIT
- */
-public class PatientEncountersIT {
+@DisplayName("Patient Encounter Endpoints")
+class PatientEncountersIT extends BaseIT {
 
-    public static void main(String[] args) {
-        RestAssured.baseURI = System.getProperty("gateway.url",
-                "https://gateway-dev-824144893232.us-west1.run.app");
+    // ── Test data ─────────────────────────────────────────────────────────────
+    private static final String NON_EXISTENT_ID = "00000000-0000-0000-0000-000000000000";
+    private static final String MALFORMED_ID    = "not-a-uuid";
 
-        // Step 1 — login as patient
-        String encounterId =
-            LoginHelper.asPatient()
-            .when()
-                .get(ApiPaths.ENCOUNTERS_ME)
-            .then()
-                .statusCode(200)
-                .contentType(ContentType.JSON)
-                .body("total",      notNullValue())
-                .body("page",       notNullValue())
-                .body("encounters", notNullValue())
-                .extract().path("encounters[0].id");
+    private static String encounterId;
+    private static String crossPatientEncounterId;
 
-        System.out.println("Step 1 PASS: GET " + ApiPaths.ENCOUNTERS_ME + " returned 200");
+    @BeforeAll
+    static void fetchEncounterIds() {
+        waitUntilReady(LoginHelper.patientToken(), ApiPaths.ENCOUNTERS_ME);
 
-        if (encounterId == null) {
-            System.out.println("Step 2 SKIP: no encounters in DB");
-            return;
+        Response resp1 = LoginHelper.asPatient()
+            .when().get(ApiPaths.ENCOUNTERS_ME)
+            .then().extract().response();
+        if (resp1.statusCode() == 200) {
+            encounterId = resp1.path("encounters[0].id");
         }
 
-        // Step 2 — GET /api/encounters/me/{id}
+        try {
+            Response resp2 = LoginHelper.asPatient2()
+                .when().get(ApiPaths.ENCOUNTERS_ME)
+                .then().extract().response();
+            if (resp2.statusCode() == 200) {
+                crossPatientEncounterId = resp2.path("encounters[0].id");
+            }
+        } catch (Throwable e) {
+            // patient2 not seeded — cross-patient test will be skipped
+        }
+    }
+
+    // ── Happy path ────────────────────────────────────────────────────────────
+
+    @Test
+    void getEncounterList_asPatient_returns200() {
         LoginHelper.asPatient()
-        .when()
-            .get(ApiPaths.ENCOUNTERS_ME + "/" + encounterId)
-        .then()
+            .when().get(ApiPaths.ENCOUNTERS_ME)
+            .then()
             .statusCode(200)
             .contentType(ContentType.JSON)
-            .body("id",              notNullValue())
-            .body("encounter_class", notNullValue());
+            .body("total",      notNullValue())
+            .body("page",       notNullValue())
+            .body("encounters", notNullValue());
+    }
 
-        System.out.println("Step 2 PASS: GET " + ApiPaths.ENCOUNTERS_ME_DETAIL + " returned 200");
-
-        // Step 3 — verify old path is no longer valid
-        int oldPathStatus =
-            LoginHelper.asPatient()
-            .when()
-                .get(ApiPaths.OLD_PATIENT_ENCOUNTERS)
+    @Test
+    void getEncounterDetail_asPatient_returns200() {
+        assumeTrue(encounterId != null, "No encounter ID available — patient has no encounters");
+        LoginHelper.asPatient()
+            .when().get(ApiPaths.ENCOUNTERS_ME + "/" + encounterId)
             .then()
-                .extract().statusCode();
+            .statusCode(200)
+            .contentType(ContentType.JSON)
+            .body("id", notNullValue());
+    }
 
-        if (oldPathStatus == 404 || oldPathStatus == 500) {
-            System.out.println("Step 3 PASS: old path " + ApiPaths.OLD_PATIENT_ENCOUNTERS + " returns " + oldPathStatus);
-        } else {
-            throw new AssertionError("Step 3 FAIL: old path should not return " + oldPathStatus);
-        }
+    // ── Security ─────────────────────────────────────────────────────────────
+
+    @Test
+    void getEncounterList_withoutToken_returns401() {
+        given().when().get(ApiPaths.ENCOUNTERS_ME).then().statusCode(401);
+    }
+
+    // ── Validation ────────────────────────────────────────────────────────────
+
+    @Test
+    void getEncounterDetail_withNonExistentId_returns404() {
+        LoginHelper.asPatient()
+            .when().get(ApiPaths.ENCOUNTERS_ME + "/" + NON_EXISTENT_ID)
+            .then().statusCode(404);
+    }
+
+    @Test
+    void getEncounterDetail_withMalformedId_returns400() {
+        LoginHelper.asPatient()
+            .when().get(ApiPaths.ENCOUNTERS_ME + "/" + MALFORMED_ID)
+            .then().statusCode(400);
+    }
+
+    @Test
+    void getEncounterDetail_ofOtherPatient_returns404() {
+        assumeTrue(crossPatientEncounterId != null,
+            "testpatient02 not seeded or has no encounters — set -Dtest.patient2.* to enable");
+        LoginHelper.asPatient()
+            .when().get(ApiPaths.ENCOUNTERS_ME + "/" + crossPatientEncounterId)
+            .then().statusCode(404);
     }
 }

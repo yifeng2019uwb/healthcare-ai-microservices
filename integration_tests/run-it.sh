@@ -7,27 +7,43 @@
 #
 # Tests:
 #   seed          — verify test accounts are reachable
+#   auth          — auth.AuthIT  (JUnit 5 via Failsafe)
 #   register      — auth.RegisterPatientIT
-#   auth          — auth.AuthIT (login, refresh, logout)
-#   patient       — encounter.PatientEncountersIT + patient.PatientProfileIT
-#   provider      — encounter.ProviderEncountersIT + provider.ProviderProfileIT
+#   patient       — patient.PatientProfileIT + encounter.PatientEncountersIT
+#   provider      — provider.ProviderProfileIT + encounter.ProviderEncountersIT
 #   all           — run all tests in order
 #
+# Migration status:
+#   auth     → JUnit 5 (Failsafe)
+#   others   → legacy main() style (exec plugin), to be migrated
+#
 # Examples:
-#   ./integration_tests/run-it.sh seed
+#   ./integration_tests/run-it.sh auth
 #   ./integration_tests/run-it.sh patient provider
 #   ./integration_tests/run-it.sh all
 # =============================================================================
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 GATEWAY_URL="${GATEWAY_URL:-https://gateway-dev-824144893232.us-west1.run.app}"
-POM="integration_tests/pom.xml"
+POM="$SCRIPT_DIR/pom.xml"
 
 GREEN='\033[0;32m'; RED='\033[0;31m'; BLUE='\033[0;34m'; NC='\033[0m'
 ok()    { echo -e "${GREEN}✓ $1${NC}"; }
 fail()  { echo -e "${RED}✗ $1${NC}"; exit 1; }
 stage() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
+
+run_junit() {
+  local label=$1
+  local class=$2
+  stage "$label"
+  mvn failsafe:integration-test failsafe:verify -f "$POM" \
+    -Dgateway.url="$GATEWAY_URL" \
+    -Dit.test="$class" \
+    -q
+  ok "$label passed"
+}
 
 run_class() {
   local class=$1
@@ -44,7 +60,7 @@ if [[ $# -eq 0 ]]; then
   echo ""
   echo "Usage: $0 <test|all> [test2 ...]"
   echo ""
-  echo "Tests: seed  register  auth  patient  provider  all"
+  echo "Tests: seed  auth  register  patient  provider  all"
   echo ""
   echo "Gateway URL: $GATEWAY_URL"
   echo "Override:    GATEWAY_URL=https://... $0 all"
@@ -60,26 +76,27 @@ ok "Compiled"
 
 for arg in "$@"; do
   case $arg in
-    seed)     run_class "util.SeedAccounts"                  "Seed / verify accounts" ;;
-    register) run_class "auth.RegisterPatientIT"             "Register patient (auth)" ;;
-    auth)     run_class "auth.AuthIT"                        "Auth: login, refresh, logout" ;;
+    seed)     run_class "util.SeedAccounts"             "Seed / verify accounts" ;;
+    auth)     run_junit "Auth endpoints"                "auth.AuthIT" ;;
+    register) run_junit "Register patient endpoint"    "auth.RegisterPatientIT" ;;
     patient)
-      run_class "patient.PatientProfileIT"           "Patient profile endpoints"
-      run_class "encounter.PatientEncountersIT"      "Patient encounter endpoints"
+      run_junit "Patient profile endpoints"        "patient.PatientProfileIT"
+      run_junit "Patient encounter endpoints"      "encounter.PatientEncountersIT"
       ;;
     provider)
-      run_class "provider.ProviderProfileIT"         "Provider profile endpoints"
-      run_class "encounter.ProviderEncountersIT"     "Provider encounter endpoints"
+      run_junit "Provider profile endpoints"       "provider.ProviderProfileIT"
+      run_junit "Provider encounter endpoints"     "encounter.ProviderEncountersIT"
       ;;
     all)
-      run_class "util.SeedAccounts"                  "Seed / verify accounts"
-      run_class "auth.AuthIT"                        "Auth: login, refresh, logout"
-      run_class "patient.PatientProfileIT"           "Patient profile endpoints"
-      run_class "encounter.PatientEncountersIT"      "Patient encounter endpoints"
-      run_class "provider.ProviderProfileIT"         "Provider profile endpoints"
-      run_class "encounter.ProviderEncountersIT"     "Provider encounter endpoints"
+      run_class "util.SeedAccounts"                "Seed / verify accounts"
+      run_junit "Auth endpoints"                   "auth.AuthIT"
+      run_junit "Register patient endpoint"        "auth.RegisterPatientIT"
+      run_junit "Patient profile endpoints"        "patient.PatientProfileIT"
+      run_junit "Patient encounter endpoints"      "encounter.PatientEncountersIT"
+      run_junit "Provider profile endpoints"       "provider.ProviderProfileIT"
+      run_junit "Provider encounter endpoints"     "encounter.ProviderEncountersIT"
       ;;
-    *) fail "Unknown test: $arg  (known: seed register auth patient provider all)" ;;
+    *) fail "Unknown test: $arg  (known: seed auth register patient provider all)" ;;
   esac
 done
 

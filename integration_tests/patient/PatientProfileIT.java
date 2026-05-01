@@ -1,71 +1,79 @@
 package patient;
 
-import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import util.ApiPaths;
+import util.BaseIT;
 import util.LoginHelper;
 
+import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.notNullValue;
 
-/**
- * Integration test for patient-service profile endpoints.
- *
- * Verifies:
- *   GET /api/patients/me              — patient views own profile
- *   GET /api/patients/me/encounters   — patient views encounter list
- *   GET /api/patients/me/conditions   — patient views condition list
- *   GET /api/patients/me/allergies    — patient views allergy list
- *
- * Run:
- *   mvn exec:java -f integration_tests/pom.xml -Dexec.mainClass=patient.PatientProfileIT
- */
-public class PatientProfileIT {
+@DisplayName("Patient Profile Endpoints")
+class PatientProfileIT extends BaseIT {
 
-    public static void main(String[] args) {
-        RestAssured.baseURI = System.getProperty("gateway.url",
-                "https://gateway-dev-824144893232.us-west1.run.app");
+    @BeforeAll
+    static void setUp() {
+        waitUntilReady(LoginHelper.patientToken(), ApiPaths.PATIENT_ME);
+    }
 
-        // Step 1 — GET /api/patients/me
+    // ── Happy path ────────────────────────────────────────────────────────────
+
+    @Test
+    void getProfile_asPatient_returns200() {
         LoginHelper.asPatient()
-        .when()
-            .get(ApiPaths.PATIENT_ME)
-        .then()
+            .when().get(ApiPaths.PATIENT_ME)
+            .then()
             .statusCode(200)
             .contentType(ContentType.JSON)
             .body("id",         notNullValue())
             .body("mrn",        notNullValue())
             .body("first_name", notNullValue());
+    }
 
-        System.out.println("Step 1 PASS: GET " + ApiPaths.PATIENT_ME + " returned 200");
-
-        // Step 2 — GET /api/patients/me/encounters
+    @Test
+    void getEncounterList_asPatient_returns200() {
         LoginHelper.asPatient()
-        .when()
-            .get(ApiPaths.PATIENT_ENCOUNTERS)
-        .then()
-            .statusCode(200)
-            .contentType(ContentType.JSON);
+            .when().get(ApiPaths.PATIENT_ENCOUNTERS)
+            .then().statusCode(200).contentType(ContentType.JSON);
+    }
 
-        System.out.println("Step 2 PASS: GET " + ApiPaths.PATIENT_ENCOUNTERS + " returned 200");
-
-        // Step 3 — GET /api/patients/me/conditions
+    @Test
+    void getConditionList_asPatient_returns200() {
         LoginHelper.asPatient()
-        .when()
-            .get(ApiPaths.PATIENT_CONDITIONS)
-        .then()
-            .statusCode(200)
-            .contentType(ContentType.JSON);
+            .when().get(ApiPaths.PATIENT_CONDITIONS)
+            .then().statusCode(200).contentType(ContentType.JSON);
+    }
 
-        System.out.println("Step 3 PASS: GET " + ApiPaths.PATIENT_CONDITIONS + " returned 200");
-
-        // Step 4 — GET /api/patients/me/allergies
+    @Test
+    void getAllergyList_asPatient_returns200() {
         LoginHelper.asPatient()
-        .when()
-            .get(ApiPaths.PATIENT_ALLERGIES)
-        .then()
-            .statusCode(200)
-            .contentType(ContentType.JSON);
+            .when().get(ApiPaths.PATIENT_ALLERGIES)
+            .then().statusCode(200).contentType(ContentType.JSON);
+    }
 
-        System.out.println("Step 4 PASS: GET " + ApiPaths.PATIENT_ALLERGIES + " returned 200");
+    // ── Security ─────────────────────────────────────────────────────────────
+
+    @Test
+    void getProfile_withoutToken_returns401() {
+        given().when().get(ApiPaths.PATIENT_ME).then().statusCode(401);
+    }
+
+    @Test
+    void getEncounterList_withoutToken_returns401() {
+        given().when().get(ApiPaths.PATIENT_ENCOUNTERS).then().statusCode(401);
+    }
+
+    @Test
+    void getConditionList_withoutToken_returns401() {
+        given().when().get(ApiPaths.PATIENT_CONDITIONS).then().statusCode(401);
+    }
+
+    @Test
+    void getAllergyList_withoutToken_returns401() {
+        given().when().get(ApiPaths.PATIENT_ALLERGIES).then().statusCode(401);
     }
 }

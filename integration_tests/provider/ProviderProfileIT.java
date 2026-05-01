@@ -1,91 +1,145 @@
 package provider;
 
-import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import util.ApiPaths;
+import util.BaseIT;
 import util.LoginHelper;
 
+import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-/**
- * Integration test for provider-service profile endpoints.
- *
- * Verifies:
- *   GET /api/provider/me                        — provider views own profile
- *   GET /api/provider/patients                  — provider views patient list
- *   GET /api/provider/patients/{id}             — provider views patient detail
- *   GET /api/provider/patients/{id}/conditions  — provider views patient conditions
- *   GET /api/provider/patients/{id}/allergies   — provider views patient allergies
- *
- * Run:
- *   mvn exec:java -f integration_tests/pom.xml -Dexec.mainClass=provider.ProviderProfileIT
- */
-public class ProviderProfileIT {
+@DisplayName("Provider Profile Endpoints")
+class ProviderProfileIT extends BaseIT {
 
-    public static void main(String[] args) {
-        RestAssured.baseURI = System.getProperty("gateway.url",
-                "https://gateway-dev-824144893232.us-west1.run.app");
+    // ── Test data ─────────────────────────────────────────────────────────────
+    private static final String NON_EXISTENT_ID = "00000000-0000-0000-0000-000000000000";
+    private static final String MALFORMED_ID    = "not-a-uuid";
 
-        // Step 1 — GET /api/provider/me
+    private static String patientId;
+
+    @BeforeAll
+    static void fetchPatientId() {
+        waitUntilReady(LoginHelper.providerToken(), ApiPaths.PROVIDER_ME);
+
+        Response resp = LoginHelper.asProvider()
+            .when().get(ApiPaths.PROVIDER_PATIENTS)
+            .then().extract().response();
+        if (resp.statusCode() == 200) {
+            patientId = resp.path("[0].id");
+        }
+    }
+
+    // ── Happy path ────────────────────────────────────────────────────────────
+
+    @Test
+    void getProfile_asProvider_returns200() {
         LoginHelper.asProvider()
-        .when()
-            .get(ApiPaths.PROVIDER_ME)
-        .then()
+            .when().get(ApiPaths.PROVIDER_ME)
+            .then()
             .statusCode(200)
             .contentType(ContentType.JSON)
             .body("id",            notNullValue())
             .body("provider_code", notNullValue())
             .body("name",          notNullValue());
+    }
 
-        System.out.println("Step 1 PASS: GET " + ApiPaths.PROVIDER_ME + " returned 200");
-
-        // Step 2 — GET /api/provider/patients
-        String patientId =
-            LoginHelper.asProvider()
-            .when()
-                .get(ApiPaths.PROVIDER_PATIENTS)
-            .then()
-                .statusCode(200)
-                .contentType(ContentType.JSON)
-                .extract().path("[0].id");
-
-        System.out.println("Step 2 PASS: GET " + ApiPaths.PROVIDER_PATIENTS + " returned 200");
-
-        if (patientId == null) {
-            System.out.println("Steps 3-5 SKIP: no patients in provider list");
-            return;
-        }
-
-        // Step 3 — GET /api/provider/patients/{id}
+    @Test
+    void getPatientList_asProvider_returns200() {
         LoginHelper.asProvider()
-        .when()
-            .get(ApiPaths.PROVIDER_PATIENTS + "/" + patientId)
-        .then()
+            .when().get(ApiPaths.PROVIDER_PATIENTS)
+            .then().statusCode(200).contentType(ContentType.JSON);
+    }
+
+    @Test
+    void getPatientDetail_asProvider_returns200() {
+        assumeTrue(patientId != null, "No patient ID available — provider has no patients");
+        LoginHelper.asProvider()
+            .when().get(ApiPaths.PROVIDER_PATIENTS + "/" + patientId)
+            .then()
             .statusCode(200)
             .contentType(ContentType.JSON)
             .body("id",  notNullValue())
             .body("mrn", notNullValue());
+    }
 
-        System.out.println("Step 3 PASS: GET " + ApiPaths.PROVIDER_PATIENTS + "/{id} returned 200");
-
-        // Step 4 — GET /api/provider/patients/{id}/conditions
+    @Test
+    void getPatientConditions_asProvider_returns200() {
+        assumeTrue(patientId != null, "No patient ID available — provider has no patients");
         LoginHelper.asProvider()
-        .when()
-            .get(ApiPaths.PROVIDER_PATIENTS + "/" + patientId + "/conditions")
-        .then()
-            .statusCode(200)
-            .contentType(ContentType.JSON);
+            .when().get(ApiPaths.PROVIDER_PATIENTS + "/" + patientId + "/conditions")
+            .then().statusCode(200).contentType(ContentType.JSON);
+    }
 
-        System.out.println("Step 4 PASS: GET " + ApiPaths.PROVIDER_PATIENTS + "/{id}/conditions returned 200");
-
-        // Step 5 — GET /api/provider/patients/{id}/allergies
+    @Test
+    void getPatientAllergies_asProvider_returns200() {
+        assumeTrue(patientId != null, "No patient ID available — provider has no patients");
         LoginHelper.asProvider()
-        .when()
-            .get(ApiPaths.PROVIDER_PATIENTS + "/" + patientId + "/allergies")
-        .then()
-            .statusCode(200)
-            .contentType(ContentType.JSON);
+            .when().get(ApiPaths.PROVIDER_PATIENTS + "/" + patientId + "/allergies")
+            .then().statusCode(200).contentType(ContentType.JSON);
+    }
 
-        System.out.println("Step 5 PASS: GET " + ApiPaths.PROVIDER_PATIENTS + "/{id}/allergies returned 200");
+    // ── Security ─────────────────────────────────────────────────────────────
+
+    @Test
+    void getProfile_withoutToken_returns401() {
+        given().when().get(ApiPaths.PROVIDER_ME).then().statusCode(401);
+    }
+
+    @Test
+    void getPatientList_withoutToken_returns401() {
+        given().when().get(ApiPaths.PROVIDER_PATIENTS).then().statusCode(401);
+    }
+
+    // ── Validation — /patients/{id} ───────────────────────────────────────────
+
+    @Test
+    void getPatientDetail_withNonExistentId_returns404() {
+        LoginHelper.asProvider()
+            .when().get(ApiPaths.PROVIDER_PATIENTS + "/" + NON_EXISTENT_ID)
+            .then().statusCode(404);
+    }
+
+    @Test
+    void getPatientDetail_withMalformedId_returns400() {
+        LoginHelper.asProvider()
+            .when().get(ApiPaths.PROVIDER_PATIENTS + "/" + MALFORMED_ID)
+            .then().statusCode(400);
+    }
+
+    // ── Validation — /patients/{id}/conditions ────────────────────────────────
+
+    @Test
+    void getPatientConditions_withNonExistentId_returns404() {
+        LoginHelper.asProvider()
+            .when().get(ApiPaths.PROVIDER_PATIENTS + "/" + NON_EXISTENT_ID + "/conditions")
+            .then().statusCode(404);
+    }
+
+    @Test
+    void getPatientConditions_withMalformedId_returns400() {
+        LoginHelper.asProvider()
+            .when().get(ApiPaths.PROVIDER_PATIENTS + "/" + MALFORMED_ID + "/conditions")
+            .then().statusCode(400);
+    }
+
+    // ── Validation — /patients/{id}/allergies ─────────────────────────────────
+
+    @Test
+    void getPatientAllergies_withNonExistentId_returns404() {
+        LoginHelper.asProvider()
+            .when().get(ApiPaths.PROVIDER_PATIENTS + "/" + NON_EXISTENT_ID + "/allergies")
+            .then().statusCode(404);
+    }
+
+    @Test
+    void getPatientAllergies_withMalformedId_returns400() {
+        LoginHelper.asProvider()
+            .when().get(ApiPaths.PROVIDER_PATIENTS + "/" + MALFORMED_ID + "/allergies")
+            .then().statusCode(400);
     }
 }

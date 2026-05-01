@@ -14,7 +14,6 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <!-- Override with -Dgateway.url=... -->
         <gateway.url>https://gateway-dev-824144893232.us-west1.run.app</gateway.url>
     </properties>
 
@@ -24,11 +23,44 @@
             <artifactId>rest-assured</artifactId>
             <version>5.4.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.17.2</version>
+        </dependency>
     </dependencies>
 
     <build>
         <sourceDirectory>.</sourceDirectory>
         <plugins>
+            <!-- JUnit 5 integration tests: *IT.java classes compiled into target/classes -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <testClassesDirectory>${project.build.outputDirectory}</testClassesDirectory>
+                    <useFile>false</useFile>
+                    <systemPropertyVariables>
+                        <gateway.url>${gateway.url}</gateway.url>
+                    </systemPropertyVariables>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- exec plugin retained for SeedAccounts utility -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>

@@ -33,8 +33,8 @@
   - Demonstrates knowledge of CMS Interoperability and Patient Access Rule (CMS-9115-F)
 
 - [ ] **RBAC enforcement at gateway** — reject requests where JWT role doesn't match path
-  - PATIENT role blocked from `/api/provider/**` and `/api/appointments/provider/**`
-  - PROVIDER role blocked from `/api/patients/**` and `/api/appointments/me/**`
+  - PATIENT role blocked from `/api/provider/**` and `/api/encounters/provider/**`
+  - PROVIDER role blocked from `/api/patients/**` and `/api/encounters/me/**`
   - Closes current security gap
 
 ---

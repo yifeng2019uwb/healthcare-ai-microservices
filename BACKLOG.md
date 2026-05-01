@@ -12,6 +12,19 @@
 
 ---
 
+## 🐛 Tech Debt
+
+| # | Issue | Found | Priority |
+|---|-------|-------|----------|
+| TD-1 | `POST /api/auth/refresh` returns 503 — service-side bug in refresh logic | 2026-04-30 | High |
+| TD-2 | `POST /api/auth/logout` status unknown — depends on TD-1 refresh flow | 2026-04-30 | High |
+| TD-3 | Gateway RBAC not enforced — patient can call `/api/provider/**` and vice versa | 2026-04-30 | High |
+| TD-4 | Patient ID enumeration — `GET /provider/patients/{id}` returns 404 for non-existent vs 403 for existing but no access. Should always return 403. | 2026-04-30 | Medium |
+| TD-5 | patient-service, provider-service, encounter-service returning persistent 503 — services are down, not a cold start. `waitUntilReady()` times out after 60s (347s wall time due to ~17s per Cloud Run attempt). Fix: redeploy services; also add per-request timeout to `BaseIT.waitUntilReady()` to fail fast (~3s/attempt). | 2026-05-01 | High |
+| TD-6 | `testpatient02` not seeded — `getEncounterDetail_ofOtherPatient_returns404` in `PatientEncountersIT` is ABORTED. Register second patient (username: `testpatient02`, MRN: `MRN-000003`) via `POST /api/auth/register/patient`. | 2026-05-01 | Low |
+
+---
+
 ## 📝 **Backlog Maintenance Rules**
 
 ### **Simple Rule**: Keep it clean and trackable

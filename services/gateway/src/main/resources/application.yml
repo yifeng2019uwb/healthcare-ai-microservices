@@ -39,10 +39,6 @@ spring:
           uri: "${APPOINTMENT_SERVICE_URL:http://localhost:8084}"
           predicates:
             - Path=/api/encounters/**
-        # - id: appointment-service       # Phase 2 — not yet implemented
-        #   uri: "${APPOINTMENT_SERVICE_URL:http://localhost:8084}"
-        #   predicates:
-        #     - Path=/api/appointments/**
 
 logging:
   structured:

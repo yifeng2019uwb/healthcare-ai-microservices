@@ -56,15 +56,8 @@ spring-cloud-gcp-starter-secretmanager
 | PUT  | `/api/patients/**` | Yes | patient-service |
 | GET  | `/api/provider/**` | Yes | provider-service |
 | POST | `/api/provider/**` | Yes | provider-service |
-| GET  | `/api/encounters/**` | Yes | appointment-service |
-| GET  | `/api/appointments/**` | Yes | appointment-service |
-| POST | `/api/appointments/**` | Yes | appointment-service |
-| PUT  | `/api/appointments/**` | Yes | appointment-service |
+| GET  | `/api/encounters/**` | Yes | encounter-service |
 | GET  | `/actuator/health` | No | gateway (self) |
-
-> `/api/encounters/**` and `/api/appointments/**` both route to the same appointment-service.
-> Encounters = clinical history (Phase 1). Appointments = booking/scheduling (Phase 2).
-> Following FHIR R4 / Epic conventions — these are distinct resources.
 
 ---
 

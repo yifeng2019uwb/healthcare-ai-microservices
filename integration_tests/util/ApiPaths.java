@@ -33,7 +33,4 @@ public final class ApiPaths {
     public static final String ENCOUNTERS_PROVIDER_DETAIL  = "/api/encounters/provider/{id}";
     public static final String ENCOUNTERS_PROVIDER_PATIENT = "/api/encounters/provider/patients/{patientId}";
 
-    // ── Old paths (should return 4xx/5xx) ────────────────────────────────────
-    public static final String OLD_PATIENT_ENCOUNTERS  = "/api/appointments/me/encounters";
-    public static final String OLD_PROVIDER_ENCOUNTERS = "/api/appointments/provider/encounters";
 }
