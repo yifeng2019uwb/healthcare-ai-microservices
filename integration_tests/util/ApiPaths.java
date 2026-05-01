@@ -15,11 +15,14 @@ public final class ApiPaths {
     public static final String LOGOUT            = "/api/auth/logout";
 
     // ── Provider ──────────────────────────────────────────────────────────────
+    public static final String PROVIDER_ME       = "/api/provider/me";
     public static final String PROVIDER_PATIENTS = "/api/provider/patients";
-    public static final String PROVIDER_PROFILE  = "/api/provider/profile";
 
     // ── Patient ───────────────────────────────────────────────────────────────
-    public static final String PATIENT_PROFILE   = "/api/patients/profile";
+    public static final String PATIENT_ME         = "/api/patients/me";
+    public static final String PATIENT_ENCOUNTERS = "/api/patients/me/encounters";
+    public static final String PATIENT_CONDITIONS = "/api/patients/me/conditions";
+    public static final String PATIENT_ALLERGIES  = "/api/patients/me/allergies";
 
     // ── Encounters (patient) ──────────────────────────────────────────────────
     public static final String ENCOUNTERS_ME          = "/api/encounters/me";

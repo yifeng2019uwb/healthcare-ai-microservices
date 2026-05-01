@@ -8,8 +8,9 @@
 # Tests:
 #   seed          — verify test accounts are reachable
 #   register      — auth.RegisterPatientIT
-#   patient       — encounter.PatientEncountersIT
-#   provider      — encounter.ProviderEncountersIT
+#   auth          — auth.AuthIT (login, refresh, logout)
+#   patient       — encounter.PatientEncountersIT + patient.PatientProfileIT
+#   provider      — encounter.ProviderEncountersIT + provider.ProviderProfileIT
 #   all           — run all tests in order
 #
 # Examples:
@@ -43,7 +44,7 @@ if [[ $# -eq 0 ]]; then
   echo ""
   echo "Usage: $0 <test|all> [test2 ...]"
   echo ""
-  echo "Tests: seed  register  patient  provider  all"
+  echo "Tests: seed  register  auth  patient  provider  all"
   echo ""
   echo "Gateway URL: $GATEWAY_URL"
   echo "Override:    GATEWAY_URL=https://... $0 all"
@@ -61,14 +62,24 @@ for arg in "$@"; do
   case $arg in
     seed)     run_class "util.SeedAccounts"                  "Seed / verify accounts" ;;
     register) run_class "auth.RegisterPatientIT"             "Register patient (auth)" ;;
-    patient)  run_class "encounter.PatientEncountersIT"      "Patient encounter endpoints" ;;
-    provider) run_class "encounter.ProviderEncountersIT"     "Provider encounter endpoints" ;;
-    all)
-      run_class "util.SeedAccounts"                  "Seed / verify accounts"
+    auth)     run_class "auth.AuthIT"                        "Auth: login, refresh, logout" ;;
+    patient)
+      run_class "patient.PatientProfileIT"           "Patient profile endpoints"
       run_class "encounter.PatientEncountersIT"      "Patient encounter endpoints"
+      ;;
+    provider)
+      run_class "provider.ProviderProfileIT"         "Provider profile endpoints"
       run_class "encounter.ProviderEncountersIT"     "Provider encounter endpoints"
       ;;
-    *) fail "Unknown test: $arg  (known: seed register patient provider all)" ;;
+    all)
+      run_class "util.SeedAccounts"                  "Seed / verify accounts"
+      run_class "auth.AuthIT"                        "Auth: login, refresh, logout"
+      run_class "patient.PatientProfileIT"           "Patient profile endpoints"
+      run_class "encounter.PatientEncountersIT"      "Patient encounter endpoints"
+      run_class "provider.ProviderProfileIT"         "Provider profile endpoints"
+      run_class "encounter.ProviderEncountersIT"     "Provider encounter endpoints"
+      ;;
+    *) fail "Unknown test: $arg  (known: seed register auth patient provider all)" ;;
   esac
 done
 
