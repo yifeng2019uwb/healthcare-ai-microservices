@@ -214,7 +214,7 @@ FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
 | id               | UUID         | PK, NOT NULL | PRIMARY KEY     | Primary key identifier |
 | user_id          | UUID         | FK, NOT NULL | UNIQUE INDEX    | Foreign key to user_profiles.id |
 | license_numbers  | VARCHAR(50)   | -            | -               | State medical license number |
-| npi_number       | VARCHAR(10)  | UNIQUE, NOT NULL | UNIQUE INDEX | National Provider Identifier (NPI) |
+| npi              | VARCHAR(10)  | UNIQUE           | UNIQUE INDEX | National Provider Identifier (NPI) |
 | specialty        | VARCHAR(100) | -            | INDEX           | Primary medical specialty |
 | qualifications   | TEXT         | -            | -               | Medical qualifications and education |
 | bio              | TEXT         | -            | -               | Provider biography |

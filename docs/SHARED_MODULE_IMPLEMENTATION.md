@@ -141,7 +141,7 @@ public interface PatientRepository extends BaseRepository<Patient, UUID> {
 @Repository
 public interface ProviderRepository extends BaseRepository<Provider, UUID> {
     Optional<Provider> findByUser(User user);
-    Optional<Provider> findByNpiNumber(String npiNumber);
+
     List<Provider> findBySpecialtiesContaining(String specialty);
 }
 

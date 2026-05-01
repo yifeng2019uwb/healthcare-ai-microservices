@@ -9,6 +9,28 @@
 ### **Date**: 2025-09-15
 ### **Phase**: Phase 1 - Foundation & Core Services
 
+
+
+*Keep it simple - just track what you completed today and maintain full task history here.*
+
+---
+
+## 2026-04-15
+
+- Java 17 → 21, Spring Boot 3.2 → 3.4.4, Docker base image 17 → 21 (all services)
+- CI (.github/workflows/ci.yml) updated to Java 21
+- Renamed encounter endpoints: `/api/appointments/**` → `/api/encounters/**` (FHIR convention)
+- Added gateway route for `/api/encounters/**`
+- Removed NPI from auth-service (wrong service — belongs in provider onboarding)
+- Fixed `npi_number` column mapping → `npi` in DatabaseConstants
+- Provider entity: kept npi getter/setter, correct @Column mapping restored
+- Renamed provider endpoint: `/patients/register` → `/patients/onboard`
+- `ValidationException` now returns 400 (was falling through to 500)
+- ECS structured logging added to all 5 services
+- Integration tests: `run-it.sh`, `ApiPaths`, `LoginHelper` (asProvider/asPatient), `TestAccounts`
+- All integration tests passing against live GCP
+- Test accounts: drDeckow (provider), testpatient01 (patient)
+
 ---
 
 ## ✅ **Tasks Completed Today**
@@ -392,22 +414,3 @@ si- [x] **DAO Layer Implementation** - Created all 6 DAO interfaces (UserDao, Pa
 
 ---
 
-*Keep it simple - just track what you completed today and maintain full task history here.*
-
----
-
-## 2026-04-15
-
-- Java 17 → 21, Spring Boot 3.2 → 3.4.4, Docker base image 17 → 21 (all services)
-- CI (.github/workflows/ci.yml) updated to Java 21
-- Renamed encounter endpoints: `/api/appointments/**` → `/api/encounters/**` (FHIR convention)
-- Added gateway route for `/api/encounters/**`
-- Removed NPI from auth-service (wrong service — belongs in provider onboarding)
-- Fixed `npi_number` column mapping → `npi` in DatabaseConstants
-- Provider entity: kept npi getter/setter, correct @Column mapping restored
-- Renamed provider endpoint: `/patients/register` → `/patients/onboard`
-- `ValidationException` now returns 400 (was falling through to 500)
-- ECS structured logging added to all 5 services
-- Integration tests: `run-it.sh`, `ApiPaths`, `LoginHelper` (asProvider/asPatient), `TestAccounts`
-- All integration tests passing against live GCP
-- Test accounts: drDeckow (provider), testpatient01 (patient)

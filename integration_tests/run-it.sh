@@ -8,7 +8,6 @@
 # Tests:
 #   seed          — verify test accounts are reachable
 #   register      — auth.RegisterPatientIT
-#   onboard       — provider.OnboardPatientIT
 #   patient       — encounter.PatientEncountersIT
 #   provider      — encounter.ProviderEncountersIT
 #   all           — run all tests in order
@@ -44,7 +43,7 @@ if [[ $# -eq 0 ]]; then
   echo ""
   echo "Usage: $0 <test|all> [test2 ...]"
   echo ""
-  echo "Tests: seed  register  onboard  patient  provider  all"
+  echo "Tests: seed  register  patient  provider  all"
   echo ""
   echo "Gateway URL: $GATEWAY_URL"
   echo "Override:    GATEWAY_URL=https://... $0 all"
@@ -62,16 +61,14 @@ for arg in "$@"; do
   case $arg in
     seed)     run_class "util.SeedAccounts"                  "Seed / verify accounts" ;;
     register) run_class "auth.RegisterPatientIT"             "Register patient (auth)" ;;
-    onboard)  run_class "provider.OnboardPatientIT"          "Onboard patient (provider)" ;;
     patient)  run_class "encounter.PatientEncountersIT"      "Patient encounter endpoints" ;;
     provider) run_class "encounter.ProviderEncountersIT"     "Provider encounter endpoints" ;;
     all)
       run_class "util.SeedAccounts"                  "Seed / verify accounts"
-      run_class "provider.OnboardPatientIT"          "Onboard patient (provider)"
       run_class "encounter.PatientEncountersIT"      "Patient encounter endpoints"
       run_class "encounter.ProviderEncountersIT"     "Provider encounter endpoints"
       ;;
-    *) fail "Unknown test: $arg  (known: seed register onboard patient provider all)" ;;
+    *) fail "Unknown test: $arg  (known: seed register patient provider all)" ;;
   esac
 done
 

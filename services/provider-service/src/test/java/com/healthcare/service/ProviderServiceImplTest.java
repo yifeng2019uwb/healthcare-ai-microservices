@@ -11,8 +11,6 @@ import com.healthcare.dto.ConditionResponse;
 import com.healthcare.dto.PatientProfileResponse;
 import com.healthcare.dto.PatientSummaryResponse;
 import com.healthcare.dto.ProviderProfileResponse;
-import com.healthcare.dto.RegisterPatientRequest;
-import com.healthcare.dto.RegisterPatientResponse;
 import com.healthcare.entity.Allergy;
 import com.healthcare.entity.AllergyId;
 import com.healthcare.entity.Condition;
@@ -95,41 +93,6 @@ class ProviderServiceImplTest {
         when(providerDao.findByAuthId(authId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.getProfile(authId))
-                .isInstanceOf(ProviderServiceException.class)
-                .satisfies(e -> assertThat(((ProviderServiceException) e).getStatus())
-                        .isEqualTo(HttpStatus.NOT_FOUND));
-    }
-
-    // -------------------------------------------------------------------------
-    // onboardPatient
-    // -------------------------------------------------------------------------
-
-    @Test
-    void onboardPatient_createsPatient_andReturnsResponse() {
-        when(providerDao.findByAuthId(authId)).thenReturn(Optional.of(mockProvider));
-        when(patientDao.saveAndFlush(any(Patient.class))).thenReturn(patient);
-
-        RegisterPatientRequest req = new RegisterPatientRequest(
-                "John", null, "Doe", LocalDate.of(1990, 1, 15),
-                "M", null, null, null, null, null, null, null, null, null, null);
-
-        RegisterPatientResponse response = service.onboardPatient(authId, "dr_smith", req);
-
-        assertThat(response.firstName()).isEqualTo("John");
-        assertThat(response.lastName()).isEqualTo("Doe");
-        assertThat(response.mrn()).isEqualTo("MRN-000001");
-        verify(patientDao).saveAndFlush(any(Patient.class));
-    }
-
-    @Test
-    void onboardPatient_throws404_whenProviderNotFound() {
-        when(providerDao.findByAuthId(authId)).thenReturn(Optional.empty());
-
-        RegisterPatientRequest req = new RegisterPatientRequest(
-                "John", null, "Doe", null, null, null, null,
-                null, null, null, null, null, null, null, null);
-
-        assertThatThrownBy(() -> service.onboardPatient(authId, "dr_smith", req))
                 .isInstanceOf(ProviderServiceException.class)
                 .satisfies(e -> assertThat(((ProviderServiceException) e).getStatus())
                         .isEqualTo(HttpStatus.NOT_FOUND));

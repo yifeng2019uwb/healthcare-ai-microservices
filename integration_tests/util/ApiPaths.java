@@ -15,7 +15,6 @@ public final class ApiPaths {
     public static final String LOGOUT            = "/api/auth/logout";
 
     // ── Provider ──────────────────────────────────────────────────────────────
-    public static final String PROVIDER_ONBOARD  = "/api/provider/patients/onboard";
     public static final String PROVIDER_PATIENTS = "/api/provider/patients";
     public static final String PROVIDER_PROFILE  = "/api/provider/profile";
 

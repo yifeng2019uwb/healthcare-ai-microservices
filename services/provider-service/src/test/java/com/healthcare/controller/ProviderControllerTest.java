@@ -1,13 +1,9 @@
 package com.healthcare.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.healthcare.dto.AllergyResponse;
-import com.healthcare.dto.ConditionResponse;
 import com.healthcare.dto.PatientProfileResponse;
 import com.healthcare.dto.PatientSummaryResponse;
 import com.healthcare.dto.ProviderProfileResponse;
-import com.healthcare.dto.RegisterPatientRequest;
-import com.healthcare.dto.RegisterPatientResponse;
 import com.healthcare.exception.ProviderExceptionHandler;
 import com.healthcare.exception.ProviderServiceException;
 import com.healthcare.service.ProviderService;
@@ -17,7 +13,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
@@ -28,7 +23,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -85,56 +79,6 @@ class ProviderControllerTest {
     @Test
     void getProfile_returns400_whenMissingHeader() throws Exception {
         mockMvc.perform(get("/api/provider/me"))
-                .andExpect(status().isBadRequest());
-    }
-
-    // -------------------------------------------------------------------------
-    // POST /api/provider/patients/onboard
-    // -------------------------------------------------------------------------
-
-    @Test
-    void onboardPatient_returns201_withResponse() throws Exception {
-        RegisterPatientRequest req = new RegisterPatientRequest(
-                "John", null, "Doe", LocalDate.of(1990, 1, 15),
-                "M", null, null, null, null, null, null, null, null, null, null);
-        RegisterPatientResponse resp = new RegisterPatientResponse(
-                PATIENT_ID, "MRN-000001", "John", "Doe",
-                LocalDate.of(1990, 1, 15), "M", null);
-        when(providerService.onboardPatient(eq(AUTH_ID), any(), any())).thenReturn(resp);
-
-        mockMvc.perform(post("/api/provider/patients/onboard")
-                        .header("X-User-Id", AUTH_ID.toString())
-                        .header("X-Username", "dr_smith")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.mrn").value("MRN-000001"))
-                .andExpect(jsonPath("$.first_name").value("John"));
-    }
-
-    @Test
-    void onboardPatient_returns400_whenMissingFirstName() throws Exception {
-        RegisterPatientRequest req = new RegisterPatientRequest(
-                null, null, "Doe", null, null, null, null,
-                null, null, null, null, null, null, null, null);
-
-        mockMvc.perform(post("/api/provider/patients/onboard")
-                        .header("X-User-Id", AUTH_ID.toString())
-                        .header("X-Username", "dr_smith")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void onboardPatient_returns400_whenMissingHeader() throws Exception {
-        RegisterPatientRequest req = new RegisterPatientRequest(
-                "John", null, "Doe", null, null, null, null,
-                null, null, null, null, null, null, null, null);
-
-        mockMvc.perform(post("/api/provider/patients/onboard")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest());
     }
 

@@ -2,7 +2,6 @@ package com.healthcare.exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.healthcare.controller.ProviderController;
-import com.healthcare.dto.RegisterPatientRequest;
 import com.healthcare.service.ProviderService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +9,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
@@ -18,7 +16,6 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -77,32 +74,4 @@ class ProviderExceptionHandlerTest {
                 .andExpect(jsonPath("$.status").value(400));
     }
 
-    @Test
-    void returns400_forMethodArgumentNotValid_withFieldMessage() throws Exception {
-        // first_name is @NotBlank — sending blank triggers MethodArgumentNotValidException
-        RegisterPatientRequest req = new RegisterPatientRequest(
-                "", null, "Doe", null, null, null, null,
-                null, null, null, null, null, null, null, null);
-
-        mockMvc.perform(post("/api/provider/patients/onboard")
-                        .header("X-User-Id", AUTH_ID.toString())
-                        .header("X-Username", "dr_smith")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("firstName")));
-    }
-
-    @Test
-    void returns400_forMalformedRequestBody() throws Exception {
-        mockMvc.perform(post("/api/provider/patients/onboard")
-                        .header("X-User-Id", AUTH_ID.toString())
-                        .header("X-Username", "dr_smith")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("not-valid-json{"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.message").value("Malformed request body"));
-    }
 }

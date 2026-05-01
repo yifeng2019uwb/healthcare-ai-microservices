@@ -5,18 +5,12 @@ import com.healthcare.dto.ConditionResponse;
 import com.healthcare.dto.PatientProfileResponse;
 import com.healthcare.dto.PatientSummaryResponse;
 import com.healthcare.dto.ProviderProfileResponse;
-import com.healthcare.dto.RegisterPatientRequest;
-import com.healthcare.dto.RegisterPatientResponse;
 import com.healthcare.service.ProviderService;
-import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -45,16 +39,6 @@ public class ProviderController {
     public ResponseEntity<ProviderProfileResponse> getProfile(
             @RequestHeader("X-User-Id") UUID authId) {
         return ResponseEntity.ok(providerService.getProfile(authId));
-    }
-
-    /** POST /api/provider/patients/onboard */
-    @PostMapping("/patients/onboard")
-    public ResponseEntity<RegisterPatientResponse> onboardPatient(
-            @RequestHeader("X-User-Id") UUID authId,
-            @RequestHeader("X-Username") String username,
-            @Valid @RequestBody RegisterPatientRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(providerService.onboardPatient(authId, username, request));
     }
 
     /** GET /api/provider/patients?page=0&size=20 */

@@ -32,13 +32,6 @@
   - FHIR resources covered: `Patient`, `Encounter`, `Condition`, `AllergyIntolerance`
   - Demonstrates knowledge of CMS Interoperability and Patient Access Rule (CMS-9115-F)
 
-- [x] **NPI registry verification** — `npi` field added to Provider, verified against NPPES public API on provider registration
-  - `npi VARCHAR(10) UNIQUE` column added via migration `V001__add_npi_to_providers.sql`
-  - On provider registration in auth-service, `NpiVerificationService` calls `https://npiregistry.cms.hhs.gov/api/?number={npi}` to verify NPI exists + name matches
-  - `npi` added to `ProviderProfileResponse`
-  - NPI is optional at registration — providers without NPI can still register
-  - Demonstrates integration with federal identity systems
-
 - [ ] **RBAC enforcement at gateway** — reject requests where JWT role doesn't match path
   - PATIENT role blocked from `/api/provider/**` and `/api/appointments/provider/**`
   - PROVIDER role blocked from `/api/patients/**` and `/api/appointments/me/**`

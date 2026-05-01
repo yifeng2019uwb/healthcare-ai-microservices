@@ -11,14 +11,11 @@ import com.healthcare.dto.ConditionResponse;
 import com.healthcare.dto.PatientProfileResponse;
 import com.healthcare.dto.PatientSummaryResponse;
 import com.healthcare.dto.ProviderProfileResponse;
-import com.healthcare.dto.RegisterPatientRequest;
-import com.healthcare.dto.RegisterPatientResponse;
 import com.healthcare.entity.AuditLog;
 import com.healthcare.entity.Encounter;
 import com.healthcare.entity.Patient;
 import com.healthcare.entity.Provider;
 import com.healthcare.enums.ActionType;
-import com.healthcare.enums.Gender;
 import com.healthcare.enums.Outcome;
 import com.healthcare.enums.UserRole;
 import com.healthcare.exception.ProviderServiceException;
@@ -78,40 +75,6 @@ public class ProviderServiceImpl implements ProviderService {
                 .withResourceId(provider.getId()));
 
         return ProviderProfileResponse.from(provider);
-    }
-
-    @Override
-    @Transactional
-    public RegisterPatientResponse onboardPatient(UUID authId, String username, RegisterPatientRequest req) {
-        Provider provider = requireProvider(authId);
-
-        String mrn = String.format("MRN-%06d", new java.util.Random().nextInt(999999) + 1);
-        Patient patient = new Patient(mrn, req.firstName(), req.lastName());
-
-        if (req.middleName()       != null) patient.setMiddleName(req.middleName());
-        if (req.birthdate()        != null) patient.setBirthdate(req.birthdate());
-        if (req.gender()           != null) patient.setGender(Gender.valueOf(req.gender().toUpperCase()));
-        if (req.race()             != null) patient.setRace(req.race());
-        if (req.ethnicity()        != null) patient.setEthnicity(req.ethnicity());
-        if (req.address()          != null) patient.setAddress(req.address());
-        if (req.city()             != null) patient.setCity(req.city());
-        if (req.state()            != null) patient.setState(req.state());
-        if (req.zip()              != null) patient.setZip(req.zip());
-        if (req.phone()            != null) patient.setPhone(req.phone());
-        if (req.emergencyContact() != null) patient.setEmergencyContact(req.emergencyContact());
-        if (req.bloodType()        != null) patient.setBloodType(req.bloodType());
-        if (req.notes()            != null) patient.setNotes(req.notes());
-
-        patient.setUpdatedBy(username);
-        patient = patientDao.saveAndFlush(patient);
-
-        auditLogDao.insert(new AuditLog(ActionType.CREATE, RESOURCE_PATIENTS, Outcome.SUCCESS)
-                .withAuthId(authId.toString())
-                .withUserRole(UserRole.PROVIDER)
-                .withResourceId(patient.getId()));
-
-        log.info("Provider {} created patient MRN={}", provider.getProviderCode(), patient.getMrn());
-        return RegisterPatientResponse.from(patient);
     }
 
     @Override
