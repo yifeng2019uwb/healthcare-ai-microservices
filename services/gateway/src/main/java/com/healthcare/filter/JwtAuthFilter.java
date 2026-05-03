@@ -71,11 +71,11 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         return extractKid(token)
                 .flatMap(jwksCache::getKey)
                 .flatMap(publicKey -> parseAndValidate(token, publicKey))
-                .flatMap(claims -> checkBlacklist(claims.get("jti", String.class)).thenReturn(claims))
+                // TODO: Redis removed (cost saving) — uncomment when Cloud Memorystore is restored
+                // .flatMap(claims -> checkBlacklist(claims.get("jti", String.class)).thenReturn(claims))
                 .flatMap(claims -> {
                     var mutatedRequest = exchange.getRequest().mutate()
                             .headers(headers -> {
-                                headers.remove(HttpHeaders.AUTHORIZATION);
                                 headers.set("X-User-Id", claims.getSubject());
                                 headers.set("X-User-Role", claims.get("role", String.class));
                                 headers.set("X-Username", claims.get("username", String.class));

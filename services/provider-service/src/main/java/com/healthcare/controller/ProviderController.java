@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.healthcare.exception.ProviderServiceException;
+import org.springframework.http.HttpStatus;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -55,23 +58,31 @@ public class ProviderController {
     @GetMapping("/patients/{id}")
     public ResponseEntity<PatientProfileResponse> getPatient(
             @RequestHeader("X-User-Id") UUID authId,
-            @PathVariable UUID id) {
-        return ResponseEntity.ok(providerService.getPatient(authId, id));
+            @PathVariable String id) {
+        return ResponseEntity.ok(providerService.getPatient(authId, parseUuid(id)));
     }
 
     /** GET /api/provider/patients/{id}/conditions */
     @GetMapping("/patients/{id}/conditions")
     public ResponseEntity<List<ConditionResponse>> getPatientConditions(
             @RequestHeader("X-User-Id") UUID authId,
-            @PathVariable UUID id) {
-        return ResponseEntity.ok(providerService.getPatientConditions(authId, id));
+            @PathVariable String id) {
+        return ResponseEntity.ok(providerService.getPatientConditions(authId, parseUuid(id)));
     }
 
     /** GET /api/provider/patients/{id}/allergies */
     @GetMapping("/patients/{id}/allergies")
     public ResponseEntity<List<AllergyResponse>> getPatientAllergies(
             @RequestHeader("X-User-Id") UUID authId,
-            @PathVariable UUID id) {
-        return ResponseEntity.ok(providerService.getPatientAllergies(authId, id));
+            @PathVariable String id) {
+        return ResponseEntity.ok(providerService.getPatientAllergies(authId, parseUuid(id)));
+    }
+
+    private static UUID parseUuid(String id) {
+        try {
+            return UUID.fromString(id);
+        } catch (IllegalArgumentException e) {
+            throw new ProviderServiceException(HttpStatus.BAD_REQUEST, "INVALID_ID", "Invalid ID: " + id);
+        }
     }
 }

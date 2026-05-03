@@ -29,9 +29,9 @@ class PatientProfileIT extends BaseIT {
             .then()
             .statusCode(200)
             .contentType(ContentType.JSON)
-            .body("id",         notNullValue())
-            .body("mrn",        notNullValue())
-            .body("first_name", notNullValue());
+            .body("id",                  notNullValue())
+            .body("identifier[0].value", notNullValue())
+            .body("name[0].family",      notNullValue());
     }
 
     @Test

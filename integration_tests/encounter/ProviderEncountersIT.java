@@ -3,6 +3,7 @@ package encounter;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import util.ApiPaths;
@@ -13,6 +14,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+@Disabled("Appointment service deleted — re-enable when service is restored")
 @DisplayName("Provider Encounter Endpoints")
 class ProviderEncountersIT extends BaseIT {
 
