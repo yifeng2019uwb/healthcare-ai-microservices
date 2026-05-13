@@ -1,16 +1,18 @@
 # Provider Service Design
 
-> Version: 2.0 | Last Updated: April 2026
+> Version: 3.0 | Last Updated: 2026-05-13
 
 ---
 
 ## Overview
 
-Manages provider profiles, organizations, and provider access to patient data.
+Manages provider profiles, organizations, provider access to patient data, and admin data import.
 Providers onboard new patients and view their patients' clinical data.
+Admins import bulk patient and provider records via `/api/admin/**`.
 
 Owns: `providers`, `organizations` tables
-Reads: `patients`, `encounters`, `conditions`, `allergies` tables
+Reads: `patients`, `encounters`, `conditions`, `allergies` tables (PROVIDER role)
+Writes: `patients`, `providers` tables (ADMIN role — bulk import only)
 
 ---
 
@@ -36,6 +38,32 @@ Reads: `patients`, `encounters`, `conditions`, `allergies` tables
 | GET | `/api/provider/patients/{id}/conditions` | View patient conditions |
 | GET | `/api/provider/patients/{id}/allergies` | View patient allergies |
 | GET | `/health` | Health check |
+
+### Admin (ADMIN role) — `/api/admin/**`
+
+All endpoints enforced at gateway — only ADMIN-role JWTs reach this service via `/api/admin/**`.
+No encounter-based access filter applies. Admin reads and writes all data tables.
+
+**Import endpoints — must be called in this order due to FK dependencies:**
+
+| Order | Method | Endpoint | Writes to | Depends on |
+|---|---|---|---|---|
+| 1 | POST | `/api/admin/import/organizations` | organizations | — |
+| 2 | POST | `/api/admin/import/patients` | patients | — |
+| 3 | POST | `/api/admin/import/providers` | providers | organizations |
+| 4 | POST | `/api/admin/import/encounters` | encounters | patients, providers, organizations |
+| 5 | POST | `/api/admin/import/conditions` | conditions | patients, encounters |
+| 6 | POST | `/api/admin/import/allergies` | allergies | patients, encounters |
+| 7 | POST | `/api/admin/import/medications` | medications (Phase 4) | patients, encounters |
+| 8 | POST | `/api/admin/import/observations` | observations (Phase 4) | patients, encounters |
+
+**List/query endpoints:**
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/admin/patients` | List all patients (no encounter filter) |
+| GET | `/api/admin/providers` | List all providers |
+| GET | `/api/admin/organizations` | List all organizations |
 
 ---
 
