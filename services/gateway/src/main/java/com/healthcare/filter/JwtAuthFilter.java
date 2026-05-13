@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -25,7 +24,7 @@ import java.util.Base64;
 /**
  * GlobalFilter that runs on every request.
  * - Public paths: pass through without JWT check.
- * - Protected paths: validate RS256 JWT, check Redis blacklist, inject user headers.
+ * - Protected paths: validate RS256 JWT, inject user headers.
  */
 @Component
 public class JwtAuthFilter implements GlobalFilter, Ordered {
@@ -35,16 +34,13 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     private final GatewayConfig config;
     private final JwksCache jwksCache;
-    private final ReactiveStringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
     public JwtAuthFilter(GatewayConfig config,
                          JwksCache jwksCache,
-                         ReactiveStringRedisTemplate redisTemplate,
                          ObjectMapper objectMapper) {
         this.config = config;
         this.jwksCache = jwksCache;
-        this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
     }
 
@@ -71,8 +67,6 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         return extractKid(token)
                 .flatMap(jwksCache::getKey)
                 .flatMap(publicKey -> parseAndValidate(token, publicKey))
-                // TODO: Redis removed (cost saving) — uncomment when Cloud Memorystore is restored
-                // .flatMap(claims -> checkBlacklist(claims.get("jti", String.class)).thenReturn(claims))
                 .flatMap(claims -> {
                     var mutatedRequest = exchange.getRequest().mutate()
                             .headers(headers -> {
@@ -110,22 +104,5 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         } catch (JwtException e) {
             return Mono.error(new GatewayException(HttpStatus.UNAUTHORIZED, "Unauthorized"));
         }
-    }
-
-    private Mono<Void> checkBlacklist(String jti) {
-        if (jti == null) return Mono.empty();
-        return redisTemplate.hasKey("blacklist:" + jti)
-                .flatMap(blacklisted -> {
-                    if (Boolean.TRUE.equals(blacklisted)) {
-                        return Mono.error(new GatewayException(HttpStatus.UNAUTHORIZED, "Unauthorized"));
-                    }
-                    return Mono.empty();
-                })
-                .onErrorResume(GatewayException.class, Mono::error)
-                .onErrorResume(e -> {
-                    log.error("Redis unavailable during blacklist check for jti={}: {}", jti, e.getMessage());
-                    return Mono.error(new GatewayException(HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable"));
-                })
-                .then();
     }
 }

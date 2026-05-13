@@ -174,6 +174,26 @@ Downstream services trust these headers — they only accept requests via gatewa
 
 ---
 
+## Decision Record — Redis Blacklist Removed (2026-05-13)
+
+**Decision:** Remove Redis (Cloud Memorystore) and the JWT blacklist check from the gateway entirely.
+
+**Reason:**
+- Project focus is RBAC enforcement and AI governance — Redis adds operational cost and complexity that does not serve either goal
+- Token blacklist requires Cloud Memorystore (~$50/month on GCP) for a security feature that is low priority at this stage
+- Without blacklist, logout invalidates the session client-side; the JWT remains technically valid until expiry — this is an accepted trade-off
+- If blacklist is needed in future, it can be re-added: the auth-service `checkBlacklist` method and `jti` claim are preserved on that side
+
+**What was removed:**
+- `spring-boot-starter-data-redis-reactive` from `pom.xml`
+- `spring.data.redis` config from `application.yml`
+- `ReactiveStringRedisTemplate` field and `checkBlacklist()` method from `JwtAuthFilter`
+- `google_redis_instance` from Terraform infra
+- `redis.googleapis.com` API from Terraform
+- `redis_host` output from Terraform
+
+---
+
 ## Future Additions
 
 - Rate limiting (per IP, per user)

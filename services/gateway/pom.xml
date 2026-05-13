@@ -32,12 +32,6 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- Redis reactive — JTI blacklist check -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
-        </dependency>
-
         <!-- JWT RS256 validation -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

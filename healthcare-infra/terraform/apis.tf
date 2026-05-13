@@ -8,7 +8,7 @@ locals {
     "artifactregistry.googleapis.com",  # Artifact Registry (Docker images)
     "secretmanager.googleapis.com",     # Secret Manager (JWT keys, DB passwords)
     "sqladmin.googleapis.com",          # Cloud SQL
-    "redis.googleapis.com",             # Cloud Memorystore Redis
+    # "redis.googleapis.com",           # Cloud Memorystore Redis — removed 2026-05-13 (see docs/gateway-service-design.md)
     "vpcaccess.googleapis.com",         # Serverless VPC Access (Cloud Run → VPC)
     "servicenetworking.googleapis.com", # VPC peering (Cloud SQL private IP)
     "storage.googleapis.com",           # Cloud Storage (Terraform state, Cloud Build)

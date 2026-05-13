@@ -16,10 +16,11 @@ output "artifact_registry_url" {
   value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.healthcare.repository_id}"
 }
 
-output "redis_host" {
-  description = "Memorystore Redis host (VPC-internal)"
-  value       = google_redis_instance.cache.host
-}
+# output "redis_host" {
+#   description = "Memorystore Redis host (VPC-internal)"
+#   value       = google_redis_instance.cache.host
+# }
+# Removed 2026-05-13 — Redis instance deleted. See docs/gateway-service-design.md.
 
 output "vpc_connector_id" {
   description = "Serverless VPC Access Connector ID — used in gcloud run deploy"
