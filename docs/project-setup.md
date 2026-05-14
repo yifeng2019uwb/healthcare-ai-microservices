@@ -76,12 +76,11 @@ GATEWAY_URL=https://your-gateway-url.run.app ./run-it.sh all
 ### 4. Infra changes (Terraform)
 
 ```bash
-cd healthcare-infra/terraform/
-
-terraform init             # first time or after provider changes
-terraform plan             # preview changes (safe — no side effects)
-terraform apply            # apply changes to GCP
+./scripts/local-ci.sh --terraform              # plan only (safe — preview changes)
+./scripts/local-ci.sh --terraform --apply      # plan + apply to GCP
 ```
+
+> Always run plan first and review output before applying.
 
 ---
 
@@ -121,9 +120,8 @@ cd services/ && ./dev.sh provider-service
 
 ### Changed Terraform infra
 ```bash
-cd healthcare-infra/terraform/
-terraform plan
-terraform apply
+./scripts/local-ci.sh --terraform          # review plan first
+./scripts/local-ci.sh --terraform --apply  # apply after review
 ```
 
 ### Changed DB schema (add migration)

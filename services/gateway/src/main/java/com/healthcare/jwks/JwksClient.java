@@ -29,7 +29,7 @@ public class JwksClient {
 
     public JwksClient(GatewayConfig config, ObjectMapper objectMapper) {
         this.webClient = WebClient.builder()
-                .baseUrl(config.getAuthServiceUrl())
+                .baseUrl(config.authServiceUrl())
                 .build();
         this.objectMapper = objectMapper;
     }

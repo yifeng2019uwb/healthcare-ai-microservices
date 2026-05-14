@@ -1,17 +1,12 @@
 package com.healthcare;
 
+import com.healthcare.config.GatewayConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
-/**
- * Gateway Service Application
- *
- * API Gateway for Healthcare AI Microservices
- * - Routes requests to appropriate backend services
- * - Handles authentication and authorization
- * - Provides unified API interface
- */
 @SpringBootApplication
+@EnableConfigurationProperties(GatewayConfig.class)
 public class GatewayServiceApplication {
 
     public static void main(String[] args) {

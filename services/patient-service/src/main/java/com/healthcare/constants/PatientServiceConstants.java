@@ -79,10 +79,7 @@ public final class PatientServiceConstants {
     public static final int MAX_INSURANCE_POLICY_LENGTH = 50;
     public static final int MAX_PHYSICIAN_LENGTH = 100;
 
-    // User Roles
-    public static final String ROLE_PATIENT = "PATIENT";
-    public static final String ROLE_PROVIDER = "PROVIDER";
-    public static final String ROLE_ADMIN = "ADMIN";
+    // User Roles → SecurityConstants.ROLE_PATIENT / ROLE_PROVIDER / ROLE_ADMIN
 
     // User Status
     public static final String STATUS_ACTIVE = "ACTIVE";

@@ -6,6 +6,7 @@ import com.healthcare.dto.EncounterResponse;
 import com.healthcare.dto.PageResponse;
 import com.healthcare.dto.PatientProfileResponse;
 import com.healthcare.dto.UpdatePatientRequest;
+import com.healthcare.constants.SecurityConstants;
 import com.healthcare.fhir.FhirMapper;
 import com.healthcare.service.PatientService;
 import jakarta.validation.Valid;
@@ -44,14 +45,14 @@ public class GetPatientProfileController {
     /** GET /api/patients/me — JSON */
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PatientProfileResponse> getProfile(
-            @RequestHeader("X-User-Id") UUID authId) {
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId) {
         return ResponseEntity.ok(patientService.getProfile(authId));
     }
 
     /** GET /api/patients/me — FHIR R4 Patient resource */
     @GetMapping(produces = "application/fhir+json")
     public ResponseEntity<Map<String, Object>> getProfileFhir(
-            @RequestHeader("X-User-Id") UUID authId) {
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId) {
         PatientProfileResponse profile = patientService.getProfile(authId);
         return ResponseEntity.ok(FhirMapper.toPatient(profile));
     }
@@ -59,8 +60,8 @@ public class GetPatientProfileController {
     /** PUT /api/patients/me */
     @PutMapping
     public ResponseEntity<PatientProfileResponse> updateProfile(
-            @RequestHeader("X-User-Id") UUID authId,
-            @RequestHeader("X-Username") String username,
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId,
+            @RequestHeader(SecurityConstants.HEADER_USERNAME) String username,
             @Valid @RequestBody UpdatePatientRequest request) {
         return ResponseEntity.ok(patientService.updateProfile(authId, username, request));
     }
@@ -68,7 +69,7 @@ public class GetPatientProfileController {
     /** GET /api/patients/me/encounters?page=0&size=20 — JSON */
     @GetMapping(value = "/encounters", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageResponse<EncounterResponse>> getEncounters(
-            @RequestHeader("X-User-Id") UUID authId,
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         PageRequest pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
@@ -78,7 +79,7 @@ public class GetPatientProfileController {
     /** GET /api/patients/me/encounters — FHIR R4 Bundle of Encounter resources */
     @GetMapping(value = "/encounters", produces = "application/fhir+json")
     public ResponseEntity<Map<String, Object>> getEncountersFhir(
-            @RequestHeader("X-User-Id") UUID authId,
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         PatientProfileResponse profile = patientService.getProfile(authId);
@@ -90,14 +91,14 @@ public class GetPatientProfileController {
     /** GET /api/patients/me/conditions — JSON */
     @GetMapping(value = "/conditions", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<ConditionResponse>> getConditions(
-            @RequestHeader("X-User-Id") UUID authId) {
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId) {
         return ResponseEntity.ok(patientService.getConditions(authId));
     }
 
     /** GET /api/patients/me/conditions — FHIR R4 Bundle of Condition resources */
     @GetMapping(value = "/conditions", produces = "application/fhir+json")
     public ResponseEntity<Map<String, Object>> getConditionsFhir(
-            @RequestHeader("X-User-Id") UUID authId) {
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId) {
         PatientProfileResponse profile = patientService.getProfile(authId);
         List<ConditionResponse> conditions = patientService.getConditions(authId);
         return ResponseEntity.ok(FhirMapper.toConditionBundle(profile.id(), conditions));
@@ -106,14 +107,14 @@ public class GetPatientProfileController {
     /** GET /api/patients/me/allergies — JSON */
     @GetMapping(value = "/allergies", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AllergyResponse>> getAllergies(
-            @RequestHeader("X-User-Id") UUID authId) {
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId) {
         return ResponseEntity.ok(patientService.getAllergies(authId));
     }
 
     /** GET /api/patients/me/allergies — FHIR R4 Bundle of AllergyIntolerance resources */
     @GetMapping(value = "/allergies", produces = "application/fhir+json")
     public ResponseEntity<Map<String, Object>> getAllergiesFhir(
-            @RequestHeader("X-User-Id") UUID authId) {
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId) {
         PatientProfileResponse profile = patientService.getProfile(authId);
         List<AllergyResponse> allergies = patientService.getAllergies(authId);
         return ResponseEntity.ok(FhirMapper.toAllergyBundle(profile.id(), allergies));

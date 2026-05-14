@@ -1,5 +1,6 @@
 package com.healthcare.service;
 
+import com.healthcare.constants.SecurityConstants;
 import com.healthcare.entity.User;
 import com.healthcare.exception.AuthServiceException;
 import io.jsonwebtoken.Claims;
@@ -40,9 +41,7 @@ public class JwtService {
     private static final long REFRESH_TOKEN_EXPIRY_MS = 3_600_000L; // 1 hour
     private static final long SESSION_MAX_MS           = 28_800_000L; // 8 hours
 
-    // JWT claim names
-    private static final String CLAIM_USERNAME     = "username";
-    private static final String CLAIM_ROLE         = "role";
+    // JWT claim names — shared contract in SecurityConstants; auth-specific below
     private static final String CLAIM_TOKEN_TYPE   = "token_type";
     private static final String CLAIM_ORIGINAL_IAT = "original_iat";
 
@@ -162,11 +161,11 @@ public class JwtService {
     }
 
     public String extractUsername(Claims claims) {
-        return claims.get(CLAIM_USERNAME, String.class);
+        return claims.get(SecurityConstants.JWT_CLAIM_USERNAME, String.class);
     }
 
     public String extractRole(Claims claims) {
-        return claims.get(CLAIM_ROLE, String.class);
+        return claims.get(SecurityConstants.JWT_CLAIM_ROLE, String.class);
     }
 
     public String extractTokenType(Claims claims) {
@@ -219,8 +218,8 @@ public class JwtService {
         return Jwts.builder()
                 .header().add(KEY_ID, keyId).and()
                 .subject(user.getId().toString())
-                .claim(CLAIM_USERNAME, user.getUsername())
-                .claim(CLAIM_ROLE, user.getRole().name())
+                .claim(SecurityConstants.JWT_CLAIM_USERNAME, user.getUsername())
+                .claim(SecurityConstants.JWT_CLAIM_ROLE, user.getRole().name())
                 .claim(CLAIM_TOKEN_TYPE, tokenType)
                 .claim(CLAIM_ORIGINAL_IAT, originalIat)
                 .id(UUID.randomUUID().toString())

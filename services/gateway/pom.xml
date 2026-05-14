@@ -32,6 +32,13 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- Shared constants (SecurityConstants) — no JPA autoconfiguration, excluded in application.yml -->
+        <dependency>
+            <groupId>com.healthcare</groupId>
+            <artifactId>shared</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <!-- JWT RS256 validation -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

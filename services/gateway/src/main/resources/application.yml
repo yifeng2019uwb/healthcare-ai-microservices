@@ -29,6 +29,10 @@ spring:
           uri: "${PROVIDER_SERVICE_URL:http://localhost:8083}"
           predicates:
             - Path=/api/provider/**
+        - id: provider-admin
+          uri: "${PROVIDER_SERVICE_URL:http://localhost:8083}"
+          predicates:
+            - Path=/api/admin/**
         - id: encounter-service
           uri: "${APPOINTMENT_SERVICE_URL:http://localhost:8084}"
           predicates:
@@ -54,3 +58,9 @@ gateway:
     - /api/auth/login
     - /api/auth/refresh
     - /actuator/health
+  role-paths:
+    /api/patients/: PATIENT
+    /api/provider/: PROVIDER
+    /api/admin/: ADMIN
+    /api/encounters/me/: PATIENT
+    /api/encounters/provider/: PROVIDER

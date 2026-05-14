@@ -2,6 +2,7 @@ package com.healthcare.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.healthcare.config.GatewayConfig;
+import com.healthcare.constants.SecurityConstants;
 import com.healthcare.exception.GatewayException;
 import com.healthcare.jwks.JwksCache;
 import io.jsonwebtoken.Claims;
@@ -30,7 +31,8 @@ import java.util.Base64;
 public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
-    private static final String BEARER_PREFIX = "Bearer ";
+    private static final int    JWT_FILTER_ORDER = -100;
+    private static final String BEARER_PREFIX    = "Bearer ";
 
     private final GatewayConfig config;
     private final JwksCache jwksCache;
@@ -46,14 +48,14 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return -100;
+        return JWT_FILTER_ORDER;
     }
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
 
-        if (config.getPublicPaths().contains(path)) {
+        if (config.publicPaths().contains(path)) {
             return chain.filter(exchange);
         }
 
@@ -67,16 +69,25 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         return extractKid(token)
                 .flatMap(jwksCache::getKey)
                 .flatMap(publicKey -> parseAndValidate(token, publicKey))
+                .flatMap(claims -> checkRole(path, claims.get(SecurityConstants.JWT_CLAIM_ROLE, String.class)).thenReturn(claims))
                 .flatMap(claims -> {
                     var mutatedRequest = exchange.getRequest().mutate()
                             .headers(headers -> {
-                                headers.set("X-User-Id", claims.getSubject());
-                                headers.set("X-User-Role", claims.get("role", String.class));
-                                headers.set("X-Username", claims.get("username", String.class));
+                                headers.set(SecurityConstants.HEADER_USER_ID,   claims.getSubject());
+                                headers.set(SecurityConstants.HEADER_USER_ROLE, claims.get(SecurityConstants.JWT_CLAIM_ROLE, String.class));
+                                headers.set(SecurityConstants.HEADER_USERNAME,  claims.get(SecurityConstants.JWT_CLAIM_USERNAME, String.class));
                             })
                             .build();
                     return chain.filter(exchange.mutate().request(mutatedRequest).build());
                 });
+    }
+
+    private Mono<Void> checkRole(String path, String role) {
+        String required = config.getRequiredRole(path);
+        if (required == null) return Mono.empty();
+        if (required.equals(role)) return Mono.empty();
+        log.warn("RBAC denied: path={} required={} actual={}", path, required, role);
+        return Mono.error(new GatewayException(HttpStatus.FORBIDDEN, "Forbidden"));
     }
 
     private Mono<String> extractKid(String token) {

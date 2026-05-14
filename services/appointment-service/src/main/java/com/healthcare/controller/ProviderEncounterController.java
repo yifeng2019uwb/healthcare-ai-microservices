@@ -3,6 +3,7 @@ package com.healthcare.controller;
 import com.healthcare.dto.EncounterDetailResponse;
 import com.healthcare.dto.EncounterPageResponse;
 import com.healthcare.dto.EncounterSummaryResponse;
+import com.healthcare.constants.SecurityConstants;
 import com.healthcare.service.AppointmentService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +37,7 @@ public class ProviderEncounterController {
     /** GET /api/encounters/provider */
     @GetMapping
     public ResponseEntity<EncounterPageResponse> getEncounters(
-            @RequestHeader("X-User-Id") UUID authId,
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(name = "patient_id", required = false) UUID patientId,
@@ -50,7 +51,7 @@ public class ProviderEncounterController {
     /** GET /api/encounters/provider/{id} */
     @GetMapping("/{id}")
     public ResponseEntity<EncounterDetailResponse> getEncounterDetail(
-            @RequestHeader("X-User-Id") UUID authId,
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId,
             @PathVariable UUID id) {
 
         return ResponseEntity.ok(appointmentService.getProviderEncounterDetail(authId, id));
@@ -59,7 +60,7 @@ public class ProviderEncounterController {
     /** GET /api/encounters/provider/patients/{patientId} */
     @GetMapping("/patients/{patientId}")
     public ResponseEntity<List<EncounterSummaryResponse>> getPatientEncounters(
-            @RequestHeader("X-User-Id") UUID authId,
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId,
             @PathVariable UUID patientId) {
 
         return ResponseEntity.ok(appointmentService.getPatientEncountersByProvider(authId, patientId));

@@ -34,7 +34,7 @@ public class JwksCache {
 
     public JwksCache(JwksClient jwksClient, GatewayConfig config) {
         this.jwksClient = jwksClient;
-        this.refreshIntervalMs = config.getJwksRefreshIntervalMinutes() * 60_000L;
+        this.refreshIntervalMs = config.jwksRefreshIntervalMinutes() * 60_000L;
     }
 
     @PostConstruct

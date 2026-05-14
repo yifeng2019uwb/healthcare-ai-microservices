@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.healthcare.constants.SecurityConstants;
 import com.healthcare.exception.ProviderServiceException;
 import org.springframework.http.HttpStatus;
 
@@ -40,14 +41,14 @@ public class ProviderController {
     /** GET /api/provider/me */
     @GetMapping("/me")
     public ResponseEntity<ProviderProfileResponse> getProfile(
-            @RequestHeader("X-User-Id") UUID authId) {
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId) {
         return ResponseEntity.ok(providerService.getProfile(authId));
     }
 
     /** GET /api/provider/patients?page=0&size=20 */
     @GetMapping("/patients")
     public ResponseEntity<List<PatientSummaryResponse>> getPatients(
-            @RequestHeader("X-User-Id") UUID authId,
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         PageRequest pageable = PageRequest.of(page, size, Sort.unsorted());
@@ -57,7 +58,7 @@ public class ProviderController {
     /** GET /api/provider/patients/{id} */
     @GetMapping("/patients/{id}")
     public ResponseEntity<PatientProfileResponse> getPatient(
-            @RequestHeader("X-User-Id") UUID authId,
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId,
             @PathVariable String id) {
         return ResponseEntity.ok(providerService.getPatient(authId, parseUuid(id)));
     }
@@ -65,7 +66,7 @@ public class ProviderController {
     /** GET /api/provider/patients/{id}/conditions */
     @GetMapping("/patients/{id}/conditions")
     public ResponseEntity<List<ConditionResponse>> getPatientConditions(
-            @RequestHeader("X-User-Id") UUID authId,
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId,
             @PathVariable String id) {
         return ResponseEntity.ok(providerService.getPatientConditions(authId, parseUuid(id)));
     }
@@ -73,7 +74,7 @@ public class ProviderController {
     /** GET /api/provider/patients/{id}/allergies */
     @GetMapping("/patients/{id}/allergies")
     public ResponseEntity<List<AllergyResponse>> getPatientAllergies(
-            @RequestHeader("X-User-Id") UUID authId,
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId,
             @PathVariable String id) {
         return ResponseEntity.ok(providerService.getPatientAllergies(authId, parseUuid(id)));
     }

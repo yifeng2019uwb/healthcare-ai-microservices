@@ -21,35 +21,7 @@ public final class AppConstants {
      */
     public static final String SYSTEM_USER = "system";
 
-    // ------------------------------------------------------------------
-    // JWT / HTTP headers passed between gateway and downstream services
-    // ------------------------------------------------------------------
-
-    /** Internal header carrying the authenticated user's UUID. */
-    public static final String HEADER_USER_ID   = "X-User-Id";
-
-    /** Internal header carrying the authenticated user's role (PATIENT / PROVIDER). */
-    public static final String HEADER_USER_ROLE = "X-User-Role";
-
-    /** Internal header carrying the authenticated user's username. */
-    public static final String HEADER_USERNAME  = "X-Username";
-
-    // ------------------------------------------------------------------
-    // JWT claims
-    // ------------------------------------------------------------------
-
-    public static final String JWT_CLAIM_ROLE     = "role";
-    public static final String JWT_CLAIM_USERNAME = "username";
-    public static final String JWT_CLAIM_EMAIL    = "email";
-
-
-    // ------------------------------------------------------------------
-    // User roles (string form — mirrors UserRole enum, for use in
-    // Spring Security expressions like hasRole(...))
-    // ------------------------------------------------------------------
-
-    public static final String ROLE_PATIENT  = "PATIENT";
-    public static final String ROLE_PROVIDER = "PROVIDER";
+    // Security constants (headers, JWT claims, roles) → SecurityConstants.java
 
     public static final String SUPPRESS_UNUSED = "unused";
 

@@ -2,6 +2,7 @@ package com.healthcare.controller;
 
 import com.healthcare.dto.EncounterDetailResponse;
 import com.healthcare.dto.EncounterPageResponse;
+import com.healthcare.constants.SecurityConstants;
 import com.healthcare.service.AppointmentService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +35,7 @@ public class PatientEncounterController {
     /** GET /api/encounters/me */
     @GetMapping
     public ResponseEntity<EncounterPageResponse> getEncounters(
-            @RequestHeader("X-User-Id") UUID authId,
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(name = "class", required = false) String encounterClass,
@@ -48,7 +49,7 @@ public class PatientEncounterController {
     /** GET /api/encounters/me/{id} */
     @GetMapping("/{id}")
     public ResponseEntity<EncounterDetailResponse> getEncounterDetail(
-            @RequestHeader("X-User-Id") UUID authId,
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId,
             @PathVariable UUID id) {
 
         return ResponseEntity.ok(appointmentService.getPatientEncounterDetail(authId, id));
