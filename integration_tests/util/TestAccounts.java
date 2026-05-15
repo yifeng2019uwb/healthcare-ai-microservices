@@ -37,6 +37,12 @@ public final class TestAccounts {
     public static final String PATIENT_FIRST_NAME = "Carly657";
     public static final String PATIENT_LAST_NAME  = "Pollich983";
 
+    // ── Admin ─────────────────────────────────────────────────────────────────
+    public static final String ADMIN_USERNAME =
+            System.getProperty("test.admin.username", "admin123");
+    public static final String ADMIN_PASSWORD =
+            System.getProperty("test.admin.password", "Password123!");
+
     // ── Patient 2 (cross-patient isolation tests) ─────────────────────────────
     public static final String PATIENT2_USERNAME =
             System.getProperty("test.patient2.username", "testpatient02");

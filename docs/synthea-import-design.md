@@ -1,6 +1,6 @@
 # Synthea Data Import Design
 
-> Version: 1.1 | Last Updated: 2026-05-13
+> Version: 1.2 | Last Updated: 2026-05-14
 
 ---
 
@@ -40,7 +40,7 @@ inserts them in FK dependency order.
 run-synthea.sh generate        → synthea-with-dependencies.jar → output/csv/*.csv
 run-synthea.sh load-api        → 1. POST /api/auth/login (ADMIN) → get JWT
                                   2. curl -F file=@<table>.csv in FK order
-                                  3. provider-service: parse CSV → objects → INSERT ON CONFLICT DO NOTHING
+                                  3. provider-service: parse CSV → entity objects → JPA saveAll (service generates UUID/MRN/provider_code)
 ```
 
 ---
@@ -71,8 +71,9 @@ run-synthea.sh load-api        → 1. POST /api/auth/login (ADMIN) → get JWT
 
 ## Idempotency
 
-All import endpoints use `INSERT ... ON CONFLICT DO NOTHING`.
-Safe to run multiple times — duplicate rows are silently skipped.
+Each import endpoint pre-checks existing records with `findAllById()` before saving.
+Rows whose UUID already exists in the DB are skipped — only new rows are passed to `saveAll()`.
+Safe to re-run against existing data — exact imported/skipped counts are returned.
 
 ---
 
@@ -144,6 +145,8 @@ internal entity. Unknown columns in the CSV are ignored.
 | HEALTHCARE_COVERAGE | healthcareCoverage | BigDecimal |
 | INCOME | income | Integer |
 
+_`mrn` is not in the Synthea CSV — service generates a new MRN for each imported patient._
+
 ### providers.csv
 
 | CSV column | Java field | Type |
@@ -157,6 +160,8 @@ internal entity. Unknown columns in the CSV are ignored.
 | PROCEDURES | procedures | Integer |
 
 _(address, city, state, zip, lat, lon columns in CSV are ignored — not in schema)_
+
+_`provider_code` is not in the Synthea CSV — service generates a new provider code for each imported provider._
 
 ### encounters.csv
 
@@ -260,9 +265,15 @@ one transaction — any parse error rolls back the whole file.
 
 | File | Change |
 |---|---|
-| `services/provider-service/.../AdminImportController.java` | New — 6 POST multipart endpoints |
-| `services/provider-service/.../AdminImportService.java` | CSV parse → batch insert `ON CONFLICT DO NOTHING` |
-| `services/provider-service/.../csv/CsvMapper.java` | One static method per table: `List<row>` from `MultipartFile` |
-| `services/provider-service/pom.xml` | Add OpenCSV dependency |
+| `services/shared/.../entity/ProfileBaseEntity.java` | Add `setId(UUID)` — service sets UUID; DB only enforces uniqueness |
+| `services/shared/.../entity/Patient.java` | Remove `insertable=false` from `mrn`; add `setMrn()` |
+| `services/shared/.../entity/Provider.java` | Add `setProviderCode()` |
+| `services/provider-service/.../AdminImportController.java` | 6 POST multipart endpoints |
+| `services/provider-service/.../AdminImportService.java` | Interface — one method per table |
+| `services/provider-service/.../AdminImportServiceImpl.java` | Parse CSV → entities → `saveAll()` via shared DAOs |
+| `services/provider-service/.../csv/SyntheaCsvParser.java` | Static parse methods: `MultipartFile` → `List<SyntheaRows.X>` |
+| `services/provider-service/.../csv/SyntheaRows.java` | Typed row records for all 6 tables |
+| `services/provider-service/.../dto/ImportResult.java` | Response record: `{imported, skipped, total}` |
+| `services/provider-service/pom.xml` | OpenCSV dependency |
 | `healthcare-infra/synthea/run-synthea.sh` | Add `load-api` and `all-api` commands |
 

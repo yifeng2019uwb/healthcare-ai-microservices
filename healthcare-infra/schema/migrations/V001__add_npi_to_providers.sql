@@ -5,7 +5,9 @@
 --   license_number = state medical license
 --   npi            = federal CMS identity (required for Medicare/Medicaid billing)
 
-ALTER TABLE providers
-    ADD COLUMN IF NOT EXISTS npi VARCHAR(10) UNIQUE;
-
-CREATE INDEX IF NOT EXISTS idx_providers_npi ON providers(npi);
+DO $$ BEGIN
+    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'providers') THEN
+        ALTER TABLE providers ADD COLUMN IF NOT EXISTS npi VARCHAR(10) UNIQUE;
+        CREATE INDEX IF NOT EXISTS idx_providers_npi ON providers(npi);
+    END IF;
+END $$;

@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS conditions (
 
     created_at      TIMESTAMPTZ DEFAULT NOW(),
     updated_at      TIMESTAMPTZ DEFAULT NOW(),
-    updated_by      VARCHAR(100) DEFAULT 'system'
+    updated_by      VARCHAR(100) DEFAULT 'system',
 
     PRIMARY KEY (patient_id, encounter_id, code)
 );

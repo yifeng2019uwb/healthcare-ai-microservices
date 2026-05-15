@@ -37,11 +37,8 @@ Limitation — not guaranteed unique for large datasets. Two patients
 could share the same name, birthdate, and gender.
 
 ### Phase 2 — MRN (Medical Record Number)
-`mrn` column already added to `patients` table as nullable — ready
-for Phase 2 without schema change.
-
-MRN is system-generated, non-sensitive, given to patient by provider.
-More reliable than name+birthdate matching.
+`mrn` column is in the `patients` table. Service-generated, unique, given to patient by provider.
+More reliable than name+birthdate matching. Already active — no schema change needed.
 
 ### Future — SSN Matching
 Synthea generates unique fake SSNs. Real healthcare systems use SSN
@@ -167,8 +164,9 @@ Owner: patient-service. Synthea patients.csv + auth linkage.
 
 | Column | Type | Notes |
 |---|---|---|
-| id | UUID PK | Synthea patient UUID |
+| id | UUID PK | Set by service (Synthea UUID on import, `UUID.randomUUID()` for new records) |
 | auth_id | UUID UNIQUE | FK to users.id — null until registered |
+| mrn | VARCHAR(20) UNIQUE | Service-generated (e.g. MRN-000001). Given to patient for account registration. |
 | birthdate | DATE NOT NULL | |
 | deathdate | DATE | Null if alive |
 | prefix | VARCHAR(10) | |
@@ -201,7 +199,7 @@ Owner: provider-service. Synthea organizations.csv.
 
 | Column | Type | Notes |
 |---|---|---|
-| id | UUID PK | Synthea org UUID |
+| id | UUID PK | Set by service (Synthea UUID on import, `UUID.randomUUID()` for new records) |
 | name | VARCHAR(255) NOT NULL | |
 | address | VARCHAR(255) NOT NULL | Required for registration |
 | city | VARCHAR(100) NOT NULL | |
@@ -219,9 +217,10 @@ Address removed — derived from organization_id JOIN.
 
 | Column | Type | Notes |
 |---|---|---|
-| id | UUID PK | Synthea provider UUID |
+| id | UUID PK | Set by service (Synthea UUID on import, `UUID.randomUUID()` for new records) |
 | organization_id | UUID NOT NULL FK → organizations | |
 | auth_id | UUID UNIQUE | FK to users.id — null until registered |
+| provider_code | VARCHAR(20) UNIQUE | Service-generated (e.g. PRV-000001). Given to provider for account registration. |
 | name | VARCHAR(255) NOT NULL | |
 | gender | VARCHAR(1) | M/F |
 | speciality | VARCHAR(100) | Synthea spelling |
@@ -236,7 +235,7 @@ organization_id kept as snapshot — org/provider may change after encounter.
 
 | Column | Type | Notes |
 |---|---|---|
-| id | UUID PK | Synthea encounter UUID |
+| id | UUID PK | Set by service (Synthea UUID on import, `UUID.randomUUID()` for new records) |
 | patient_id | UUID NOT NULL FK → patients | |
 | provider_id | UUID NOT NULL FK → providers | |
 | organization_id | UUID NOT NULL FK → organizations | Snapshot at time of encounter |
@@ -324,6 +323,14 @@ Retention: 6 years minimum.
 **Why one database, multiple tables (not separate databases)?**
 Cost — one Cloud SQL instance, one database. Access control enforced at
 PostgreSQL role level per service user, not by separate databases.
+
+**Why does the service set UUIDs instead of the DB?**
+Service layer calls `UUID.randomUUID()` for new records and uses the Synthea UUID for imported records.
+DB enforces `PRIMARY KEY` uniqueness and refuses duplicates — it does not generate IDs.
+This keeps UUID generation predictable and testable without DB involvement, and lets import
+preserve Synthea's cross-table FK references without a mapping table.
+
+MRN and provider_code follow the same principle — service-generated, DB enforces uniqueness only.
 
 **Why auth_id is VARCHAR in patients/providers, not FK to users?**
 Microservices pattern — no FK constraints crossing service boundaries.

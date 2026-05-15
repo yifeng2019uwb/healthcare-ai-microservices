@@ -32,10 +32,12 @@ public class GatewayExceptionHandler implements ErrorWebExceptionHandler {
         String message;
 
         if (ex instanceof GatewayException ge) {
+            log.info("GatewayException on {}: status={} message={}", exchange.getRequest().getURI(), ge.getStatus(), ge.getMessage());
             status = ge.getStatus();
             message = ge.getMessage();
         } else {
-            log.error("Unhandled gateway error on {}: {}", exchange.getRequest().getURI(), ex.getMessage(), ex);
+            log.error("Unhandled gateway error on {} — exceptionType={} message={}",
+                    exchange.getRequest().getURI(), ex.getClass().getName(), ex.getMessage(), ex);
             status = HttpStatus.INTERNAL_SERVER_ERROR;
             message = "Internal Server Error";
         }

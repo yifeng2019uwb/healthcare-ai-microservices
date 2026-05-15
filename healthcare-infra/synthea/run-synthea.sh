@@ -5,13 +5,16 @@
 #   ./run-synthea.sh              # generate (if needed) + load all
 #   ./run-synthea.sh generate     # generate only
 #   ./run-synthea.sh load         # load only (skip generation)
+#   ./run-synthea.sh test-data <n> # generate n patients → integration_tests/test-data/csv/
 # =============================================================================
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SYNTHEA_DIR="$SCRIPT_DIR"
 OUTPUT_DIR="$SYNTHEA_DIR/output/csv"
+TEST_DATA_DIR="$PROJECT_ROOT/integration_tests/test-data"
 SYNTHEA_JAR="$SYNTHEA_DIR/synthea-with-dependencies.jar"
 PROXY_BIN="$SCRIPT_DIR/../schema/cloud-sql-proxy"
 DB_PORT=5432
@@ -34,32 +37,33 @@ if [[ -z "$CI" ]] && [[ -f "$SCRIPT_DIR/../.env" ]]; then
   ok "Loaded .env"
 fi
 
-# =============================================================================
-# Validate required env vars
-# =============================================================================
-stage "Pre-flight checks"
-
-required_vars=(
-  "CLOUD_SQL_INSTANCE"
-  "DB_NAME"
-  "DB_USER"
-  "GCP_PROJECT_ID"
-)
-
-for var in "${required_vars[@]}"; do
-  [[ -z "${!var}" ]] && fail "$var is not set"
-done
-ok "All required env vars present"
-
-# Read DB password from Secret Manager
-stage "Reading credentials"
-DB_PASSWORD=$(gcloud secrets versions access latest \
-  --secret=db-password \
-  --project="$GCP_PROJECT_ID") \
-  || fail "Failed to read db-password from Secret Manager"
-ok "Credentials loaded"
-
 COMMAND=${1:-all}
+
+# =============================================================================
+# Validate required env vars (DB commands only)
+# =============================================================================
+preflight_db() {
+  stage "Pre-flight checks"
+
+  local required_vars=(
+    "CLOUD_SQL_INSTANCE"
+    "DB_NAME"
+    "DB_USER"
+    "GCP_PROJECT_ID"
+  )
+
+  for var in "${required_vars[@]}"; do
+    [[ -z "${!var}" ]] && fail "$var is not set"
+  done
+  ok "All required env vars present"
+
+  stage "Reading credentials"
+  DB_PASSWORD=$(gcloud secrets versions access latest \
+    --secret=db-password \
+    --project="$GCP_PROJECT_ID") \
+    || fail "Failed to read db-password from Secret Manager"
+  ok "Credentials loaded"
+}
 
 # =============================================================================
 # psql helper — runs SQL piped via stdin (allows variable expansion)
@@ -88,7 +92,7 @@ generate() {
     return
   fi
 
-  [[ -f "$SYNTHEA_JAR" ]] || fail "Synthea JAR not found at $SYNTHEA_JAR"
+  ensure_synthea_jar
 
   java -jar "$SYNTHEA_JAR" \
     -p 200 \
@@ -98,6 +102,43 @@ generate() {
     Washington Seattle
 
   ok "Generated 200 patients"
+}
+
+# =============================================================================
+# Generate a small random dataset for integration tests
+# =============================================================================
+ensure_synthea_jar() {
+  if [[ ! -f "$SYNTHEA_JAR" ]]; then
+    warn "Synthea JAR not found — downloading..."
+    curl -sLo "$SYNTHEA_JAR" \
+      "https://github.com/synthetichealth/synthea/releases/download/master-branch-latest/synthea-with-dependencies.jar" \
+      || fail "Failed to download Synthea JAR"
+    ok "Downloaded synthea-with-dependencies.jar"
+  fi
+}
+
+generate_test_data() {
+  local count=$1
+  [[ -n "$count" && "$count" =~ ^[0-9]+$ && "$count" -gt 0 ]] \
+    || fail "Usage: ./run-synthea.sh test-data <n>  (n must be a positive integer)"
+
+  stage "Synthea test data generation (integration tests)"
+
+  ensure_synthea_jar
+
+  echo "Patient count: $count"
+  echo "Output dir:   $TEST_DATA_DIR/csv"
+
+  mkdir -p "$TEST_DATA_DIR"
+
+  java -jar "$SYNTHEA_JAR" \
+    -p "$count" \
+    --exporter.csv.export=true \
+    --exporter.fhir.export=false \
+    --exporter.baseDirectory="$TEST_DATA_DIR" \
+    Washington Seattle
+
+  ok "Generated $count patients → $TEST_DATA_DIR/csv"
 }
 
 # =============================================================================
@@ -267,16 +308,21 @@ case $COMMAND in
     generate
     ;;
   load)
+    preflight_db
     start_proxy
     load
     ;;
   all)
+    preflight_db
     generate
     start_proxy
     load
     ;;
+  test-data)
+    generate_test_data "$2"
+    ;;
   *)
-    fail "Unknown command: $COMMAND — use generate, load, all"
+    fail "Unknown command: $COMMAND — use generate, load, all, test-data"
     ;;
 esac
 

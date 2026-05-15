@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS encounters (
     payer_coverage      DECIMAL(10,2),       -- Phase 2: related to payer billing
     reason_code         VARCHAR(20),
     reason_desc         VARCHAR(255),
-    created_at          TIMESTAMPTZ DEFAULT NOW()
+    created_at          TIMESTAMPTZ DEFAULT NOW(),
     updated_at          TIMESTAMPTZ DEFAULT NOW(),
     updated_by          VARCHAR(100) DEFAULT 'system'
 );

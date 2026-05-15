@@ -108,3 +108,6 @@ gradle-app.setting
 # Synthea
 healthcare-infra/synthea/output/
 healthcare-infra/synthea/*.jar
+
+# Test Data
+test-data/

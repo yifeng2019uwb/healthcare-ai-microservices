@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS organizations (
     lat         DECIMAL(10,6),           -- system derived, not user input
     lon         DECIMAL(10,6),           -- system derived, not user input
     revenue     DECIMAL(12,2),           -- internal metric, nullable
-    utilization INTEGER                 -- internal metric, nullable
+    utilization INTEGER,                -- internal metric, nullable
 
     created_at  TIMESTAMPTZ DEFAULT NOW(),
     updated_at  TIMESTAMPTZ DEFAULT NOW(),

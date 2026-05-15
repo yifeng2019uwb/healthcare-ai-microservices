@@ -40,7 +40,9 @@ public class JwksClient {
                 .retrieve()
                 .bodyToMono(String.class)
                 .map(this::parseJwks)
-                .doOnError(e -> log.error("Failed to fetch JWKS from auth-service: {}", e.getMessage()));
+                .doOnError(e -> log.error("Failed to fetch JWKS from auth-service: {}", e.getMessage()))
+                .onErrorMap(e -> !(e instanceof GatewayException),
+                            e -> new GatewayException(HttpStatus.UNAUTHORIZED, "Unauthorized"));
     }
 
     private Map<String, RSAPublicKey> parseJwks(String json) {

@@ -11,15 +11,17 @@
 #   register      — auth.RegisterPatientIT
 #   patient       — patient.PatientProfileIT + encounter.PatientEncountersIT
 #   provider      — provider.ProviderProfileIT + encounter.ProviderEncountersIT
+#   admin         — admin.AdminImportIT  (requires test-data: run-synthea.sh test-data <n>)
 #   all           — run all tests in order
 #
 # Migration status:
-#   auth     → JUnit 5 (Failsafe)
-#   others   → legacy main() style (exec plugin), to be migrated
+#   auth/admin → JUnit 5 (Failsafe)
+#   others     → legacy main() style (exec plugin), to be migrated
 #
 # Examples:
 #   ./integration_tests/run-it.sh auth
 #   ./integration_tests/run-it.sh patient provider
+#   ./integration_tests/run-it.sh admin
 #   ./integration_tests/run-it.sh all
 # =============================================================================
 
@@ -27,6 +29,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 GATEWAY_URL="${GATEWAY_URL:-https://gateway-dev-824144893232.us-west1.run.app}"
+CSV_DIR="${CSV_DIR:-$SCRIPT_DIR/test-data/csv}"
 POM="$SCRIPT_DIR/pom.xml"
 
 GREEN='\033[0;32m'; RED='\033[0;31m'; BLUE='\033[0;34m'; NC='\033[0m'
@@ -56,14 +59,27 @@ run_class() {
   ok "$label passed"
 }
 
+run_admin() {
+  stage "Admin import endpoints"
+  [[ -d "$CSV_DIR" ]] \
+    || fail "Test CSV data not found at $CSV_DIR — run: ./healthcare-infra/synthea/run-synthea.sh test-data <n>"
+  mvn failsafe:integration-test failsafe:verify -f "$POM" \
+    -Dgateway.url="$GATEWAY_URL" \
+    -Dtest.csv.dir="$CSV_DIR" \
+    -Dit.test="admin.AdminImportIT" \
+    -q
+  ok "Admin import tests passed"
+}
+
 if [[ $# -eq 0 ]]; then
   echo ""
   echo "Usage: $0 <test|all> [test2 ...]"
   echo ""
-  echo "Tests: seed  auth  register  patient  provider  all"
+  echo "Tests: seed  auth  register  patient  provider  admin  all"
   echo ""
   echo "Gateway URL: $GATEWAY_URL"
   echo "Override:    GATEWAY_URL=https://... $0 all"
+  echo "CSV dir:     CSV_DIR=/path/to/csv $0 admin  (default: integration_tests/test-data/csv)"
   echo ""
   exit 0
 fi
@@ -87,6 +103,9 @@ for arg in "$@"; do
       run_junit "Provider profile endpoints"       "provider.ProviderProfileIT"
       run_junit "Provider encounter endpoints"     "encounter.ProviderEncountersIT"
       ;;
+    admin)
+      run_admin
+      ;;
     all)
       run_class "util.SeedAccounts"                "Seed / verify accounts"
       run_junit "Auth endpoints"                   "auth.AuthIT"
@@ -95,8 +114,9 @@ for arg in "$@"; do
       run_junit "Patient encounter endpoints"      "encounter.PatientEncountersIT"
       run_junit "Provider profile endpoints"       "provider.ProviderProfileIT"
       run_junit "Provider encounter endpoints"     "encounter.ProviderEncountersIT"
+      run_admin
       ;;
-    *) fail "Unknown test: $arg  (known: seed auth register patient provider all)" ;;
+    *) fail "Unknown test: $arg  (known: seed auth register patient provider admin all)" ;;
   esac
 done
 

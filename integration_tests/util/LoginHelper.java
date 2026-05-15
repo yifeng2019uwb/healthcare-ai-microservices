@@ -30,6 +30,11 @@ public final class LoginHelper {
         return login(TestAccounts.PATIENT2_USERNAME, TestAccounts.PATIENT2_PASSWORD);
     }
 
+    /** Login as admin, return access token. */
+    public static String adminToken() {
+        return login(TestAccounts.ADMIN_USERNAME, TestAccounts.ADMIN_PASSWORD);
+    }
+
     /** Login with given credentials, return access token. */
     public static String login(String username, String password) {
         return given()
@@ -65,5 +70,10 @@ public final class LoginHelper {
     /** Shortcut: login as second test patient and return spec with Bearer header. */
     public static RequestSpecification asPatient2() {
         return withToken(patientToken2());
+    }
+
+    /** Shortcut: login as admin and return spec with Bearer header. */
+    public static RequestSpecification asAdmin() {
+        return withToken(adminToken());
     }
 }

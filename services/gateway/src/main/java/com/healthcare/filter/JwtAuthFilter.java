@@ -8,6 +8,7 @@ import com.healthcare.jwks.JwksCache;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -46,6 +47,12 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         this.objectMapper = objectMapper;
     }
 
+    @PostConstruct
+    public void logConfig() {
+        log.info("JwtAuthFilter config — publicPaths={} rolePaths={}",
+                config.publicPaths(), config.rolePaths());
+    }
+
     @Override
     public int getOrder() {
         return JWT_FILTER_ORDER;
@@ -69,7 +76,11 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         return extractKid(token)
                 .flatMap(jwksCache::getKey)
                 .flatMap(publicKey -> parseAndValidate(token, publicKey))
-                .flatMap(claims -> checkRole(path, claims.get(SecurityConstants.JWT_CLAIM_ROLE, String.class)).thenReturn(claims))
+                .flatMap(claims -> {
+                    String role = claims.get(SecurityConstants.JWT_CLAIM_ROLE, String.class);
+                    log.info("JWT validated: path={} subject={} role={}", path, claims.getSubject(), role);
+                    return checkRole(path, role).thenReturn(claims);
+                })
                 .flatMap(claims -> {
                     var mutatedRequest = exchange.getRequest().mutate()
                             .headers(headers -> {
@@ -79,11 +90,14 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                             })
                             .build();
                     return chain.filter(exchange.mutate().request(mutatedRequest).build());
-                });
+                })
+                .onErrorMap(t -> !(t instanceof GatewayException),
+                            t -> new GatewayException(HttpStatus.UNAUTHORIZED, "Unauthorized"));
     }
 
     private Mono<Void> checkRole(String path, String role) {
         String required = config.getRequiredRole(path);
+        log.info("RBAC check: path={} required={} actual={}", path, required, role);
         if (required == null) return Mono.empty();
         if (required.equals(role)) return Mono.empty();
         log.warn("RBAC denied: path={} required={} actual={}", path, required, role);

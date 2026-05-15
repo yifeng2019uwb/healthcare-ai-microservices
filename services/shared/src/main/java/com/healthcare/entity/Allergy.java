@@ -9,7 +9,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
 
@@ -102,13 +101,11 @@ public class Allergy extends BaseEntity {
     // ------------------------------------------------------------------
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId(AppConstants.FIELD_PATIENT_ID)
-    @JoinColumn(name = DatabaseConstants.COL_PATIENT_ID)
+    @JoinColumn(name = DatabaseConstants.COL_PATIENT_ID, insertable = false, updatable = false)
     private Patient patient;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId(AppConstants.FIELD_ENCOUNTER_ID)
-    @JoinColumn(name = DatabaseConstants.COL_ENCOUNTER_ID)
+    @JoinColumn(name = DatabaseConstants.COL_ENCOUNTER_ID, insertable = false, updatable = false)
     private Encounter encounter;
 
     // ------------------------------------------------------------------

@@ -59,8 +59,8 @@ gateway:
     - /api/auth/refresh
     - /actuator/health
   role-paths:
-    /api/patients/: PATIENT
-    /api/provider/: PROVIDER
-    /api/admin/: ADMIN
-    /api/encounters/me/: PATIENT
-    /api/encounters/provider/: PROVIDER
+    "[/api/patients/]": PATIENT
+    "[/api/provider/]": PROVIDER
+    "[/api/admin/]": ADMIN
+    "[/api/encounters/me/]": PATIENT
+    "[/api/encounters/provider/]": PROVIDER

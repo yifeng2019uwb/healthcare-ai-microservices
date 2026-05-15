@@ -8,6 +8,7 @@ public class ProviderServiceException extends RuntimeException {
     public static final String PATIENT_NOT_FOUND   = "PATIENT_NOT_FOUND";
     public static final String ACCESS_DENIED        = "PROVIDER_ACCESS_DENIED";
     public static final String INTERNAL_ERROR       = "PROVIDER_INTERNAL_ERROR";
+    public static final String INVALID_CSV          = "INVALID_CSV";
 
     private final HttpStatus status;
     private final String errorCode;

@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS providers (
                     DEFAULT 'PRV-' || LPAD(nextval('provider_code_seq')::TEXT, 6, '0'),
 
     -- Contact and professional info
+    npi             VARCHAR(10) UNIQUE,  -- National Provider Identifier (10-digit federal CMS id)
     phone           VARCHAR(20),         -- contact number
     license_number  VARCHAR(50),         -- medical license
     is_active       BOOLEAN NOT NULL DEFAULT true,  -- active/inactive in system
