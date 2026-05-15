@@ -1,0 +1,3 @@
+name: healthcare-oracle-infra
+runtime: go
+description: Oracle Cloud AMD micro VMs for healthcare-ai services

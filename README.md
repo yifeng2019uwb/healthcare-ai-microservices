@@ -9,35 +9,38 @@ Internet
     │
     ▼
 Gateway (Cloud Run, public)
-  · JWT validation (RS256)
-  · Redis token blacklist
-  · Injects X-User-Id / X-Username / X-User-Role headers
+  · RS256 JWT validation (JWKS from auth-service)
+  · Path-based RBAC (PATIENT / PROVIDER / ADMIN roles)
+  · Injects X-User-Id / X-Username / X-User-Role / X-Fhir-Id headers
     │
-    ├──▶ Auth Service     (Cloud Run, internal)  /api/auth/**
-    ├──▶ Patient Service  (Cloud Run, internal)  /api/patients/**
-    └──▶ (more services)
+    ├──▶ Auth Service      (Cloud Run, internal)  /api/auth/**
+    ├──▶ Patient Service   (Cloud Run, internal)  /api/patients/**
+    ├──▶ Provider Service  (Cloud Run, internal)  /api/provider/**  /api/admin/**
+    └──▶ (AI Service — planned)                  /api/ai/**
     │
     ▼
-Cloud SQL PostgreSQL  +  Redis (Memorystore)
+Cloud SQL PostgreSQL
 ```
 
 ## Services
 
 | Service | Status | Description |
 |---------|--------|-------------|
-| gateway | ✅ deployed | JWT auth, routing |
-| auth-service | ✅ deployed | Register, login, refresh, logout |
+| gateway | ✅ deployed | JWT validation, path-based RBAC, header injection |
+| auth-service | ✅ deployed | Register, login, refresh, logout, JWKS endpoint |
 | patient-service | ✅ deployed | Patient profile, encounters, conditions, allergies |
-| provider-service | ⏳ planned | Provider profiles |
-| shared | ✅ | JPA entities, DAOs, enums — shared library |
+| provider-service | ✅ deployed | Provider profile, patient list/detail, conditions, allergies, admin import |
+| shared | ✅ library | JPA entities, DAOs, enums, security constants |
+| appointment-service | ⏳ deferred | Encounter history — code exists, not deployed (deprioritized for AI layer) |
+| ai-service | 🔜 planned | Vertex AI Gemini — clinical summarization, risk analysis |
 
 ## Stack
 
 - **Runtime**: Java 17, Spring Boot 3.2
-- **Cloud**: GCP Cloud Run, Cloud SQL (PostgreSQL), Memorystore (Redis), Artifact Registry
+- **Cloud**: GCP Cloud Run, Cloud SQL (PostgreSQL), Artifact Registry, Secret Manager
 - **Infra**: Terraform
-- **Auth**: RS256 JWT, JWKS endpoint, Redis blacklist
-- **Data**: Synthea synthetic patient data (HIPAA-safe)
+- **Auth**: RS256 JWT, JWKS endpoint, `fhirId` claim (patients.id / providers.id)
+- **Data**: Synthea synthetic patient data (200 patients, HIPAA-safe)
 
 ## Local Development
 
@@ -67,6 +70,21 @@ cd services
 ./scripts/deploy-services.sh all
 ```
 
+## Integration Tests
+
+```bash
+cd integration_tests
+
+# run all tests
+./run-it.sh all
+
+# run by suite
+./run-it.sh auth
+./run-it.sh patient
+./run-it.sh provider
+./run-it.sh admin
+```
+
 ## Full CI Pipeline
 
 ```bash
@@ -77,6 +95,6 @@ cd services
 
 ## Docs
 
-- [`docs/`](docs/) — service design docs
+- [`docs/`](docs/) — service design docs, roadmap, AI service discussion
 - [`healthcare-infra/`](healthcare-infra/) — Terraform, DB schema, Synthea data
 - [`scripts/`](scripts/) — CI/CD and deploy scripts
