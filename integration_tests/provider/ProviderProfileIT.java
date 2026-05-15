@@ -130,10 +130,10 @@ class ProviderProfileIT extends BaseIT {
     // ── Validation — /patients/{id}/allergies ─────────────────────────────────
 
     @Test
-    void getPatientAllergies_withNonExistentPatient_returns403() {
+    void getPatientAllergies_withNonExistentPatient_returns404() {
         LoginHelper.asProvider()
             .when().get(ApiPaths.PROVIDER_PATIENTS + "/" + NON_EXISTENT_ID + "/allergies")
-            .then().statusCode(403);
+            .then().statusCode(404);
     }
 
     @Test
