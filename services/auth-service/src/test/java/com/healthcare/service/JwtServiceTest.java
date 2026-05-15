@@ -1,5 +1,6 @@
 package com.healthcare.service;
 
+import com.healthcare.constants.SecurityConstants;
 import com.healthcare.entity.User;
 import com.healthcare.enums.UserRole;
 import io.jsonwebtoken.Claims;
@@ -102,5 +103,32 @@ class JwtServiceTest {
     void isSessionExpired_returnsFalseForRecentLogin() {
         long recentIat = System.currentTimeMillis() - 60_000; // 1 minute ago
         assertThat(jwtService.isSessionExpired(recentIat)).isFalse();
+    }
+
+    @Test
+    void isSessionExpired_returnsTrueForExpiredSession() {
+        long nineHoursAgo = System.currentTimeMillis() - 9 * 60 * 60 * 1000L;
+        assertThat(jwtService.isSessionExpired(nineHoursAgo)).isTrue();
+    }
+
+    @Test
+    void issueAccessToken_withFhirId_includesFhirIdClaim() {
+        UUID fhirId = UUID.fromString("00000000-0000-0000-0000-000000000099");
+        when(mockUser.getFhirId()).thenReturn(fhirId);
+
+        String token = jwtService.issueAccessToken(mockUser);
+        Claims claims = jwtService.validateAndExtractClaims(token);
+
+        assertThat(claims.get(SecurityConstants.JWT_CLAIM_FHIR_ID, String.class))
+                .isEqualTo(fhirId.toString());
+    }
+
+    @Test
+    void issueAccessToken_withoutFhirId_omitsFhirIdClaim() {
+        // mockUser.getFhirId() returns null by default — no stub needed
+        String token = jwtService.issueAccessToken(mockUser);
+        Claims claims = jwtService.validateAndExtractClaims(token);
+
+        assertThat(claims.get(SecurityConstants.JWT_CLAIM_FHIR_ID, String.class)).isNull();
     }
 }

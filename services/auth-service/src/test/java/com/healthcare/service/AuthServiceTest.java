@@ -12,6 +12,7 @@ import com.healthcare.entity.Patient;
 import com.healthcare.entity.Provider;
 import com.healthcare.entity.User;
 import com.healthcare.enums.UserRole;
+import com.healthcare.exception.AuthServiceException;
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,12 +20,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -191,5 +194,133 @@ class AuthServiceTest {
         authService.logout("access-token", "refresh-token");
 
         verify(auditLogDao).insert(any());
+    }
+
+    // =========================================================================
+    // Refresh — error paths
+    // =========================================================================
+
+    @Test
+    void refresh_withNonRefreshToken_throws401() {
+        Claims mockClaims = mock(Claims.class);
+        when(jwtService.validateAndExtractClaims("access-token")).thenReturn(mockClaims);
+        when(jwtService.extractTokenType(mockClaims)).thenReturn("access");
+
+        assertThatThrownBy(() -> authService.refresh("access-token"))
+                .isInstanceOfSatisfying(AuthServiceException.class, ex -> {
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
+                    assertThat(ex.getErrorCode()).isEqualTo(AuthServiceException.INVALID_TOKEN);
+                });
+    }
+
+    @Test
+    void refresh_withExpiredSession_throws401() {
+        Claims mockClaims = mock(Claims.class);
+        long oldIat = System.currentTimeMillis() - 9 * 60 * 60 * 1000L;
+
+        when(jwtService.validateAndExtractClaims("expired-token")).thenReturn(mockClaims);
+        when(jwtService.extractTokenType(mockClaims)).thenReturn("refresh");
+        when(jwtService.extractOriginalIat(mockClaims)).thenReturn(oldIat);
+        when(jwtService.isSessionExpired(oldIat)).thenReturn(true);
+        when(jwtService.extractSubject(mockClaims)).thenReturn(userId.toString());
+
+        assertThatThrownBy(() -> authService.refresh("expired-token"))
+                .isInstanceOfSatisfying(AuthServiceException.class, ex -> {
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
+                    assertThat(ex.getErrorCode()).isEqualTo(AuthServiceException.SESSION_EXPIRED);
+                });
+    }
+
+    @Test
+    void refresh_withUnknownUser_throws401() {
+        Claims mockClaims = mock(Claims.class);
+        long recentIat = System.currentTimeMillis() - 60_000;
+
+        when(jwtService.validateAndExtractClaims("unknown-token")).thenReturn(mockClaims);
+        when(jwtService.extractTokenType(mockClaims)).thenReturn("refresh");
+        when(jwtService.extractOriginalIat(mockClaims)).thenReturn(recentIat);
+        when(jwtService.isSessionExpired(recentIat)).thenReturn(false);
+        when(jwtService.extractSubject(mockClaims)).thenReturn(userId.toString());
+        when(userDao.findById(userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.refresh("unknown-token"))
+                .isInstanceOfSatisfying(AuthServiceException.class, ex -> {
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
+                    assertThat(ex.getErrorCode()).isEqualTo(AuthServiceException.INVALID_TOKEN);
+                });
+    }
+
+    @Test
+    void refresh_withInactiveUser_throws403() {
+        Claims mockClaims = mock(Claims.class);
+        long recentIat = System.currentTimeMillis() - 60_000;
+
+        when(jwtService.validateAndExtractClaims("inactive-token")).thenReturn(mockClaims);
+        when(jwtService.extractTokenType(mockClaims)).thenReturn("refresh");
+        when(jwtService.extractOriginalIat(mockClaims)).thenReturn(recentIat);
+        when(jwtService.isSessionExpired(recentIat)).thenReturn(false);
+        when(jwtService.extractSubject(mockClaims)).thenReturn(userId.toString());
+        when(userDao.findById(userId)).thenReturn(Optional.of(mockUser));
+        when(mockUser.getIsActive()).thenReturn(false);
+        when(mockUser.getUsername()).thenReturn("john_doe");
+
+        assertThatThrownBy(() -> authService.refresh("inactive-token"))
+                .isInstanceOfSatisfying(AuthServiceException.class, ex -> {
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+                    assertThat(ex.getErrorCode()).isEqualTo(AuthServiceException.ACCOUNT_INACTIVE);
+                });
+    }
+
+    // =========================================================================
+    // Registration — fhirId wiring
+    // =========================================================================
+
+    @Test
+    void registerPatient_setsFhirIdFromPatient() {
+        UUID patientFhirId = UUID.fromString("00000000-0000-0000-0000-000000000002");
+        stubUserForAuditLog();
+        Patient mockPatient = mock(Patient.class);
+        when(mockPatient.matchesRegistrationCredentials("MRN001", "John", "Doe")).thenReturn(true);
+        when(mockPatient.isRegistered()).thenReturn(false);
+        when(mockPatient.getId()).thenReturn(patientFhirId);
+
+        when(userDao.existsByUsername("john_doe")).thenReturn(false);
+        when(userDao.existsByEmail("john@example.com")).thenReturn(false);
+        when(patientDao.findByMrn("MRN001")).thenReturn(Optional.of(mockPatient));
+        when(passwordEncoder.encode(anyString())).thenReturn("$2a$encoded");
+        when(userDao.save(any())).thenReturn(mockUser);
+        when(patientDao.save(mockPatient)).thenReturn(mockPatient);
+        when(jwtService.issueAccessToken(mockUser)).thenReturn("access-token");
+        when(jwtService.issueRefreshToken(mockUser)).thenReturn("refresh-token");
+
+        authService.registerPatient(new RegisterPatientRequest(
+                "john_doe", "john@example.com", "Password1@", "MRN001", "John", "Doe"));
+
+        verify(mockUser).setFhirId(patientFhirId);
+    }
+
+    @Test
+    void registerProvider_setsFhirIdFromProvider() {
+        UUID providerFhirId = UUID.fromString("00000000-0000-0000-0000-000000000003");
+        when(mockUser.getId()).thenReturn(userId);
+        when(mockUser.getRole()).thenReturn(UserRole.PROVIDER);
+        Provider mockProvider = mock(Provider.class);
+        when(mockProvider.matchesRegistrationCredentials("PRV-000001", "Jane Doe")).thenReturn(true);
+        when(mockProvider.isRegistered()).thenReturn(false);
+        when(mockProvider.getId()).thenReturn(providerFhirId);
+
+        when(userDao.existsByUsername("jane_doe")).thenReturn(false);
+        when(userDao.existsByEmail("jane@example.com")).thenReturn(false);
+        when(providerDao.findByProviderCode("PRV-000001")).thenReturn(Optional.of(mockProvider));
+        when(passwordEncoder.encode(anyString())).thenReturn("$2a$encoded");
+        when(userDao.save(any())).thenReturn(mockUser);
+        when(providerDao.save(mockProvider)).thenReturn(mockProvider);
+        when(jwtService.issueAccessToken(mockUser)).thenReturn("access-token");
+        when(jwtService.issueRefreshToken(mockUser)).thenReturn("refresh-token");
+
+        authService.registerProvider(new RegisterProviderRequest(
+                "jane_doe", "jane@example.com", "Password1@", "PRV-000001", "Jane", "Doe"));
+
+        verify(mockUser).setFhirId(providerFhirId);
     }
 }
