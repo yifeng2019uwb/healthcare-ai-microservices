@@ -44,7 +44,6 @@ class AuthServiceTest {
     @Mock private ProviderDao providerDao;
     @Mock private AuditLogDao auditLogDao;
     @Mock private JwtService jwtService;
-    @Mock private TokenBlacklistService blacklistService;
     @Mock private PasswordEncoder passwordEncoder;
 
     @InjectMocks
@@ -159,8 +158,6 @@ class AuthServiceTest {
 
         when(jwtService.validateAndExtractClaims("old-refresh-token")).thenReturn(mockClaims);
         when(jwtService.extractTokenType(mockClaims)).thenReturn("refresh");
-        when(jwtService.extractJti(mockClaims)).thenReturn("jti-old");
-        when(blacklistService.isBlacklisted("jti-old")).thenReturn(false);
         when(jwtService.extractOriginalIat(mockClaims)).thenReturn(originalIat);
         when(jwtService.isSessionExpired(originalIat)).thenReturn(false);
         when(jwtService.extractSubject(mockClaims)).thenReturn(userId.toString());
@@ -174,7 +171,6 @@ class AuthServiceTest {
 
         assertThat(response.accessToken()).isEqualTo("new-access-token");
         assertThat(response.refreshToken()).isEqualTo("new-refresh-token");
-        verify(blacklistService).blacklist(mockClaims);
     }
 
     // =========================================================================
@@ -182,7 +178,7 @@ class AuthServiceTest {
     // =========================================================================
 
     @Test
-    void logout_happyPath_blacklistsBothTokens() {
+    void logout_happyPath_auditsLogout() {
         stubUserForAuditLog();
         Claims accessClaims  = mock(Claims.class);
         Claims refreshClaims = mock(Claims.class);
@@ -194,8 +190,6 @@ class AuthServiceTest {
 
         authService.logout("access-token", "refresh-token");
 
-        verify(blacklistService).blacklist(accessClaims);
-        verify(blacklistService).blacklist(refreshClaims);
         verify(auditLogDao).insert(any());
     }
 }

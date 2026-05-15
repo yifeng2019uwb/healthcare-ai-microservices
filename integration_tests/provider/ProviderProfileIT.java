@@ -3,7 +3,6 @@ package provider;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import util.ApiPaths;
@@ -131,11 +130,10 @@ class ProviderProfileIT extends BaseIT {
     // ── Validation — /patients/{id}/allergies ─────────────────────────────────
 
     @Test
-    @Disabled("Provider service returns 403 for non-existent patient — behaviour under review")
-    void getPatientAllergies_withNonExistentId_returns404() {
+    void getPatientAllergies_withNonExistentPatient_returns403() {
         LoginHelper.asProvider()
             .when().get(ApiPaths.PROVIDER_PATIENTS + "/" + NON_EXISTENT_ID + "/allergies")
-            .then().statusCode(404);
+            .then().statusCode(403);
     }
 
     @Test

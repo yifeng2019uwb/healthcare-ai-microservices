@@ -37,6 +37,7 @@ public final class DatabaseConstants {
     public static final String COL_EMAIL         = "email";
     public static final String COL_ROLE          = "role";
     public static final String COL_IS_ACTIVE     = "is_active";
+    public static final String COL_FHIR_ID       = "fhir_id";
 
     // ==================== SHARED COLUMNS (used across multiple tables) ====================
 
@@ -161,6 +162,7 @@ public final class DatabaseConstants {
     public static final String INDEX_USERS_EMAIL    = "idx_users_email";
     public static final String INDEX_USERS_USERNAME = "idx_users_username";
     public static final String INDEX_USERS_ROLE     = "idx_users_role";
+    public static final String INDEX_USERS_FHIR_ID  = "idx_users_fhir_id";
 
     // patients
     public static final String INDEX_PATIENTS_AUTH_ID       = "idx_patients_auth_id";

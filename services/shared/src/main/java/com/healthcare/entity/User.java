@@ -13,6 +13,8 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
+import java.util.UUID;
+
 /**
  * User entity mapping to the users table.
  *
@@ -27,7 +29,8 @@ import jakarta.validation.constraints.Size;
        indexes = {
            @Index(name = DatabaseConstants.INDEX_USERS_EMAIL,    columnList = DatabaseConstants.COL_EMAIL),
            @Index(name = DatabaseConstants.INDEX_USERS_USERNAME, columnList = DatabaseConstants.COL_USERNAME),
-           @Index(name = DatabaseConstants.INDEX_USERS_ROLE,     columnList = DatabaseConstants.COL_ROLE)
+           @Index(name = DatabaseConstants.INDEX_USERS_ROLE,     columnList = DatabaseConstants.COL_ROLE),
+           @Index(name = DatabaseConstants.INDEX_USERS_FHIR_ID,  columnList = DatabaseConstants.COL_FHIR_ID)
        })
 public class User extends ProfileBaseEntity {
     private static final String FIELD_USERNAME      = "Username";
@@ -55,6 +58,10 @@ public class User extends ProfileBaseEntity {
 
     @Column(name = DatabaseConstants.COL_IS_ACTIVE)
     private Boolean isActive = true;
+
+    /** FHIR resource ID — patients.id or providers.id linked at registration. Null for ADMIN. */
+    @Column(name = DatabaseConstants.COL_FHIR_ID)
+    private UUID fhirId;
 
     // ------------------------------------------------------------------
     // Constructors
@@ -98,6 +105,7 @@ public class User extends ProfileBaseEntity {
     public String getPasswordHash() { return passwordHash; }
     public UserRole getRole()       { return role; }
     public Boolean getIsActive()    { return isActive; }
+    public UUID getFhirId()         { return fhirId; }
 
     // ------------------------------------------------------------------
     // Setters
@@ -114,6 +122,10 @@ public class User extends ProfileBaseEntity {
         if (isActive == null)
             throw new ValidationException("isActive cannot be null");
         this.isActive = isActive;
+    }
+
+    public void setFhirId(UUID fhirId) {
+        this.fhirId = fhirId;
     }
 
     // ------------------------------------------------------------------

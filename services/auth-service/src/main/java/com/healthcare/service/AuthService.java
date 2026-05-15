@@ -28,7 +28,7 @@ import io.jsonwebtoken.Claims;
  * Orchestrates all auth-service business logic.
  *
  * Owns: registration, login, token refresh, logout.
- * Delegates to: JwtService (token ops), TokenBlacklistService (Redis),
+ * Delegates to: JwtService (token ops),
  *               UserDao/PatientDao/ProviderDao (DB), AuditLogDao (audit).
  *
  * Security principle: internal error details are logged, never returned to callers.
@@ -50,7 +50,6 @@ public class AuthService {
     private final ProviderDao providerDao;
     private final AuditLogDao auditLogDao;
     private final JwtService jwtService;
-    private final TokenBlacklistService blacklistService;
     private final PasswordEncoder passwordEncoder;
 
     public AuthService(UserDao userDao,
@@ -58,14 +57,12 @@ public class AuthService {
                        ProviderDao providerDao,
                        AuditLogDao auditLogDao,
                        JwtService jwtService,
-                       TokenBlacklistService blacklistService,
                        PasswordEncoder passwordEncoder) {
         this.userDao = userDao;
         this.patientDao = patientDao;
         this.providerDao = providerDao;
         this.auditLogDao = auditLogDao;
         this.jwtService = jwtService;
-        this.blacklistService = blacklistService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -111,6 +108,8 @@ public class AuthService {
 
         User user = createUser(request.username(), request.email(), request.password(), UserRole.PATIENT);
         patient.linkAuthAccount(user.getId());
+        user.setFhirId(patient.getId());
+        userDao.save(user);
         patientDao.save(patient);
 
         auditLogDao.insert(buildAuditLog(user, ActionType.CREATE, Outcome.SUCCESS));
@@ -157,6 +156,8 @@ public class AuthService {
 
         User user = createUser(request.username(), request.email(), request.password(), UserRole.PROVIDER);
         provider.linkAuthAccount(user.getId());
+        user.setFhirId(provider.getId());
+        userDao.save(user);
         providerDao.save(provider);
 
         auditLogDao.insert(buildAuditLog(user, ActionType.CREATE, Outcome.SUCCESS));
@@ -222,10 +223,8 @@ public class AuthService {
      * Flow:
      * 1. Validate refresh token signature + expiry
      * 2. Verify token type is refresh
-     * 3. Check jti not blacklisted
-     * 4. Check absolute session cap (8hr from original_iat)
-     * 5. Blacklist old refresh token (rotation)
-     * 6. Find user → issue new token pair
+     * 3. Check absolute session cap (8hr from original_iat)
+     * 4. Find user → issue new token pair
      */
     public LoginResponse refresh(String refreshToken) {
         Claims claims = jwtService.validateAndExtractClaims(refreshToken);
@@ -237,14 +236,6 @@ public class AuthService {
                     "Token is not a refresh token");
         }
 
-        String jti = jwtService.extractJti(claims);
-        if (blacklistService.isBlacklisted(jti)) {
-            throw new AuthServiceException(
-                    HttpStatus.UNAUTHORIZED,
-                    AuthServiceException.TOKEN_BLACKLISTED,
-                    "Refresh token has been revoked jti=" + jti);
-        }
-
         long originalIat = jwtService.extractOriginalIat(claims);
         if (jwtService.isSessionExpired(originalIat)) {
             throw new AuthServiceException(
@@ -252,9 +243,6 @@ public class AuthService {
                     AuthServiceException.SESSION_EXPIRED,
                     "Absolute session limit exceeded for sub=" + jwtService.extractSubject(claims));
         }
-
-        // Blacklist old refresh token immediately before issuing new ones
-        blacklistService.blacklist(claims);
 
         String userId = jwtService.extractSubject(claims);
         User user = userDao.findById(java.util.UUID.fromString(userId))
@@ -282,22 +270,17 @@ public class AuthService {
     // =========================================================================
 
     /**
-     * Blacklists both access and refresh token JTIs in Redis.
-     * Both tokens are immediately invalid regardless of their remaining lifetime.
+     * Validates both tokens and records an audit log entry.
+     * Tokens expire naturally via JWT TTL.
      *
      * Flow:
      * 1. Validate access token — extract claims
-     * 2. Validate refresh token — extract claims
-     * 3. Blacklist access token jti
-     * 4. Blacklist refresh token jti
-     * 5. Audit log
+     * 2. Validate refresh token
+     * 3. Audit log
      */
     public void logout(String accessToken, String refreshToken) {
-        Claims accessClaims  = jwtService.validateAndExtractClaims(accessToken);
-        Claims refreshClaims = jwtService.validateAndExtractClaims(refreshToken);
-
-        blacklistService.blacklist(accessClaims);
-        blacklistService.blacklist(refreshClaims);
+        Claims accessClaims = jwtService.validateAndExtractClaims(accessToken);
+        jwtService.validateAndExtractClaims(refreshToken);
 
         String userId = jwtService.extractSubject(accessClaims);
         userDao.findById(java.util.UUID.fromString(userId)).ifPresent(user -> {

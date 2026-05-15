@@ -168,6 +168,10 @@ public class JwtService {
         return claims.get(SecurityConstants.JWT_CLAIM_ROLE, String.class);
     }
 
+    public String extractFhirId(Claims claims) {
+        return claims.get(SecurityConstants.JWT_CLAIM_FHIR_ID, String.class);
+    }
+
     public String extractTokenType(Claims claims) {
         return claims.get(CLAIM_TOKEN_TYPE, String.class);
     }
@@ -220,6 +224,8 @@ public class JwtService {
                 .subject(user.getId().toString())
                 .claim(SecurityConstants.JWT_CLAIM_USERNAME, user.getUsername())
                 .claim(SecurityConstants.JWT_CLAIM_ROLE, user.getRole().name())
+                .claim(SecurityConstants.JWT_CLAIM_FHIR_ID,
+                        user.getFhirId() != null ? user.getFhirId().toString() : null)
                 .claim(CLAIM_TOKEN_TYPE, tokenType)
                 .claim(CLAIM_ORIGINAL_IAT, originalIat)
                 .id(UUID.randomUUID().toString())

@@ -81,18 +81,20 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                     log.info("JWT validated: path={} subject={} role={}", path, claims.getSubject(), role);
                     return checkRole(path, role).thenReturn(claims);
                 })
+                .onErrorMap(t -> !(t instanceof GatewayException),
+                            t -> new GatewayException(HttpStatus.UNAUTHORIZED, "Unauthorized"))
                 .flatMap(claims -> {
                     var mutatedRequest = exchange.getRequest().mutate()
                             .headers(headers -> {
                                 headers.set(SecurityConstants.HEADER_USER_ID,   claims.getSubject());
                                 headers.set(SecurityConstants.HEADER_USER_ROLE, claims.get(SecurityConstants.JWT_CLAIM_ROLE, String.class));
                                 headers.set(SecurityConstants.HEADER_USERNAME,  claims.get(SecurityConstants.JWT_CLAIM_USERNAME, String.class));
+                                String fhirId = claims.get(SecurityConstants.JWT_CLAIM_FHIR_ID, String.class);
+                                if (fhirId != null) headers.set(SecurityConstants.HEADER_FHIR_ID, fhirId);
                             })
                             .build();
                     return chain.filter(exchange.mutate().request(mutatedRequest).build());
-                })
-                .onErrorMap(t -> !(t instanceof GatewayException),
-                            t -> new GatewayException(HttpStatus.UNAUTHORIZED, "Unauthorized"));
+                });
     }
 
     private Mono<Void> checkRole(String path, String role) {

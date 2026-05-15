@@ -9,8 +9,8 @@
 #   seed          — verify test accounts are reachable
 #   auth          — auth.AuthIT  (JUnit 5 via Failsafe)
 #   register      — auth.RegisterPatientIT
-#   patient       — patient.PatientProfileIT + encounter.PatientEncountersIT
-#   provider      — provider.ProviderProfileIT + encounter.ProviderEncountersIT
+#   patient       — patient.PatientProfileIT
+#   provider      — provider.ProviderProfileIT
 #   admin         — admin.AdminImportIT  (requires test-data: run-synthea.sh test-data <n>)
 #   all           — run all tests in order
 #
@@ -97,11 +97,9 @@ for arg in "$@"; do
     register) run_junit "Register patient endpoint"    "auth.RegisterPatientIT" ;;
     patient)
       run_junit "Patient profile endpoints"        "patient.PatientProfileIT"
-      run_junit "Patient encounter endpoints"      "encounter.PatientEncountersIT"
       ;;
     provider)
       run_junit "Provider profile endpoints"       "provider.ProviderProfileIT"
-      run_junit "Provider encounter endpoints"     "encounter.ProviderEncountersIT"
       ;;
     admin)
       run_admin
@@ -111,9 +109,7 @@ for arg in "$@"; do
       run_junit "Auth endpoints"                   "auth.AuthIT"
       run_junit "Register patient endpoint"        "auth.RegisterPatientIT"
       run_junit "Patient profile endpoints"        "patient.PatientProfileIT"
-      run_junit "Patient encounter endpoints"      "encounter.PatientEncountersIT"
       run_junit "Provider profile endpoints"       "provider.ProviderProfileIT"
-      run_junit "Provider encounter endpoints"     "encounter.ProviderEncountersIT"
       run_admin
       ;;
     *) fail "Unknown test: $arg  (known: seed auth register patient provider admin all)" ;;

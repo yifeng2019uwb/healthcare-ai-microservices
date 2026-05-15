@@ -20,13 +20,6 @@ spring:
       ddl-auto: none
     show-sql: true
 
-  data:
-    redis:
-      host: "${REDIS_HOST:localhost}"
-      port: "${REDIS_PORT:6379}"
-      # Password is optional — omit for local dev, set for GCP Cloud Memorystore
-      password: "${REDIS_PASSWORD:}"
-
 jwt:
   private-key: "${JWT_PRIVATE_KEY}"
   public-key: "${JWT_PUBLIC_KEY}"

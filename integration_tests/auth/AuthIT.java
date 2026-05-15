@@ -2,7 +2,6 @@ package auth;
 
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import util.ApiPaths;
@@ -71,7 +70,6 @@ class AuthIT extends BaseIT {
     // ── Refresh ───────────────────────────────────────────────────────────────
 
     @Test
-    @Disabled("TD-1: POST /refresh returns 503 — fix auth-service then re-enable")
     void refresh_withValidToken_returns200WithNewAccessToken() {
         Response loginResp = given()
             .contentType(ContentType.JSON)
@@ -113,9 +111,8 @@ class AuthIT extends BaseIT {
     // ── Logout ────────────────────────────────────────────────────────────────
 
     @Test
-    @Disabled("TD-2: POST /logout returns 503 — fix auth-service then re-enable")
     void logout_withValidToken_returns200() {
-        String accessToken = given()
+        var loginResp = given()
             .contentType(ContentType.JSON)
             .body("""
                 {"username": "%s", "password": "%s"}
@@ -123,10 +120,17 @@ class AuthIT extends BaseIT {
         .when()
             .post(ApiPaths.LOGIN)
         .then()
-            .extract().path("access_token");
+            .extract().response();
+
+        String accessToken  = loginResp.path("access_token");
+        String refreshToken = loginResp.path("refresh_token");
 
         given()
+            .contentType(ContentType.JSON)
             .header("Authorization", BEARER_PREFIX + accessToken)
+            .body("""
+                {"refresh_token": "%s"}
+                """.formatted(refreshToken))
         .when()
             .post(ApiPaths.LOGOUT)
         .then()
