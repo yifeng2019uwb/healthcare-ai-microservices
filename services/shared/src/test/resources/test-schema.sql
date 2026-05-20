@@ -108,6 +108,35 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS ai_analysis_jobs (
+    patient_id      UUID        PRIMARY KEY,
+    marked_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    triggered_by    UUID        NULL,
+    trigger_type    VARCHAR(50) NOT NULL,
+    status          VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    lock_expires_at TIMESTAMPTZ NULL,
+    completed_at    TIMESTAMPTZ NULL,
+    last_error      TEXT        NULL,
+    retry_count     INT         NOT NULL DEFAULT 0,
+    next_retry_at   TIMESTAMPTZ NULL,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ai_analysis_results (
+    id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    patient_id       UUID        NOT NULL,
+    generated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    summary          TEXT        NOT NULL,
+    risk_flags       JSONB       NOT NULL,
+    trigger_type     VARCHAR(50) NOT NULL,
+    triggered_by     UUID        NULL,
+    model_version    VARCHAR(100) NOT NULL,
+    input_record_ids JSONB       NOT NULL,
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Create indexes (same as production)
 CREATE INDEX IF NOT EXISTS idx_user_profiles_external_auth_id ON user_profiles(external_auth_id);
 CREATE INDEX IF NOT EXISTS idx_user_profiles_email ON user_profiles(email);
@@ -125,3 +154,6 @@ CREATE INDEX IF NOT EXISTS idx_medical_records_record_type ON medical_records(re
 CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_resource_type ON audit_logs(resource_type);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_ai_jobs_status_marked_at ON ai_analysis_jobs (status, marked_at);
+CREATE INDEX IF NOT EXISTS idx_ai_results_patient_id ON ai_analysis_results (patient_id);
+CREATE INDEX IF NOT EXISTS idx_ai_results_generated_at ON ai_analysis_results (generated_at DESC);
