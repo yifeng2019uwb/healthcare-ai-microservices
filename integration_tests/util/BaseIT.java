@@ -12,8 +12,9 @@ public abstract class BaseIT {
 
     @BeforeAll
     static void configureRestAssured() {
-        RestAssured.baseURI = System.getProperty("gateway.url",
-                "https://gateway-dev-824144893232.us-west1.run.app");
+        // RestAssured.baseURI = System.getProperty("gateway.url",
+        //         "https://gateway-dev-824144893232.us-west1.run.app");
+        RestAssured.baseURI = System.getProperty("gateway.url", "http://localhost:8080");
     }
 
     /**

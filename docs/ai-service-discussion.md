@@ -17,7 +17,7 @@ This framing applies to every design decision below.
 | Dimension | Current scope              | Future scale |
 |-----------|----------------------------|-----------------------------------------------|
 | Language  | Java (same stack, same DB) | Add Python service if custom ML models needed |
-| Trigger   | Transactional outbox: provider API write → `ai_analysis_pending` → `@Scheduled` consumer | Scale to Pub/Sub: outbox publisher → AI subscriber (same table, zero API change) |
+| Trigger   | RabbitMQ: provider write → publish to `healthcare.ai` exchange → ai-service `@RabbitListener` | Add concurrency in Spring AMQP; swap to GCP Pub/Sub if moving fully to GCP |
 | Input data| Conditions + allergies + encounters | + Medications + observations (load CSVs first) |
 | Output    | Summarization + risk flags | + Care gaps, medication review, Blue Button claims |
 | Access    | PROVIDER only              | + PATIENT-facing summaries |
@@ -99,9 +99,9 @@ internal Pub/Sub). High operational complexity.
 | Data freshness        | Always current            | Near-real-time            | Daily |
 | CMS relevance         | High — aligns with CDS Hooks intent | Medium          | Medium |
 
-### Final Design (decided 2026-05-15)
+### Final Design (decided 2026-05-21)
 
-**Transactional outbox + Spring `@Scheduled` consumer. Provider API is the trigger. No HTTP endpoint for AI invocation.**
+**RabbitMQ pub/sub. Provider service publishes on clinical record save. AI service is the subscriber. No polling, no DB queue table.**
 
 #### Why asynchronous?
 
@@ -116,84 +116,66 @@ write path from the compute path eliminates this dependency entirely.
 A provider entering a full visit's diagnoses might save 5 conditions in 30 seconds.
 Synchronous triggers would fire 5 Gemini calls for the same patient — each seeing a
 partial picture. The 5th analysis (all conditions present) is the only one that matters
-clinically. The outbox UPSERT ensures only the final state triggers analysis, making
-the result more accurate, not just cheaper.
+clinically. The consumer-side debounce check ensures only one Gemini call fires after
+all updates settle, making the result more accurate, not just cheaper.
 
 **3. External API failures must not block clinical workflows**
 Gemini is an external service — it can be down (503), rate-limited (429), or slow
 (timeout). If the AI call is synchronous, every condition save fails when Gemini has
-issues. Providers cannot record patient data because an AI service is unavailable.
-That is an unacceptable failure mode in a clinical system. With the outbox, the
-condition saves successfully, the job waits, and analysis completes when Gemini
-recovers — with no data loss and no provider-facing error.
+issues. With RabbitMQ, the condition saves successfully, the message waits in the queue,
+and analysis completes when Gemini recovers — with no data loss and no provider-facing error.
+RabbitMQ's DLQ handles persistent failures without blocking the main queue.
 
 **4. Governance requires a single controlled entrypoint**
 If AI calls are triggered inline from `ConditionService`, `AllergyService`,
 `EncounterService` — governance logic (audit logging, PHI handling, rate limits,
-model version pinning) must be replicated in every caller. With the scheduler as
-the single entrypoint, those controls live in one place. Every Gemini call that
-ever runs in this system goes through `AiAnalysisScheduler.processPending()` —
-auditable, controllable, and consistent.
-
-The key insight: separate the trigger from the analysis. When a provider saves a condition
-or allergy, that write marks a patient as needing re-analysis — it does not call Gemini
-synchronously. A background scheduler picks up pending patients and runs Gemini in bulk.
-The read API always returns from `ai_analysis_results` — the trigger mechanism is an
-internal implementation detail the API contract never exposes.
+model version pinning) must be replicated in every caller. With the RabbitMQ consumer
+as the single entrypoint, those controls live in one place. Every Gemini call that
+ever runs in this system goes through the ai-service listener — auditable, controllable,
+and consistent.
 
 #### Data flow
 
 ```
 Provider POST /api/conditions  (or /api/allergies)
   └─ ConditionService.save()
-       └─ INSERT INTO ai_analysis_pending (patient_id, marked_at, triggered_by)
-            ON CONFLICT (patient_id) DO UPDATE
-              SET marked_at = NOW(), status = 'PENDING', triggered_by = EXCLUDED.triggered_by
-            -- triggered_by = provider user ID from JWT; last writer wins on rapid updates
+       └─ rabbitTemplate.convertAndSend("healthcare.ai", "patient.clinical.updated", payload)
+            payload: { patientId, triggerType, triggeredBy, recordId }
 
-@Scheduled every 30s — AiAnalysisScheduler.processPending()
-  └─ SELECT patient_id FROM ai_analysis_pending
-       WHERE status = 'PENDING'
-         AND marked_at < NOW() - INTERVAL '30 seconds'   ← debounce window
-         AND (lock_expires_at IS NULL OR lock_expires_at < NOW())
-       LIMIT 10
-  └─ For each patient:
-       └─ UPDATE ai_analysis_pending SET status='PROCESSING', lock_expires_at = NOW() + INTERVAL '5 minutes'
-            WHERE patient_id = ? AND status = 'PENDING'   ← atomic lock, 1 row updated = success
-       └─ Check ai_analysis_results: if fresh result exists (< 5 min), skip Gemini call
-       └─ Fetch patient data (conditions, allergies, encounters)
-       └─ Call Gemini → structured JSON response
-       └─ INSERT INTO ai_analysis_results (..., triggered_by copied from ai_analysis_pending row)
-       └─ On success: UPDATE ai_analysis_pending SET status='COMPLETED', completed_at = NOW()
-       └─ On failure: UPDATE ai_analysis_pending SET status='FAILED', completed_at = NOW(),
-                        last_error = '<exception message>', retry_count = retry_count + 1
+ai-service — @RabbitListener("ai.patient-clinical-update")
+  └─ Debounce check: query ai_analysis_results for result generated < 30s ago for this patient
+       └─ If fresh result exists → ack message, skip Gemini call
+  └─ Fetch patient data (conditions, allergies, encounters)
+  └─ Call Gemini → structured JSON response
+  └─ INSERT INTO ai_analysis_results (governance fields from message payload)
+  └─ ack message
 
-On scheduler startup:
-  └─ UPDATE ai_analysis_pending SET status='PENDING', lock_expires_at = NULL
-       WHERE status = 'PROCESSING' AND lock_expires_at < NOW()   ← release stale locks
-
-Periodic cleanup:
-  └─ DELETE FROM ai_analysis_pending
-       WHERE (status = 'COMPLETED' AND completed_at < NOW() - INTERVAL '24 hours')
-          OR (status = 'FAILED'    AND completed_at < NOW() - INTERVAL '7 days')
+  On failure (Gemini down, DB error, validation error):
+  └─ nack → RabbitMQ retries (max 3, with backoff via x-death header)
+  └─ After 3 failures → message routes to DLQ (ai.patient-clinical-update.dlq)
 ```
 
-#### `ai_analysis_pending` schema
+#### RabbitMQ topology
 
-```sql
-CREATE TABLE ai_analysis_pending (
-    patient_id      UUID        PRIMARY KEY,   -- one row per patient, never duplicates
-    marked_at       TIMESTAMP   NOT NULL DEFAULT NOW(),
-    triggered_by    UUID        NULL,          -- provider user ID from JWT; last writer wins
-    status          VARCHAR(20) NOT NULL DEFAULT 'PENDING',  -- PENDING | PROCESSING | COMPLETED | FAILED
-    lock_expires_at TIMESTAMP   NULL,
-    completed_at    TIMESTAMP   NULL,
-    last_error      TEXT        NULL,
-    retry_count     INT         NOT NULL DEFAULT 0
-);
+| Component | Name | Purpose |
+|---|---|---|
+| Exchange | `healthcare.ai` | Topic exchange, durable |
+| Queue | `ai.patient-clinical-update` | Main consumer queue, durable, DLQ-bound |
+| DLQ | `ai.patient-clinical-update.dlq` | Failed messages after 3 retries |
+| Routing key | `patient.clinical.updated` | All clinical update events |
+
+#### Message payload
+
+```json
+{
+  "patientId": "uuid",
+  "triggerType": "CONDITION_ADDED",
+  "triggeredBy": "uuid",
+  "recordId": "uuid"
+}
 ```
 
-#### `ai_analysis_results` schema (governance fields required)
+#### `ai_analysis_results` schema (governance fields required — append-only)
 
 ```sql
 CREATE TABLE ai_analysis_results (
@@ -202,32 +184,50 @@ CREATE TABLE ai_analysis_results (
     generated_at     TIMESTAMP   NOT NULL DEFAULT NOW(),
     summary          TEXT        NOT NULL,
     risk_flags       JSONB       NOT NULL,
-    -- AI governance fields (append-only, immutable after insert)
-    trigger_type     VARCHAR(50) NOT NULL,  -- 'CONDITION_ADDED' | 'ALLERGY_ADDED' | 'MANUAL'
-    triggered_by     UUID        NULL,      -- copied from ai_analysis_pending; NULL if multiple providers updated within debounce window
-    model_version    VARCHAR(50) NOT NULL,  -- e.g. 'gemini-1.5-pro-002'
-    input_record_ids JSONB       NOT NULL   -- IDs of conditions/allergies included in this call
+    -- AI governance fields (immutable after insert)
+    trigger_type     VARCHAR(50) NOT NULL,   -- CONDITION_ADDED | ALLERGY_ADDED | MANUAL
+    triggered_by     UUID        NULL,       -- provider user ID from message payload
+    model_version    VARCHAR(100) NOT NULL,  -- e.g. 'gemini-1.5-pro-002'
+    input_record_ids JSONB       NOT NULL    -- UUIDs of conditions/allergies included in this call
 );
 ```
 
-#### Three-layer idempotency
+#### Idempotency
 
 | Layer | Mechanism | Prevents |
-|-------|-----------|----------|
-| 1. Dedup on write | `ON CONFLICT (patient_id) DO UPDATE` | Duplicate outbox rows from concurrent saves |
-| 2. Atomic processing lock | Single-row UPDATE with status check — only 1 scheduler instance wins | Parallel schedulers running Gemini twice for same patient |
-| 3. Freshness check | Check `ai_analysis_results` before calling Gemini | Gemini call on restart after DB write but before DELETE from outbox |
+|---|---|---|
+| Debounce check | Query `ai_analysis_results` before Gemini call — skip if result < 30s old | Duplicate Gemini calls for rapid condition updates |
+| At-least-once ack | Message acked only after successful DB write | Message loss on consumer crash |
+| DLQ isolation | Failed messages parked in DLQ after 3 retries | Poison messages blocking the main queue |
+
+#### Local dev
+
+```yaml
+# docker-compose.yml
+rabbitmq:
+  image: rabbitmq:3-management
+  ports:
+    - "5672:5672"    # AMQP
+    - "15672:15672"  # Management UI (guest/guest)
+```
+
+#### Spring Boot wiring (overview)
+
+```
+provider-service: spring-boot-starter-amqp → RabbitTemplate.convertAndSend(...)
+ai-service:       spring-boot-starter-amqp → @RabbitListener("ai.patient-clinical-update")
+```
+
+Queue/DLQ declaration handled by ai-service `RabbitMQConfig` on startup — no manual broker setup needed.
 
 #### Scale path
 
 ```
-Current:   ConditionService → INSERT INTO ai_analysis_pending → @Scheduled
-Next:      ConditionService → INSERT INTO ai_analysis_pending → also publish to Pub/Sub topic
-           Add AI subscriber: Pub/Sub → INSERT INTO ai_analysis_pending (same table, same scheduler)
-Ultimate:  Debezium CDC on ai_analysis_pending → Kafka topic → distributed AI consumers
+Current:  RabbitMQ single consumer (concurrency=1)
+Next:     Increase Spring AMQP concurrency — multiple threads consume in parallel, same queue
+Ultimate: Swap to GCP Pub/Sub if fully migrating to GCP — same message contract,
+          same ai_analysis_results table, zero API changes
 ```
-
-Zero changes to the read API or `ai_analysis_results` table at any scale step.
 
 ---
 
@@ -442,7 +442,7 @@ No gateway changes needed for this expansion, only AI service logic.
 | Question | Recommendation | Scale path |
 |---|---|---|
 | Language | Java / Spring Boot | Add Python service if custom ML needed |
-| Trigger | Transactional outbox + `@Scheduled` (30s debounce) | Pub/Sub publisher → AI subscriber → same table |
+| Trigger | RabbitMQ pub/sub + `@RabbitListener` (consumer-side 30s debounce check) | Increase AMQP concurrency; swap to GCP Pub/Sub if fully on GCP |
 | Input data | Minimal (conditions, allergies, encounters) | + Medications + observations (next pass) |
 | Output | Summarization + risk flags | + Care gaps, medication flags |
 | Blue Button | Defer | Add after core endpoint is stable |
@@ -475,6 +475,7 @@ No gateway changes needed for this expansion, only AI service logic.
 - 2026-05-15: ai_analysis_results is append-only and immutable after insert; governance fields required: trigger_type, triggered_by, model_version, input_record_ids
 - 2026-05-15: Simulation strategy — 1000 Synthea patients; conditions.csv + allergies.csv split 500/500; first 500 bulk imported as baseline history; second 500 fed row-by-row via provider POST API to trigger outbox → AI
 - 2026-05-15: Scale path confirmed — outbox → Pub/Sub publisher + AI subscriber → same table; ultimate scale via Debezium CDC → Kafka; zero API changes at any step
+- 2026-05-21: Trigger mechanism revised — dropped transactional outbox (ai_analysis_jobs table + @Scheduled polling) in favor of RabbitMQ pub/sub; ai_analysis_results table unchanged; CloudAMQP free tier for cloud, rabbitmq:3-management Docker image for local dev; debounce moved to consumer-side check on ai_analysis_results; DLQ replaces retry_count logic
 - 2026-05-15: CDS Hooks wording softened — "widely aligned with modern EHR interoperability patterns" not "CMS mandates"; CMS explainability expectation is strong preference not a named legal requirement
 - 2026-05-15: triggered_by added to ai_analysis_pending at insert time (provider ID from JWT); last writer wins on rapid updates; copied to ai_analysis_results at processing time
 - 2026-05-15: ai_analysis_pending extended with COMPLETED/FAILED states, completed_at, last_error, retry_count — COMPLETED rows purged after 24h, FAILED after 7d; failure inspection and retry without re-triggering provider flow

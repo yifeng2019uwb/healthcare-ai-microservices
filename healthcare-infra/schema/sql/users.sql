@@ -11,11 +11,13 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash   VARCHAR(255) NOT NULL,          -- BCrypt hashed, never plain text
     role            VARCHAR(20) NOT NULL,            -- PATIENT, PROVIDER, ADMIN
     is_active       BOOLEAN NOT NULL DEFAULT true,
+    fhir_id         UUID,                            -- UUID of linked patient/provider record; null for ADMIN
     created_at      TIMESTAMPTZ DEFAULT NOW(),
     updated_at      TIMESTAMPTZ DEFAULT NOW(),
     updated_by      VARCHAR(100) DEFAULT 'system'
 );
 
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_email    ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_role     ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_fhir_id  ON users(fhir_id);

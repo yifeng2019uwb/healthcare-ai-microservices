@@ -12,6 +12,10 @@ spring:
     hikari:
       maximum-pool-size: 2
       minimum-idle: 1
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:

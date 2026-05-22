@@ -28,7 +28,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-GATEWAY_URL="${GATEWAY_URL:-https://gateway-dev-824144893232.us-west1.run.app}"
+GATEWAY_URL="${GATEWAY_URL:-}"
 CSV_DIR="${CSV_DIR:-$SCRIPT_DIR/test-data/csv}"
 POM="$SCRIPT_DIR/pom.xml"
 
@@ -37,12 +37,14 @@ ok()    { echo -e "${GREEN}✓ $1${NC}"; }
 fail()  { echo -e "${RED}✗ $1${NC}"; exit 1; }
 stage() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
 
+GATEWAY_PROP="${GATEWAY_URL:+-Dgateway.url=$GATEWAY_URL}"
+
 run_junit() {
   local label=$1
   local class=$2
   stage "$label"
   mvn failsafe:integration-test failsafe:verify -f "$POM" \
-    -Dgateway.url="$GATEWAY_URL" \
+    $GATEWAY_PROP \
     -Dit.test="$class" \
     -q
   ok "$label passed"
@@ -54,7 +56,7 @@ run_class() {
   stage "$label"
   mvn exec:java -f "$POM" \
     -Dexec.mainClass="$class" \
-    -Dgateway.url="$GATEWAY_URL" \
+    $GATEWAY_PROP \
     -q
   ok "$label passed"
 }
@@ -64,7 +66,7 @@ run_admin() {
   [[ -d "$CSV_DIR" ]] \
     || fail "Test CSV data not found at $CSV_DIR — run: ./healthcare-infra/synthea/run-synthea.sh test-data <n>"
   mvn failsafe:integration-test failsafe:verify -f "$POM" \
-    -Dgateway.url="$GATEWAY_URL" \
+    $GATEWAY_PROP \
     -Dtest.csv.dir="$CSV_DIR" \
     -Dit.test="admin.AdminImportIT" \
     -q

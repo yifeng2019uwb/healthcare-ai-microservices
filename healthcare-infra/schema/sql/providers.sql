@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS providers (
 
     -- Contact and professional info
     npi             VARCHAR(10) UNIQUE,  -- National Provider Identifier (10-digit federal CMS id)
-    phone           VARCHAR(20),         -- contact number
+    phone           VARCHAR(50),         -- contact number
     license_number  VARCHAR(50),         -- medical license
     is_active       BOOLEAN NOT NULL DEFAULT true,  -- active/inactive in system
     bio             TEXT,                -- provider bio/description

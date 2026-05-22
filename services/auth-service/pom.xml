@@ -87,17 +87,6 @@
         </dependency>
 
         <!-- ================================================================ -->
-        <!-- GCP — Secret Manager for RS256 private/public keys              -->
-        <!-- Accessed via Workload Identity Federation — no JSON key files     -->
-        <!-- ================================================================ -->
-
-        <dependency>
-            <groupId>com.google.cloud</groupId>
-            <artifactId>spring-cloud-gcp-starter-secretmanager</artifactId>
-            <version>4.10.0</version>
-        </dependency>
-
-        <!-- ================================================================ -->
         <!-- JSON                                                              -->
         <!-- ================================================================ -->
 

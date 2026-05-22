@@ -42,3 +42,4 @@ CREATE OR REPLACE TRIGGER trg_allergies_updated_at
 CREATE OR REPLACE TRIGGER trg_audit_logs_updated_at
     BEFORE UPDATE ON audit_logs
     FOR EACH ROW EXECUTE FUNCTION update_timestamp_column();
+

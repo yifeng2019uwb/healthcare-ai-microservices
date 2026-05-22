@@ -21,6 +21,9 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'appointment_role') THEN
         CREATE ROLE appointment_role;
     END IF;
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ai_role') THEN
+        CREATE ROLE ai_role;
+    END IF;
 END $$;
 
 -- =============================================================================
@@ -90,3 +93,21 @@ GRANT auth_role TO auth_service_user;
 GRANT patient_role TO patient_service_user;
 GRANT provider_role TO provider_service_user;
 GRANT appointment_role TO appointment_service_user;
+
+-- =============================================================================
+-- ai_role — reads clinical data; owns ai_analysis_results
+-- =============================================================================
+GRANT SELECT ON patients    TO ai_role;
+GRANT SELECT ON conditions  TO ai_role;
+GRANT SELECT ON allergies   TO ai_role;
+GRANT SELECT ON encounters  TO ai_role;
+GRANT SELECT, INSERT        ON ai_analysis_results          TO ai_role;
+GRANT INSERT                ON audit_logs                   TO ai_role;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ai_service_user') THEN
+        CREATE USER ai_service_user WITH PASSWORD 'PLACEHOLDER_SET_VIA_SECRET';
+    END IF;
+END $$;
+
+GRANT ai_role TO ai_service_user;

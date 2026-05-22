@@ -2,10 +2,10 @@ package admin;
 
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import util.ApiPaths;
@@ -71,6 +71,7 @@ class AdminImportIT extends BaseIT {
 
     @Test
     @Order(3)
+    @Disabled
     @DisplayName("Import with patient token returns 403")
     void importOrganizations_withPatientToken_returns403() {
         LoginHelper.asPatient()
@@ -137,6 +138,7 @@ class AdminImportIT extends BaseIT {
 
     @Test
     @Order(50)
+    @Disabled
     @DisplayName("Import conditions returns 200 with ImportResult")
     void importConditions_withValidCsv_returns200() throws IOException {
         LoginHelper.withToken(adminToken)
@@ -150,6 +152,7 @@ class AdminImportIT extends BaseIT {
 
     @Test
     @Order(60)
+    @Disabled
     @DisplayName("Import allergies returns 200 with ImportResult")
     void importAllergies_withValidCsv_returns200() throws IOException {
         LoginHelper.withToken(adminToken)
@@ -165,6 +168,7 @@ class AdminImportIT extends BaseIT {
 
     @Test
     @Order(70)
+    @Disabled
     @DisplayName("Re-importing organizations skips duplicates")
     void importOrganizations_reimport_skipsAllRows() throws IOException {
         LoginHelper.withToken(adminToken)

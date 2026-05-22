@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS patients (
                          DEFAULT 'MRN-' || LPAD(nextval('mrn_seq')::TEXT, 6, '0'),
 
     -- Contact and medical info
-    phone                VARCHAR(20),              -- contact number for appointments
+    phone                VARCHAR(50),              -- contact number for appointments
     emergency_contact    VARCHAR(255),             -- emergency contact info
     blood_type           VARCHAR(5),               -- A+, B-, O+, etc. nullable
     notes                TEXT,                     -- general notes

@@ -285,7 +285,7 @@ public final class DatabaseConstants {
 
     // patients — application fields
     public static final int LEN_MRN               = 20;
-    public static final int LEN_PHONE             = 20;
+    public static final int LEN_PHONE             = 50;
     public static final int LEN_EMERGENCY_CONTACT = 255;
     public static final int LEN_BLOOD_TYPE        = 5;
 
@@ -333,37 +333,23 @@ public final class DatabaseConstants {
 
     public static final int LEN_NOTES            = 2000;
 
-    // ==================== AI ANALYSIS TABLE NAMES ====================
+    // ==================== AI ANALYSIS RESULTS ====================
 
-    public static final String TABLE_AI_ANALYSIS_JOBS    = "ai_analysis_jobs";
     public static final String TABLE_AI_ANALYSIS_RESULTS = "ai_analysis_results";
 
-    // ==================== AI ANALYSIS COLUMNS ====================
-
-    public static final String COL_MARKED_AT         = "marked_at";
     public static final String COL_TRIGGERED_BY      = "triggered_by";
+    public static final String COL_ARCHIVED          = "archived";
     public static final String COL_TRIGGER_TYPE      = "trigger_type";
-    public static final String COL_LOCK_EXPIRES_AT   = "lock_expires_at";
-    public static final String COL_COMPLETED_AT      = "completed_at";
-    public static final String COL_LAST_ERROR        = "last_error";
-    public static final String COL_RETRY_COUNT       = "retry_count";
-    public static final String COL_NEXT_RETRY_AT     = "next_retry_at";
     public static final String COL_GENERATED_AT      = "generated_at";
     public static final String COL_AI_SUMMARY        = "summary";
     public static final String COL_RISK_FLAGS        = "risk_flags";
     public static final String COL_MODEL_VERSION     = "model_version";
     public static final String COL_INPUT_RECORD_IDS  = "input_record_ids";
 
-    // ==================== AI ANALYSIS INDEX NAMES ====================
-
-    public static final String INDEX_AI_JOBS_STATUS_MARKED    = "idx_ai_jobs_status_marked_at";
-    public static final String INDEX_AI_RESULTS_PATIENT_ID    = "idx_ai_results_patient_id";
-    public static final String INDEX_AI_RESULTS_GENERATED_AT  = "idx_ai_results_generated_at";
-
-    // ==================== AI ANALYSIS COLUMN LENGTHS ====================
+    public static final String INDEX_AI_RESULTS_PATIENT_HISTORY = "idx_ai_results_patient_history";
+    public static final String INDEX_AI_RESULTS_GENERATED_AT    = "idx_ai_results_generated_at";
 
     public static final int LEN_TRIGGER_TYPE  = 50;
-    public static final int LEN_AI_JOB_STATUS = 20;
     public static final int LEN_MODEL_VERSION = 100;
 
     // ==================== DECIMAL PRECISION AND SCALE (LEN_) ====================
