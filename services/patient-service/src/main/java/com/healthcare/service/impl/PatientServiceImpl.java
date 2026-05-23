@@ -90,6 +90,7 @@ public class PatientServiceImpl implements PatientService {
                 .withUserRole(UserRole.PATIENT)
                 .withResourceId(patient.getId()));
 
+        log.info("Patient profile updated: authId={}, username={}", authId, username);
         return PatientProfileResponse.from(patient);
     }
 

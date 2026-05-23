@@ -12,6 +12,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -25,11 +26,6 @@ import java.util.UUID;
 /**
  * Provider entity mapping to the providers table.
  *
- * Registration flow:
- *   1. Admin creates provider record → provider_code auto-generated
- *   2. Admin gives provider_code to provider
- *   3. Provider registers with provider_code + name
- *
  * Trimming and business validation belongs in the service layer.
  * Entity only checks structural requirements.
  */
@@ -42,17 +38,26 @@ import java.util.UUID;
                   columnList = DatabaseConstants.COL_AUTH_ID),
            @Index(name = DatabaseConstants.INDEX_PROVIDERS_SPECIALITY,
                   columnList = DatabaseConstants.COL_SPECIALITY),
-           @Index(name = DatabaseConstants.INDEX_PROVIDERS_CODE,
-                  columnList = DatabaseConstants.COL_PROVIDER_CODE),
            @Index(name = DatabaseConstants.INDEX_PROVIDERS_ACTIVE,
-                  columnList = DatabaseConstants.COL_IS_ACTIVE)
+                  columnList = DatabaseConstants.COL_IS_ACTIVE),
+           @Index(name = DatabaseConstants.INDEX_PROVIDERS_NAME,
+                  columnList = DatabaseConstants.COL_NAME + "," + DatabaseConstants.COL_ORGANIZATION_ID)
        })
-public class Provider extends ProfileBaseEntity {
+public class Provider extends BaseEntity {
 
     private static final String FIELD_PROVIDER_NAME  = "Provider name";
     private static final String FIELD_LICENSE_NUMBER  = "License number";
     private static final String FIELD_PHONE = "Phone";
     private static final String FIELD_ORGANIZATION_ID = "Organization ID";
+
+    // ------------------------------------------------------------------
+    // Identity
+    // ------------------------------------------------------------------
+
+    @Id
+    @Column(name = DatabaseConstants.COL_ID, updatable = false, nullable = false,
+            columnDefinition = "UUID DEFAULT gen_random_uuid()")
+    private UUID id;
 
     // ------------------------------------------------------------------
     // Synthea fields
@@ -91,15 +96,6 @@ public class Provider extends ProfileBaseEntity {
      */
     @Column(name = DatabaseConstants.COL_AUTH_ID, unique = true)
     private UUID authId;
-
-    /**
-     * Provider code — service-generated before save.
-     * Format: PRV-000001 (or any unique format chosen by the service).
-     * Used for provider registration: provider_code + name must match.
-     */
-    @Size(max = DatabaseConstants.LEN_PROVIDER_CODE)
-    @Column(name = DatabaseConstants.COL_PROVIDER_CODE, unique = true)
-    private String providerCode;
 
     @Size(max = DatabaseConstants.LEN_PHONE)
     @Pattern(regexp = ValidationPatterns.PHONE,
@@ -200,21 +196,6 @@ public class Provider extends ProfileBaseEntity {
         this.authId = userId;
     }
 
-    /**
-     * Validate registration credentials.
-     * Provider must provide provider_code + name to register.
-     *
-     * @param providerCode provided provider code
-     * @param name         provided name
-     * @return true if credentials match this provider record
-     */
-    public boolean matchesRegistrationCredentials(String providerCode, String name) {
-        if (providerCode == null || name == null)
-            return false;
-        return this.providerCode.equalsIgnoreCase(providerCode)
-                && this.name.equalsIgnoreCase(name.trim());
-    }
-
     public boolean isActive() {
         return Boolean.TRUE.equals(isActive);
     }
@@ -223,6 +204,12 @@ public class Provider extends ProfileBaseEntity {
     // Getters
     // ------------------------------------------------------------------
 
+    public UUID getId()                { return id; }
+    public void setId(UUID id) {
+        if (this.id != null) throw new ValidationException("ID is already set and cannot be changed");
+        this.id = id;
+    }
+
     public UUID getOrganizationId()   { return organizationId; }
     public String getName()           { return name; }
     public Gender getGender()         { return gender; }
@@ -230,7 +217,6 @@ public class Provider extends ProfileBaseEntity {
     public Integer getEncounters()    { return encounters; }
     public Integer getProcedures()    { return procedures; }
     public UUID getAuthId()           { return authId; }
-    public String getProviderCode()   { return providerCode; }
     public String getPhone()          { return phone; }
     public String getLicenseNumber()  { return licenseNumber; }
     public String getNpi()            { return npi; }
@@ -242,13 +228,6 @@ public class Provider extends ProfileBaseEntity {
     // ------------------------------------------------------------------
     // Setters
     // authId — set only via linkAuthAccount(), no direct setter
-
-    /** Write-once — throws if provider code is already assigned. */
-    public void setProviderCode(String providerCode) {
-        if (this.providerCode != null)
-            throw new ValidationException("Provider code is already assigned and cannot be changed");
-        this.providerCode = providerCode;
-    }
 
     public void setName(String name) {
         this.name = ValidationUtils.validateAndNormalizeString(

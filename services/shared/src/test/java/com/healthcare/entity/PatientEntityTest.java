@@ -19,10 +19,8 @@ class PatientEntityTest {
     private String first_name = "John";
     private String last_name = "Doe";
 
-    private String mrn = "MRN-000001";
-
     private Patient createPatient() {
-        return new Patient(mrn, first_name, last_name);
+        return new Patient(first_name, last_name);
     }
 
     @Test
@@ -32,30 +30,25 @@ class PatientEntityTest {
         assertThat(patient.getFirstName()).isEqualTo(first_name);
         assertThat(patient.getLastName()).isEqualTo(last_name);
         assertThat(patient.getFullName()).isEqualTo(first_name + " " + last_name);
-        assertThat(patient.getMrn()).isEqualTo(mrn);
         assertThat(patient.getAuthId()).isNull();
         assertThat(patient.getUser()).isNull();
     }
 
     @Test
     void testConstructorValidation() {
-        assertThatThrownBy(() -> new Patient(null, first_name, last_name))
-                .isInstanceOf(ValidationException.class)
-                .hasMessage("MRN is required");
-
-        assertThatThrownBy(() -> new Patient(mrn, null, last_name))
+        assertThatThrownBy(() -> new Patient(null, last_name))
                 .isInstanceOf(ValidationException.class)
                 .hasMessage("First name is required");
 
-        assertThatThrownBy(() -> new Patient(mrn, first_name, null))
+        assertThatThrownBy(() -> new Patient(first_name, null))
                 .isInstanceOf(ValidationException.class)
                 .hasMessage("Last name is required");
 
-        assertThatThrownBy(() -> new Patient(mrn, "  ", last_name))
+        assertThatThrownBy(() -> new Patient("  ", last_name))
                 .isInstanceOf(ValidationException.class)
                 .hasMessage("First name is required");
 
-        assertThatThrownBy(() -> new Patient(mrn, first_name, "   "))
+        assertThatThrownBy(() -> new Patient(first_name, "   "))
                 .isInstanceOf(ValidationException.class)
                 .hasMessage("Last name is required");
     }
@@ -118,26 +111,6 @@ class PatientEntityTest {
         assertThatThrownBy(() -> patient.linkAuthAccount(null))
                 .isInstanceOf(ValidationException.class)
                 .hasMessage("User ID cannot be null");
-    }
-
-    @Test
-    void testMatchesRegistrationCredentials() {
-        Patient patient = createPatient();
-        String mrn = "MRN-000123";
-
-        try {
-            java.lang.reflect.Field mrnField = Patient.class.getDeclaredField("mrn");
-            mrnField.setAccessible(true);
-            mrnField.set(patient, mrn);
-        } catch (Exception e) {
-            fail("Failed to set mrn field via reflection: " + e.getMessage());
-        }
-
-        assertThat(patient.matchesRegistrationCredentials(mrn, first_name, last_name)).isTrue();
-        assertThat(patient.matchesRegistrationCredentials("MRN-999999", first_name, last_name)).isFalse();
-        assertThat(patient.matchesRegistrationCredentials(null, first_name, last_name)).isFalse();
-        assertThat(patient.matchesRegistrationCredentials(mrn, null, last_name)).isFalse();
-        assertThat(patient.matchesRegistrationCredentials(mrn, first_name, null)).isFalse();
     }
 
     @Test

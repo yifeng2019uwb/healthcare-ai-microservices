@@ -23,26 +23,7 @@ class PatientDaoTest {
     private PatientDao patientDao;
 
     private Patient newPatient() {
-        return new Patient("MRN-000001", "John", "Doe");
-    }
-
-    @Test
-    void findByMrn_returnsPatient() {
-        Patient patient = newPatient();
-        when(patientDao.findByMrn("MRN-000001")).thenReturn(Optional.of(patient));
-
-        Optional<Patient> result = patientDao.findByMrn("MRN-000001");
-
-        assertThat(result).isPresent();
-        assertThat(result.get().getFirstName()).isEqualTo("John");
-        verify(patientDao).findByMrn("MRN-000001");
-    }
-
-    @Test
-    void findByMrn_returnsEmpty_whenNotFound() {
-        when(patientDao.findByMrn("MRN-999999")).thenReturn(Optional.empty());
-
-        assertThat(patientDao.findByMrn("MRN-999999")).isEmpty();
+        return new Patient("John", "Doe");
     }
 
     @Test
@@ -61,20 +42,6 @@ class PatientDaoTest {
         when(patientDao.findByAuthId(authId)).thenReturn(Optional.empty());
 
         assertThat(patientDao.findByAuthId(authId)).isEmpty();
-    }
-
-    @Test
-    void existsByMrn_returnsTrue() {
-        when(patientDao.existsByMrn("MRN-000001")).thenReturn(true);
-
-        assertThat(patientDao.existsByMrn("MRN-000001")).isTrue();
-    }
-
-    @Test
-    void existsByMrn_returnsFalse_whenNotFound() {
-        when(patientDao.existsByMrn("MRN-999999")).thenReturn(false);
-
-        assertThat(patientDao.existsByMrn("MRN-999999")).isFalse();
     }
 
     @Test

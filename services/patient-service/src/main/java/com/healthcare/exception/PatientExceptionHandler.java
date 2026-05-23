@@ -32,7 +32,7 @@ public class PatientExceptionHandler {
                 .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
                 .findFirst()
                 .orElse("Validation failed");
-        log.debug("Validation error: {}", message);
+        log.warn("Validation error: {}", message);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(400, message));
@@ -45,7 +45,7 @@ public class PatientExceptionHandler {
                 .map(cv -> cv.getPropertyPath() + ": " + cv.getMessage())
                 .findFirst()
                 .orElse("Validation failed");
-        log.debug("Constraint violation: {}", message);
+        log.warn("Constraint violation: {}", message);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(400, message));
@@ -53,7 +53,7 @@ public class PatientExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleNotReadable(HttpMessageNotReadableException e) {
-        log.debug("Malformed request body: {}", e.getMessage());
+        log.warn("Malformed request body: {}", e.getMessage());
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(400, "Malformed request body"));
@@ -61,7 +61,7 @@ public class PatientExceptionHandler {
 
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<ErrorResponse> handleMissingHeader(MissingRequestHeaderException e) {
-        log.debug("Missing required header: {}", e.getHeaderName());
+        log.warn("Missing required header: {}", e.getHeaderName());
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(400, "Missing required header: " + e.getHeaderName()));

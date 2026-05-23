@@ -50,9 +50,9 @@ public final class FhirMapper {
         resource.put("resourceType", "Patient");
         resource.put("id", p.id() != null ? p.id().toString() : null);
 
-        // Identifier — MRN as internal system identifier
+        // Identifier — internal patient UUID as system identifier (MRN removed from design)
         resource.put("identifier", List.of(
-                coding("urn:oid:2.16.840.1.113883.4.6", p.mrn())
+                coding("urn:oid:2.16.840.1.113883.4.6", p.id() != null ? p.id().toString() : null)
         ));
 
         // Human name

@@ -44,7 +44,6 @@ class ProviderProfileIT extends BaseIT {
             .statusCode(200)
             .contentType(ContentType.JSON)
             .body("id",            notNullValue())
-            .body("provider_code", notNullValue())
             .body("name",          notNullValue());
     }
 
@@ -63,8 +62,7 @@ class ProviderProfileIT extends BaseIT {
             .then()
             .statusCode(200)
             .contentType(ContentType.JSON)
-            .body("id",  notNullValue())
-            .body("mrn", notNullValue());
+            .body("id",  notNullValue());
     }
 
     @Test

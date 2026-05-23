@@ -6,13 +6,12 @@ import com.healthcare.entity.Patient;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record PatientSummaryResponse(UUID id, String name, String mrn) {
+public record PatientSummaryResponse(UUID id, String name) {
 
     public static PatientSummaryResponse from(Patient p) {
         if (p == null) return null;
         return new PatientSummaryResponse(
                 p.getId(),
-                p.getFirstName() + " " + p.getLastName(),
-                p.getMrn());
+                p.getFirstName() + " " + p.getLastName());
     }
 }

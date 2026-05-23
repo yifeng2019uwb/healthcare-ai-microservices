@@ -124,8 +124,7 @@ class EncounterEntityTest {
     }
 
     @Test
-    void extendsProfileBaseEntity() {
-        assertThat(newEncounter()).isInstanceOf(ProfileBaseEntity.class);
+    void extendsBaseEntity() {
         assertThat(newEncounter()).isInstanceOf(BaseEntity.class);
     }
 }

@@ -12,7 +12,7 @@ class PatientProfileResponseTest {
 
     @Test
     void from_mapsAllFields() {
-        Patient patient = new Patient("MRN-000001", "John", "Doe");
+        Patient patient = new Patient("John", "Doe");
         patient.setMiddleName("A");
         patient.setBirthdate(LocalDate.of(1990, 1, 15));
         patient.setGender(Gender.M);
@@ -26,7 +26,6 @@ class PatientProfileResponseTest {
 
         PatientProfileResponse response = PatientProfileResponse.from(patient);
 
-        assertThat(response.mrn()).isEqualTo("MRN-000001");
         assertThat(response.firstName()).isEqualTo("John");
         assertThat(response.middleName()).isEqualTo("A");
         assertThat(response.lastName()).isEqualTo("Doe");
@@ -43,7 +42,7 @@ class PatientProfileResponseTest {
 
     @Test
     void from_handlesNullBirthdate() {
-        Patient patient = new Patient("MRN-000001", "John", "Doe");
+        Patient patient = new Patient("John", "Doe");
 
         PatientProfileResponse response = PatientProfileResponse.from(patient);
 
@@ -52,7 +51,7 @@ class PatientProfileResponseTest {
 
     @Test
     void from_mapsPrefixSuffixRaceEthnicityEmergencyContact() {
-        Patient patient = new Patient("MRN-000001", "John", "Doe");
+        Patient patient = new Patient("John", "Doe");
         patient.setPrefix("Mr");
         patient.setSuffix("Jr");
         patient.setRace("white");
@@ -70,7 +69,7 @@ class PatientProfileResponseTest {
 
     @Test
     void from_handlesNullOptionalFields() {
-        Patient patient = new Patient("MRN-000001", "John", "Doe");
+        Patient patient = new Patient("John", "Doe");
 
         PatientProfileResponse response = PatientProfileResponse.from(patient);
 

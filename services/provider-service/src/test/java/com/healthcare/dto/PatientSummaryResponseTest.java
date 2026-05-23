@@ -17,14 +17,13 @@ class PatientSummaryResponseTest {
 
     @Test
     void from_mapsAllFields() {
-        Patient patient = new Patient("MRN-000001", "John", "Doe");
+        Patient patient = new Patient("John", "Doe");
         patient.setBirthdate(LocalDate.of(1990, 1, 15));
         patient.setGender(Gender.M);
         patient.setPhone("+15551234567");
 
         PatientSummaryResponse response = PatientSummaryResponse.from(patient, LAST_ENCOUNTER);
 
-        assertThat(response.mrn()).isEqualTo("MRN-000001");
         assertThat(response.firstName()).isEqualTo("John");
         assertThat(response.lastName()).isEqualTo("Doe");
         assertThat(response.birthdate()).isEqualTo(LocalDate.of(1990, 1, 15));
@@ -35,7 +34,7 @@ class PatientSummaryResponseTest {
 
     @Test
     void from_handlesNullGender() {
-        Patient patient = new Patient("MRN-000002", "Jane", "Doe");
+        Patient patient = new Patient("Jane", "Doe");
 
         PatientSummaryResponse response = PatientSummaryResponse.from(patient, null);
 
@@ -45,7 +44,7 @@ class PatientSummaryResponseTest {
 
     @Test
     void from_handlesNullOptionalFields() {
-        Patient patient = new Patient("MRN-000003", "Alex", "Smith");
+        Patient patient = new Patient("Alex", "Smith");
 
         PatientSummaryResponse response = PatientSummaryResponse.from(patient, null);
 

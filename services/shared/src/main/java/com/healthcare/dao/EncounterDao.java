@@ -33,6 +33,8 @@ public interface EncounterDao extends JpaRepository<Encounter, UUID> {
 
     List<Encounter> findByStartTimeBetween(OffsetDateTime start, OffsetDateTime end);
 
+    // TODO: composite indexes (provider_id, start_time) and (patient_id, start_time) would be
+    //  faster than separate single-column indexes for these range queries — tech debt
     List<Encounter> findByProviderIdAndStartTimeBetween(
             UUID providerId, OffsetDateTime start, OffsetDateTime end);
 

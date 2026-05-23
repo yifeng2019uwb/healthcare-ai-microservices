@@ -76,7 +76,6 @@ public final class DatabaseConstants {
 
     // Application fields
     public static final String COL_AUTH_ID               = "auth_id";
-    public static final String COL_MRN                   = "mrn";
     public static final String COL_EMERGENCY_CONTACT     = "emergency_contact";
     public static final String COL_BLOOD_TYPE            = "blood_type";
 
@@ -92,7 +91,6 @@ public final class DatabaseConstants {
     public static final String COL_NAME            = "name";
     public static final String COL_SPECIALITY      = "speciality";
     public static final String COL_LICENSE_NUMBER  = "license_number";
-    public static final String COL_PROVIDER_CODE   = "provider_code";
     public static final String COL_ENCOUNTERS      = "encounters";
     public static final String COL_PROCEDURES      = "procedures";
 
@@ -166,15 +164,14 @@ public final class DatabaseConstants {
 
     // patients
     public static final String INDEX_PATIENTS_AUTH_ID       = "idx_patients_auth_id";
-    public static final String INDEX_PATIENTS_MRN           = "idx_patients_mrn";
     public static final String INDEX_PATIENTS_NAME          = "idx_patients_name";
 
     // provider_profiles
     public static final String INDEX_PROVIDERS_ORGANIZATION = "idx_providers_organization";
     public static final String INDEX_PROVIDERS_AUTH_ID      = "idx_providers_auth_id";
     public static final String INDEX_PROVIDERS_SPECIALITY   = "idx_providers_speciality";
-    public static final String INDEX_PROVIDERS_CODE         = "idx_providers_code";
     public static final String INDEX_PROVIDERS_ACTIVE       = "idx_providers_active";
+    public static final String INDEX_PROVIDERS_NAME        = "idx_providers_name";
     public static final String INDEX_PROVIDERS_SPECIALTY    = "idx_provider_profiles_specialty";
 
     // Organization
@@ -284,7 +281,6 @@ public final class DatabaseConstants {
     public static final int LEN_ZIP           = 10;
 
     // patients — application fields
-    public static final int LEN_MRN               = 20;
     public static final int LEN_PHONE             = 50;
     public static final int LEN_EMERGENCY_CONTACT = 255;
     public static final int LEN_BLOOD_TYPE        = 5;
@@ -293,7 +289,6 @@ public final class DatabaseConstants {
     public static final int LEN_PROVIDER_NAME     = 255;
     public static final int LEN_PROVIDER_GENDER   = 1;
     public static final int LEN_SPECIALITY        = 100;
-    public static final int LEN_PROVIDER_CODE     = 20;
     public static final int LEN_LICENSE_NUMBER    = 50;
     public static final int LEN_NPI               = 10;
 

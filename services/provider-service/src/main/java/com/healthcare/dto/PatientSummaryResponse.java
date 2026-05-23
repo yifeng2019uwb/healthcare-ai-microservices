@@ -9,7 +9,6 @@ import java.util.UUID;
 
 public record PatientSummaryResponse(
         @JsonProperty("id")                 UUID id,
-        @JsonProperty("mrn")                String mrn,
         @JsonProperty("first_name")         String firstName,
         @JsonProperty("last_name")          String lastName,
         @JsonProperty("birthdate")          LocalDate birthdate,
@@ -20,7 +19,6 @@ public record PatientSummaryResponse(
     public static PatientSummaryResponse from(Patient p, OffsetDateTime lastEncounterDate) {
         return new PatientSummaryResponse(
                 p.getId(),
-                p.getMrn(),
                 p.getFirstName(),
                 p.getLastName(),
                 p.getBirthdate(),

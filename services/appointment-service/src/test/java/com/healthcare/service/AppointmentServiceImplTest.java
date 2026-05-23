@@ -53,7 +53,7 @@ class AppointmentServiceImplTest {
     void setUp() {
         service = new AppointmentServiceImpl(patientDao, providerDao, encounterDao, auditLogDao);
 
-        patient = new Patient("MRN-000001", "John", "Doe");
+        patient = new Patient("John", "Doe");
 
         mockProvider = mock(Provider.class);
         lenient().when(mockProvider.getId()).thenReturn(providerId);

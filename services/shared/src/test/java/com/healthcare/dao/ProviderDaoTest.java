@@ -30,25 +30,6 @@ class ProviderDaoTest {
     }
 
     @Test
-    void findByProviderCode_returnsProvider() {
-        Provider provider = newProvider();
-        when(providerDao.findByProviderCode("PRV-000001")).thenReturn(Optional.of(provider));
-
-        Optional<Provider> result = providerDao.findByProviderCode("PRV-000001");
-
-        assertThat(result).isPresent();
-        assertThat(result.get().getName()).isEqualTo("Dr. Jane Smith");
-        verify(providerDao).findByProviderCode("PRV-000001");
-    }
-
-    @Test
-    void findByProviderCode_returnsEmpty_whenNotFound() {
-        when(providerDao.findByProviderCode("PRV-999999")).thenReturn(Optional.empty());
-
-        assertThat(providerDao.findByProviderCode("PRV-999999")).isEmpty();
-    }
-
-    @Test
     void findByAuthId_returnsProvider() {
         UUID authId = UUID.randomUUID();
         Provider provider = newProvider();
@@ -92,20 +73,6 @@ class ProviderDaoTest {
         List<Provider> result = providerDao.findBySpecialityAndIsActive("Cardiology", true);
 
         assertThat(result).hasSize(1);
-    }
-
-    @Test
-    void existsByProviderCode_returnsTrue() {
-        when(providerDao.existsByProviderCode("PRV-000001")).thenReturn(true);
-
-        assertThat(providerDao.existsByProviderCode("PRV-000001")).isTrue();
-    }
-
-    @Test
-    void existsByProviderCode_returnsFalse_whenNotFound() {
-        when(providerDao.existsByProviderCode("PRV-999999")).thenReturn(false);
-
-        assertThat(providerDao.existsByProviderCode("PRV-999999")).isFalse();
     }
 
     @Test

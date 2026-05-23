@@ -4,13 +4,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.healthcare.constants.AuthConstants;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+
+import java.time.LocalDate;
 
 /**
  * Request DTO for patient registration.
  *
- * Validates MRN + first_name + last_name against the patients table.
  * Bean Validation handles API boundary rules — domain rules enforced in AuthService.
  */
 public record RegisterPatientRequest(
@@ -33,9 +36,6 @@ public record RegisterPatientRequest(
                 message = "Password must contain at least one uppercase letter, one lowercase letter, one number and one special character (@$!%*?&^#)")
         String password,
 
-        @NotBlank(message = "MRN is required")
-        String mrn,
-
         @JsonProperty("first_name")
         @NotBlank(message = "First name is required")
         @Size(max = 100, message = "First name cannot exceed 100 characters")
@@ -44,5 +44,10 @@ public record RegisterPatientRequest(
         @JsonProperty("last_name")
         @NotBlank(message = "Last name is required")
         @Size(max = 100, message = "Last name cannot exceed 100 characters")
-        String lastName
+        String lastName,
+
+        @JsonProperty("birthdate")
+        @NotNull(message = "Date of birth is required")
+        @Past(message = "Date of birth must be in the past")
+        LocalDate birthdate
 ) {}

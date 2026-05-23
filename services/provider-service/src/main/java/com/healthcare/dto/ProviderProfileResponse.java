@@ -7,7 +7,6 @@ import java.util.UUID;
 
 public record ProviderProfileResponse(
         @JsonProperty("id")             UUID id,
-        @JsonProperty("provider_code")  String providerCode,
         @JsonProperty("name")           String name,
         @JsonProperty("gender")         String gender,
         @JsonProperty("speciality")     String speciality,
@@ -21,7 +20,6 @@ public record ProviderProfileResponse(
     public static ProviderProfileResponse from(Provider p) {
         return new ProviderProfileResponse(
                 p.getId(),
-                p.getProviderCode(),
                 p.getName(),
                 p.getGender() != null ? p.getGender().name() : null,
                 p.getSpeciality(),

@@ -3,6 +3,7 @@ package com.healthcare.entity;
 import com.healthcare.constants.AppConstants;
 import com.healthcare.constants.DatabaseConstants;
 import com.healthcare.enums.EncounterStatus;
+import com.healthcare.exception.ValidationException;
 import com.healthcare.enums.EncounterType;
 
 import jakarta.persistence.Column;
@@ -10,6 +11,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -42,7 +44,16 @@ import java.util.UUID;
            @Index(name = DatabaseConstants.INDEX_ENCOUNTERS_START_TIME,
                   columnList = DatabaseConstants.COL_START_TIME)
        })
-public class Encounter extends ProfileBaseEntity {
+public class Encounter extends BaseEntity {
+
+    // ------------------------------------------------------------------
+    // Identity
+    // ------------------------------------------------------------------
+
+    @Id
+    @Column(name = DatabaseConstants.COL_ID, updatable = false, nullable = false,
+            columnDefinition = "UUID DEFAULT gen_random_uuid()")
+    private UUID id;
 
     @Column(name = DatabaseConstants.COL_PATIENT_ID)
     private UUID patientId;
@@ -156,6 +167,12 @@ public class Encounter extends ProfileBaseEntity {
     // ------------------------------------------------------------------
     // Getters
     // ------------------------------------------------------------------
+
+    public UUID getId()                          { return id; }
+    public void setId(UUID id) {
+        if (this.id != null) throw new ValidationException("ID is already set and cannot be changed");
+        this.id = id;
+    }
 
     public UUID getPatientId()                  { return patientId; }
     public UUID getProviderId()                 { return providerId; }

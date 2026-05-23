@@ -16,12 +16,6 @@ import java.util.UUID;
 public interface ProviderDao extends JpaRepository<Provider, UUID> {
 
     /**
-     * Find provider by provider_code.
-     * Used for provider registration validation.
-     */
-    Optional<Provider> findByProviderCode(String providerCode);
-
-    /**
      * Find provider by auth_id.
      * Used after login to fetch provider profile.
      */
@@ -38,12 +32,22 @@ public interface ProviderDao extends JpaRepository<Provider, UUID> {
     List<Provider> findBySpecialityAndIsActive(String speciality, Boolean isActive);
 
     /**
-     * Check if provider_code exists.
-     */
-    boolean existsByProviderCode(String providerCode);
-
-    /**
      * Check if auth_id is already linked.
      */
     boolean existsByAuthId(UUID authId);
+
+    /**
+     * Find providers by name + organization for registration matching.
+     * Uses idx_providers_name index on (name, organization_id).
+     * Synthea data only — NPI and license are not available from Synthea import.
+     * Returns a list — caller must enforce exactly one match.
+     */
+    List<Provider> findByNameAndOrganizationId(String name, UUID organizationId);
+
+    /**
+     * Find providers by full name for auth registration lookup.
+     * Uses idx_providers_name index prefix scan on name column.
+     * Returns a list — caller must enforce exactly one match.
+     */
+    List<Provider> findByName(String name);
 }

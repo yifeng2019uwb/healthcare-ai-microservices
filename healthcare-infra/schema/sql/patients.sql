@@ -3,16 +3,6 @@
 -- Requirements:
 --   - Store Synthea synthetic patient data as-is
 --   - auth_id (UUID) links to users.id — null until user registers
---   - mrn (Medical Record Number) — system generated, unique, required
---     Used for patient account registration — MRN + first_name + last_name validation
---
--- Patient registration flow:
---   1. Provider creates patient record → MRN auto-generated
---   2. Provider gives MRN to patient
---   3. Patient registers account with MRN + first_name + last_name
-
--- Sequence for MRN auto-generation
-CREATE SEQUENCE IF NOT EXISTS mrn_seq START 1;
 
 CREATE TABLE IF NOT EXISTS patients (
     -- Synthea fields
@@ -47,8 +37,6 @@ CREATE TABLE IF NOT EXISTS patients (
 
     -- Application fields
     auth_id              UUID UNIQUE,              -- links to users.id, null until registered
-    mrn                  VARCHAR(20) UNIQUE NOT NULL
-                         DEFAULT 'MRN-' || LPAD(nextval('mrn_seq')::TEXT, 6, '0'),
 
     -- Contact and medical info
     phone                VARCHAR(50),              -- contact number for appointments
@@ -63,5 +51,4 @@ CREATE TABLE IF NOT EXISTS patients (
 );
 
 CREATE INDEX IF NOT EXISTS idx_patients_auth_id ON patients(auth_id);
-CREATE INDEX IF NOT EXISTS idx_patients_name ON patients(last_name, first_name);
-CREATE INDEX IF NOT EXISTS idx_patients_mrn ON patients(mrn);
+CREATE INDEX IF NOT EXISTS idx_patients_name ON patients(last_name, first_name, birthdate);

@@ -35,6 +35,7 @@ public class ProviderExceptionHandler {
                 .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
                 .findFirst()
                 .orElse("Validation failed");
+        log.warn("Validation error: {}", message);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(400, message));
@@ -47,6 +48,7 @@ public class ProviderExceptionHandler {
                 .map(cv -> cv.getPropertyPath() + ": " + cv.getMessage())
                 .findFirst()
                 .orElse("Validation failed");
+        log.warn("Constraint violation: {}", message);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(400, message));
@@ -54,6 +56,7 @@ public class ProviderExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleNotReadable(HttpMessageNotReadableException e) {
+        log.warn("Malformed request body: {}", e.getMessage());
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(400, "Malformed request body"));
@@ -61,6 +64,7 @@ public class ProviderExceptionHandler {
 
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<ErrorResponse> handleMissingHeader(MissingRequestHeaderException e) {
+        log.warn("Missing required header: {}", e.getHeaderName());
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(400, "Missing required header: " + e.getHeaderName()));
@@ -69,6 +73,7 @@ public class ProviderExceptionHandler {
     @ExceptionHandler({MethodArgumentTypeMismatchException.class, TypeMismatchException.class})
     public ResponseEntity<ErrorResponse> handleTypeMismatch(TypeMismatchException e) {
         String param = e instanceof MethodArgumentTypeMismatchException m ? m.getName() : e.getPropertyName();
+        log.warn("Type mismatch for parameter: {}", param);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(400, "Invalid value for parameter: " + param));

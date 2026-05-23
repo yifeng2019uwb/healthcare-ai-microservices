@@ -16,7 +16,6 @@ import java.util.UUID;
 public record PatientProfileResponse(
 
         UUID id,
-        String mrn,
 
         @JsonProperty("first_name")
         String firstName,
@@ -58,7 +57,6 @@ public record PatientProfileResponse(
         LocalDate bd = p.getBirthdate();
         return new PatientProfileResponse(
                 p.getId(),
-                p.getMrn(),
                 p.getFirstName(),
                 p.getMiddleName(),
                 p.getLastName(),

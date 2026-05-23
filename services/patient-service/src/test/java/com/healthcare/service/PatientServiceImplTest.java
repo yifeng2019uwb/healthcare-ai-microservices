@@ -59,7 +59,7 @@ class PatientServiceImplTest {
     @BeforeEach
     void setUp() {
         service = new PatientServiceImpl(patientDao, encounterDao, conditionDao, allergyDao, auditLogDao);
-        patient = new Patient("MRN-000001", "John", "Doe");
+        patient = new Patient("John", "Doe");
     }
 
     // -------------------------------------------------------------------------
@@ -74,7 +74,6 @@ class PatientServiceImplTest {
 
         assertThat(response.firstName()).isEqualTo("John");
         assertThat(response.lastName()).isEqualTo("Doe");
-        assertThat(response.mrn()).isEqualTo("MRN-000001");
         verify(patientDao).findByAuthId(authId);
     }
 

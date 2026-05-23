@@ -12,6 +12,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
@@ -29,11 +30,6 @@ import java.util.UUID;
  *
  * Contains Synthea synthetic patient data fields plus application fields.
  *
- * Registration flow:
- *   1. Patient record exists (created by provider)
- *   2. Patient registers account using MRN + first_name + last_name
- *   3. On successful match, auth_id is linked to users.id
- *
  * auth_id is null until the patient registers an account.
  */
 @Entity
@@ -41,16 +37,23 @@ import java.util.UUID;
        indexes = {
            @Index(name = DatabaseConstants.INDEX_PATIENTS_AUTH_ID,
                   columnList = DatabaseConstants.COL_AUTH_ID),
-           @Index(name = DatabaseConstants.INDEX_PATIENTS_MRN,
-                  columnList = DatabaseConstants.COL_MRN),
            @Index(name = DatabaseConstants.INDEX_PATIENTS_NAME,
-                  columnList = DatabaseConstants.COL_LAST_NAME + "," + DatabaseConstants.COL_FIRST_NAME)
+                  columnList = DatabaseConstants.COL_LAST_NAME + "," + DatabaseConstants.COL_FIRST_NAME + "," + DatabaseConstants.COL_BIRTHDATE)
        })
-public class Patient extends ProfileBaseEntity {
+public class Patient extends BaseEntity {
     private static final String FIELD_FIRST_NAME = "First name";
     private static final String FIELD_LAST_NAME  = "Last name";
     private static final String FIELD_MIDDLE_NAME  = "Middle name";
     private static final String FIELD_PHONE = "Phone";
+
+    // ------------------------------------------------------------------
+    // Identity
+    // ------------------------------------------------------------------
+
+    @Id
+    @Column(name = DatabaseConstants.COL_ID, updatable = false, nullable = false,
+            columnDefinition = "UUID DEFAULT gen_random_uuid()")
+    private UUID id;
 
     // ------------------------------------------------------------------
     // Synthea fields
@@ -180,15 +183,6 @@ public class Patient extends ProfileBaseEntity {
     @Column(name = DatabaseConstants.COL_AUTH_ID, unique = true)
     private UUID authId;
 
-    /**
-     * Medical Record Number — service-generated before save.
-     * Format: MRN-000001 (or any unique format chosen by the service).
-     * Used for patient registration: MRN + first_name + last_name must match.
-     */
-    @Size(max = DatabaseConstants.LEN_MRN)
-    @Column(name = DatabaseConstants.COL_MRN, unique = true)
-    private String mrn;
-
     @Size(max = DatabaseConstants.LEN_PHONE)
     @Pattern(regexp = ValidationPatterns.PHONE,
              message = "Phone must be a valid international format")
@@ -232,20 +226,16 @@ public class Patient extends ProfileBaseEntity {
 
     /**
      * Minimal constructor for API-created patient records.
-     * firstName and lastName required for MRN-based registration validation.
      *
      * @param firstName patient first name
      * @param lastName  patient last name
      */
-    public Patient(String mrn, String firstName, String lastName) {
-        if (mrn == null || mrn.isBlank())
-            throw new ValidationException("MRN is required");
+    public Patient(String firstName, String lastName) {
         if (firstName == null || firstName.isBlank())
             throw new ValidationException(FIELD_FIRST_NAME + " is required");
         if (lastName == null || lastName.isBlank())
             throw new ValidationException(FIELD_LAST_NAME + " is required");
 
-        this.mrn       = mrn;
         this.firstName = firstName;
         this.lastName  = lastName;
     }
@@ -275,26 +265,15 @@ public class Patient extends ProfileBaseEntity {
         this.authId = userId;
     }
 
-    /**
-     * Validate registration credentials.
-     * Patient must provide MRN + first_name + last_name to register.
-     *
-     * @param mrn       provided MRN
-     * @param firstName provided first name
-     * @param lastName  provided last name
-     * @return true if all three match this patient record
-     */
-    public boolean matchesRegistrationCredentials(String mrn, String firstName, String lastName) {
-        if (mrn == null || firstName == null || lastName == null)
-            return false;
-        return this.mrn.equalsIgnoreCase(mrn)
-                && this.firstName.equalsIgnoreCase(firstName.trim())
-                && this.lastName.equalsIgnoreCase(lastName.trim());
-    }
-
     // ------------------------------------------------------------------
     // Getters
     // ------------------------------------------------------------------
+
+    public UUID getId()                       { return id; }
+    public void setId(UUID id) {
+        if (this.id != null) throw new ValidationException("ID is already set and cannot be changed");
+        this.id = id;
+    }
 
     public LocalDate getBirthdate()              { return birthdate; }
     public LocalDate getDeathdate()              { return deathdate; }
@@ -324,7 +303,6 @@ public class Patient extends ProfileBaseEntity {
     public BigDecimal getHealthcareCoverage()    { return healthcareCoverage; }
     public Integer getIncome()                   { return income; }
     public UUID getAuthId()                      { return authId; }
-    public String getMrn()                       { return mrn; }
     public String getPhone()                     { return phone; }
     public String getEmergencyContact()          { return emergencyContact; }
     public String getBloodType()                 { return bloodType; }
@@ -337,13 +315,6 @@ public class Patient extends ProfileBaseEntity {
     // ------------------------------------------------------------------
 
     // authId — set only via linkAuthAccount(), no direct setter
-
-    /** Write-once — throws if MRN is already assigned. */
-    public void setMrn(String mrn) {
-        if (this.mrn != null)
-            throw new ValidationException("MRN is already assigned and cannot be changed");
-        this.mrn = mrn;
-    }
 
     public void setBirthdate(LocalDate birthdate)       { this.birthdate = birthdate; }
     public void setDeathdate(LocalDate deathdate)       { this.deathdate = deathdate; }

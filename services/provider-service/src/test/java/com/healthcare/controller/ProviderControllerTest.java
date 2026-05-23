@@ -39,13 +39,13 @@ class ProviderControllerTest {
 
     private ProviderProfileResponse providerProfile() {
         return new ProviderProfileResponse(
-                UUID.randomUUID(), "PRV-000001", "Dr. Smith", "M",
+                UUID.randomUUID(), "Dr. Smith", "M",
                 "Cardiology", null, "+15551234567", "LIC-001", null, "Bio text", true);
     }
 
     private PatientProfileResponse patientProfile() {
         return new PatientProfileResponse(
-                PATIENT_ID, "MRN-000001", "John", null, "Doe",
+                PATIENT_ID, "John", null, "Doe",
                 LocalDate.of(1990, 1, 15), "M", null, null,
                 null, null, null, null, null, null, null, null, null, null);
     }
@@ -61,7 +61,6 @@ class ProviderControllerTest {
         mockMvc.perform(get("/api/provider/me")
                         .header("X-User-Id", AUTH_ID.toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.provider_code").value("PRV-000001"))
                 .andExpect(jsonPath("$.name").value("Dr. Smith"));
     }
 
@@ -89,14 +88,14 @@ class ProviderControllerTest {
     @Test
     void getPatients_returns200_withList() throws Exception {
         PatientSummaryResponse summary = new PatientSummaryResponse(
-                PATIENT_ID, "MRN-000001", "John", "Doe",
+                PATIENT_ID, "John", "Doe",
                 LocalDate.of(1990, 1, 15), "M", null, null);
         when(providerService.getPatients(eq(AUTH_ID), any())).thenReturn(List.of(summary));
 
         mockMvc.perform(get("/api/provider/patients")
                         .header("X-User-Id", AUTH_ID.toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].mrn").value("MRN-000001"));
+                .andExpect(jsonPath("$[0].first_name").value("John"));
     }
 
     @Test
@@ -116,7 +115,7 @@ class ProviderControllerTest {
         mockMvc.perform(get("/api/provider/patients/{id}", PATIENT_ID)
                         .header("X-User-Id", AUTH_ID.toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.mrn").value("MRN-000001"));
+                .andExpect(jsonPath("$.first_name").value("John"));
     }
 
     @Test

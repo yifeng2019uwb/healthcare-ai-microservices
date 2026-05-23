@@ -15,8 +15,7 @@ import io.restassured.RestAssured;
 public class SeedAccounts {
 
     public static void main(String[] args) {
-        RestAssured.baseURI = System.getProperty("gateway.url",
-                "https://gateway-dev-824144893232.us-west1.run.app");
+        RestAssured.baseURI = System.getProperty("gateway.url", "http://localhost:8080");
 
         System.out.println("Verifying test accounts...");
 

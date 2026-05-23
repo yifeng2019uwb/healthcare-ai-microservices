@@ -23,6 +23,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,6 +56,7 @@ class AuthServiceTest {
 
     private User mockUser;
     private final UUID userId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final LocalDate DOB = LocalDate.of(1990, 1, 15);
 
     @BeforeEach
     void setUp() {
@@ -95,27 +98,23 @@ class AuthServiceTest {
     @Test
     void registerPatient_happyPath_returnsTokenPair() {
         stubUserForAuditLog();
-        Patient mockPatient = mock(Patient.class);
-        when(mockPatient.matchesRegistrationCredentials("MRN001", "John", "Doe")).thenReturn(true);
-        when(mockPatient.isRegistered()).thenReturn(false);
-
+        Patient patient = new Patient("John", "Doe");
         when(userDao.existsByUsername("john_doe")).thenReturn(false);
         when(userDao.existsByEmail("john@example.com")).thenReturn(false);
-        when(patientDao.findByMrn("MRN001")).thenReturn(Optional.of(mockPatient));
+        when(patientDao.findByFirstNameAndLastNameAndBirthdate("John", "Doe", DOB))
+                .thenReturn(List.of(patient));
         when(passwordEncoder.encode(anyString())).thenReturn("$2a$encoded");
         when(userDao.save(any())).thenReturn(mockUser);
-        when(patientDao.save(mockPatient)).thenReturn(mockPatient);
         when(jwtService.issueAccessToken(mockUser)).thenReturn("access-token");
         when(jwtService.issueRefreshToken(mockUser)).thenReturn("refresh-token");
 
-        RegisterPatientRequest request = new RegisterPatientRequest(
-                "john_doe", "john@example.com", "Password1@", "MRN001", "John", "Doe");
-
-        LoginResponse response = authService.registerPatient(request);
+        LoginResponse response = authService.registerPatient(
+                new RegisterPatientRequest("john_doe", "john@example.com", "Password1@", "John", "Doe", DOB));
 
         assertThat(response.accessToken()).isEqualTo("access-token");
         assertThat(response.refreshToken()).isEqualTo("refresh-token");
-        verify(mockPatient).linkAuthAccount(userId);
+        assertThat(response.tokenType()).isEqualTo("Bearer");
+        verify(patientDao).save(patient);
         verify(auditLogDao).insert(any());
     }
 
@@ -125,28 +124,24 @@ class AuthServiceTest {
 
     @Test
     void registerProvider_happyPath_returnsTokenPair() {
-        Provider mockProvider = mock(Provider.class);
-        when(mockProvider.matchesRegistrationCredentials("PRV-000001", "Jane Doe")).thenReturn(true);
-        when(mockProvider.isRegistered()).thenReturn(false);
-
         when(mockUser.getId()).thenReturn(userId);
         when(mockUser.getRole()).thenReturn(UserRole.PROVIDER);
+        Provider provider = new Provider(UUID.randomUUID(), "Dr. Jane Smith");
         when(userDao.existsByUsername("jane_doe")).thenReturn(false);
         when(userDao.existsByEmail("jane@example.com")).thenReturn(false);
-        when(providerDao.findByProviderCode("PRV-000001")).thenReturn(Optional.of(mockProvider));
+        when(providerDao.findByName("Dr. Jane Smith")).thenReturn(List.of(provider));
         when(passwordEncoder.encode(anyString())).thenReturn("$2a$encoded");
         when(userDao.save(any())).thenReturn(mockUser);
-        when(providerDao.save(mockProvider)).thenReturn(mockProvider);
         when(jwtService.issueAccessToken(mockUser)).thenReturn("access-token");
         when(jwtService.issueRefreshToken(mockUser)).thenReturn("refresh-token");
 
-        RegisterProviderRequest request = new RegisterProviderRequest(
-                "jane_doe", "jane@example.com", "Password1@", "PRV-000001", "Jane", "Doe");
-
-        LoginResponse response = authService.registerProvider(request);
+        LoginResponse response = authService.registerProvider(
+                new RegisterProviderRequest("jane_doe", "jane@example.com", "Password1@", "Dr. Jane Smith"));
 
         assertThat(response.accessToken()).isEqualTo("access-token");
-        verify(mockProvider).linkAuthAccount(userId);
+        assertThat(response.refreshToken()).isEqualTo("refresh-token");
+        assertThat(response.tokenType()).isEqualTo("Bearer");
+        verify(providerDao).save(provider);
         verify(auditLogDao).insert(any());
     }
 
@@ -250,6 +245,112 @@ class AuthServiceTest {
                 });
     }
 
+    // =========================================================================
+    // Register patient — error paths
+    // =========================================================================
+
+    @Test
+    void registerPatient_noMatchingRecord_throws422() {
+        when(userDao.existsByUsername("john_doe")).thenReturn(false);
+        when(userDao.existsByEmail("john@example.com")).thenReturn(false);
+        when(patientDao.findByFirstNameAndLastNameAndBirthdate("John", "Doe", DOB))
+                .thenReturn(List.of());
+
+        assertThatThrownBy(() -> authService.registerPatient(
+                new RegisterPatientRequest("john_doe", "john@example.com", "Password1@", "John", "Doe", DOB)))
+                .isInstanceOfSatisfying(AuthServiceException.class, ex -> {
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                    assertThat(ex.getErrorCode()).isEqualTo(AuthServiceException.RECORD_NOT_FOUND);
+                });
+    }
+
+    @Test
+    void registerPatient_multipleRecordsFound_throws422() {
+        when(userDao.existsByUsername("john_doe")).thenReturn(false);
+        when(userDao.existsByEmail("john@example.com")).thenReturn(false);
+        when(patientDao.findByFirstNameAndLastNameAndBirthdate("John", "Doe", DOB))
+                .thenReturn(List.of(new Patient("John", "Doe"), new Patient("John", "Doe")));
+
+        assertThatThrownBy(() -> authService.registerPatient(
+                new RegisterPatientRequest("john_doe", "john@example.com", "Password1@", "John", "Doe", DOB)))
+                .isInstanceOfSatisfying(AuthServiceException.class, ex -> {
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                    assertThat(ex.getErrorCode()).isEqualTo(AuthServiceException.MULTIPLE_RECORDS_FOUND);
+                });
+    }
+
+    @Test
+    void registerPatient_alreadyRegistered_throws409() {
+        Patient patient = new Patient("John", "Doe");
+        patient.linkAuthAccount(UUID.randomUUID());
+        when(userDao.existsByUsername("john_doe")).thenReturn(false);
+        when(userDao.existsByEmail("john@example.com")).thenReturn(false);
+        when(patientDao.findByFirstNameAndLastNameAndBirthdate("John", "Doe", DOB))
+                .thenReturn(List.of(patient));
+
+        assertThatThrownBy(() -> authService.registerPatient(
+                new RegisterPatientRequest("john_doe", "john@example.com", "Password1@", "John", "Doe", DOB)))
+                .isInstanceOfSatisfying(AuthServiceException.class, ex -> {
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(ex.getErrorCode()).isEqualTo(AuthServiceException.ALREADY_REGISTERED);
+                });
+    }
+
+    // =========================================================================
+    // Register provider — error paths
+    // =========================================================================
+
+    @Test
+    void registerProvider_noMatchingRecord_throws422() {
+        when(userDao.existsByUsername("jane_doe")).thenReturn(false);
+        when(userDao.existsByEmail("jane@example.com")).thenReturn(false);
+        when(providerDao.findByName("Dr. Jane Smith")).thenReturn(List.of());
+
+        assertThatThrownBy(() -> authService.registerProvider(
+                new RegisterProviderRequest("jane_doe", "jane@example.com", "Password1@", "Dr. Jane Smith")))
+                .isInstanceOfSatisfying(AuthServiceException.class, ex -> {
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                    assertThat(ex.getErrorCode()).isEqualTo(AuthServiceException.RECORD_NOT_FOUND);
+                });
+    }
+
+    @Test
+    void registerProvider_multipleRecordsFound_throws422() {
+        UUID orgId = UUID.randomUUID();
+        when(userDao.existsByUsername("jane_doe")).thenReturn(false);
+        when(userDao.existsByEmail("jane@example.com")).thenReturn(false);
+        when(providerDao.findByName("Dr. Jane Smith"))
+                .thenReturn(List.of(new Provider(orgId, "Dr. Jane Smith"),
+                                    new Provider(orgId, "Dr. Jane Smith")));
+
+        assertThatThrownBy(() -> authService.registerProvider(
+                new RegisterProviderRequest("jane_doe", "jane@example.com", "Password1@", "Dr. Jane Smith")))
+                .isInstanceOfSatisfying(AuthServiceException.class, ex -> {
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                    assertThat(ex.getErrorCode()).isEqualTo(AuthServiceException.MULTIPLE_RECORDS_FOUND);
+                });
+    }
+
+    @Test
+    void registerProvider_alreadyRegistered_throws409() {
+        Provider provider = new Provider(UUID.randomUUID(), "Dr. Jane Smith");
+        provider.linkAuthAccount(UUID.randomUUID());
+        when(userDao.existsByUsername("jane_doe")).thenReturn(false);
+        when(userDao.existsByEmail("jane@example.com")).thenReturn(false);
+        when(providerDao.findByName("Dr. Jane Smith")).thenReturn(List.of(provider));
+
+        assertThatThrownBy(() -> authService.registerProvider(
+                new RegisterProviderRequest("jane_doe", "jane@example.com", "Password1@", "Dr. Jane Smith")))
+                .isInstanceOfSatisfying(AuthServiceException.class, ex -> {
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(ex.getErrorCode()).isEqualTo(AuthServiceException.ALREADY_REGISTERED);
+                });
+    }
+
+    // =========================================================================
+    // Refresh — error paths
+    // =========================================================================
+
     @Test
     void refresh_withInactiveUser_throws403() {
         Claims mockClaims = mock(Claims.class);
@@ -271,56 +372,4 @@ class AuthServiceTest {
                 });
     }
 
-    // =========================================================================
-    // Registration — fhirId wiring
-    // =========================================================================
-
-    @Test
-    void registerPatient_setsFhirIdFromPatient() {
-        UUID patientFhirId = UUID.fromString("00000000-0000-0000-0000-000000000002");
-        stubUserForAuditLog();
-        Patient mockPatient = mock(Patient.class);
-        when(mockPatient.matchesRegistrationCredentials("MRN001", "John", "Doe")).thenReturn(true);
-        when(mockPatient.isRegistered()).thenReturn(false);
-        when(mockPatient.getId()).thenReturn(patientFhirId);
-
-        when(userDao.existsByUsername("john_doe")).thenReturn(false);
-        when(userDao.existsByEmail("john@example.com")).thenReturn(false);
-        when(patientDao.findByMrn("MRN001")).thenReturn(Optional.of(mockPatient));
-        when(passwordEncoder.encode(anyString())).thenReturn("$2a$encoded");
-        when(userDao.save(any())).thenReturn(mockUser);
-        when(patientDao.save(mockPatient)).thenReturn(mockPatient);
-        when(jwtService.issueAccessToken(mockUser)).thenReturn("access-token");
-        when(jwtService.issueRefreshToken(mockUser)).thenReturn("refresh-token");
-
-        authService.registerPatient(new RegisterPatientRequest(
-                "john_doe", "john@example.com", "Password1@", "MRN001", "John", "Doe"));
-
-        verify(mockUser).setFhirId(patientFhirId);
-    }
-
-    @Test
-    void registerProvider_setsFhirIdFromProvider() {
-        UUID providerFhirId = UUID.fromString("00000000-0000-0000-0000-000000000003");
-        when(mockUser.getId()).thenReturn(userId);
-        when(mockUser.getRole()).thenReturn(UserRole.PROVIDER);
-        Provider mockProvider = mock(Provider.class);
-        when(mockProvider.matchesRegistrationCredentials("PRV-000001", "Jane Doe")).thenReturn(true);
-        when(mockProvider.isRegistered()).thenReturn(false);
-        when(mockProvider.getId()).thenReturn(providerFhirId);
-
-        when(userDao.existsByUsername("jane_doe")).thenReturn(false);
-        when(userDao.existsByEmail("jane@example.com")).thenReturn(false);
-        when(providerDao.findByProviderCode("PRV-000001")).thenReturn(Optional.of(mockProvider));
-        when(passwordEncoder.encode(anyString())).thenReturn("$2a$encoded");
-        when(userDao.save(any())).thenReturn(mockUser);
-        when(providerDao.save(mockProvider)).thenReturn(mockProvider);
-        when(jwtService.issueAccessToken(mockUser)).thenReturn("access-token");
-        when(jwtService.issueRefreshToken(mockUser)).thenReturn("refresh-token");
-
-        authService.registerProvider(new RegisterProviderRequest(
-                "jane_doe", "jane@example.com", "Password1@", "PRV-000001", "Jane", "Doe"));
-
-        verify(mockUser).setFhirId(providerFhirId);
-    }
 }

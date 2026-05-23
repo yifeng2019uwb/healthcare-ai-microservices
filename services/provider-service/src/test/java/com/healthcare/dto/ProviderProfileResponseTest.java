@@ -61,6 +61,5 @@ class ProviderProfileResponseTest {
         assertThat(response.licenseNumber()).isNull();
         assertThat(response.npi()).isNull();
         assertThat(response.bio()).isNull();
-        assertThat(response.providerCode()).isNull();
     }
 }

@@ -24,8 +24,11 @@ public class AuthServiceException extends RuntimeException {
     public static final String INVALID_TOKEN       = "INVALID_TOKEN";
     public static final String TOKEN_EXPIRED       = "TOKEN_EXPIRED";
     public static final String TOKEN_BLACKLISTED   = "TOKEN_BLACKLISTED";
-    public static final String SESSION_EXPIRED     = "SESSION_EXPIRED";
-    public static final String INTERNAL_ERROR = "AUTH_INTERNAL_ERROR";
+    public static final String SESSION_EXPIRED        = "SESSION_EXPIRED";
+    public static final String INTERNAL_ERROR         = "AUTH_INTERNAL_ERROR";
+    public static final String RECORD_NOT_FOUND       = "RECORD_NOT_FOUND";
+    public static final String MULTIPLE_RECORDS_FOUND = "MULTIPLE_RECORDS_FOUND";
+    public static final String ALREADY_REGISTERED     = "ALREADY_REGISTERED";
 
     private final HttpStatus status;
     private final String errorCode;

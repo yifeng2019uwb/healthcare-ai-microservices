@@ -6,11 +6,13 @@ import com.healthcare.exception.ValidationException;
 import com.healthcare.utils.ValidationUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 /**
  * Organization entity mapping to the organizations table.
@@ -22,13 +24,17 @@ import java.math.BigDecimal;
            @Index(name = DatabaseConstants.INDEX_ORGANIZATIONS_NAME,
                   columnList = DatabaseConstants.COL_NAME)
        })
-public class Organization extends ProfileBaseEntity {
+public class Organization extends BaseEntity {
     private static final String FIELD_NAME = "Name";
     private static final String FIELD_ORGANIZATION_NAME = "Organization Name";
     private static final String FIELD_ADRESS = "Address";
     private static final String FIELD_STATE = "state";
     private static final String FIELD_CITY = "city";
 
+    @Id
+    @Column(name = DatabaseConstants.COL_ID, updatable = false, nullable = false,
+            columnDefinition = "UUID DEFAULT gen_random_uuid()")
+    private UUID id;
 
     @Size(max = DatabaseConstants.LEN_ORGANIZATION_NAME)
     @Column(name = DatabaseConstants.COL_NAME)
@@ -94,6 +100,12 @@ public class Organization extends ProfileBaseEntity {
     // ------------------------------------------------------------------
     // Getters
     // ------------------------------------------------------------------
+
+    public UUID getId() { return id; }
+    public void setId(UUID id) {
+        if (this.id != null) throw new ValidationException("ID is already set and cannot be changed");
+        this.id = id;
+    }
 
     public String getName()          { return name; }
     public String getAddress()       { return address; }

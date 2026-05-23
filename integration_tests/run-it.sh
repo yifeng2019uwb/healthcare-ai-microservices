@@ -8,7 +8,7 @@
 # Tests:
 #   seed          — verify test accounts are reachable
 #   auth          — auth.AuthIT  (JUnit 5 via Failsafe)
-#   register      — auth.RegisterPatientIT
+#   register      — auth.RegisterPatientIT + auth.RegisterProviderIT
 #   patient       — patient.PatientProfileIT
 #   provider      — provider.ProviderProfileIT
 #   admin         — admin.AdminImportIT  (requires test-data: run-synthea.sh test-data <n>)
@@ -96,7 +96,10 @@ for arg in "$@"; do
   case $arg in
     seed)     run_class "util.SeedAccounts"             "Seed / verify accounts" ;;
     auth)     run_junit "Auth endpoints"                "auth.AuthIT" ;;
-    register) run_junit "Register patient endpoint"    "auth.RegisterPatientIT" ;;
+    register)
+      run_junit "Register patient endpoint"   "auth.RegisterPatientIT"
+      run_junit "Register provider endpoint"  "auth.RegisterProviderIT"
+      ;;
     patient)
       run_junit "Patient profile endpoints"        "patient.PatientProfileIT"
       ;;
@@ -110,6 +113,7 @@ for arg in "$@"; do
       run_class "util.SeedAccounts"                "Seed / verify accounts"
       run_junit "Auth endpoints"                   "auth.AuthIT"
       run_junit "Register patient endpoint"        "auth.RegisterPatientIT"
+      run_junit "Register provider endpoint"       "auth.RegisterProviderIT"
       run_junit "Patient profile endpoints"        "patient.PatientProfileIT"
       run_junit "Provider profile endpoints"       "provider.ProviderProfileIT"
       run_admin

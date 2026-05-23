@@ -106,8 +106,7 @@ class OrganizationEntityTest {
     }
 
     @Test
-    void extendsProfileBaseEntity() {
-        assertThat(newOrg()).isInstanceOf(ProfileBaseEntity.class);
+    void extendsBaseEntity() {
         assertThat(newOrg()).isInstanceOf(BaseEntity.class);
     }
 }

@@ -24,7 +24,7 @@ public class AppointmentExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleNotReadable(HttpMessageNotReadableException e) {
-        log.debug("Malformed request body: {}", e.getMessage());
+        log.warn("Malformed request body: {}", e.getMessage());
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(400, "Malformed request body"));
@@ -32,7 +32,7 @@ public class AppointmentExceptionHandler {
 
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<ErrorResponse> handleMissingHeader(MissingRequestHeaderException e) {
-        log.debug("Missing required header: {}", e.getHeaderName());
+        log.warn("Missing required header: {}", e.getHeaderName());
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(400, "Missing required header: " + e.getHeaderName()));

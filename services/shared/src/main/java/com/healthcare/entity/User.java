@@ -8,6 +8,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
@@ -32,11 +33,20 @@ import java.util.UUID;
            @Index(name = DatabaseConstants.INDEX_USERS_ROLE,     columnList = DatabaseConstants.COL_ROLE),
            @Index(name = DatabaseConstants.INDEX_USERS_FHIR_ID,  columnList = DatabaseConstants.COL_FHIR_ID)
        })
-public class User extends ProfileBaseEntity {
+public class User extends BaseEntity {
     private static final String FIELD_USERNAME      = "Username";
     private static final String FIELD_EMAIL         = "Email";
     private static final String FIELD_PASSWORD_HASH = "Password hash";
     private static final String FIELD_ROLE          = "Role";
+
+    // ------------------------------------------------------------------
+    // Identity
+    // ------------------------------------------------------------------
+
+    @Id
+    @Column(name = DatabaseConstants.COL_ID, updatable = false, nullable = false,
+            columnDefinition = "UUID DEFAULT gen_random_uuid()")
+    private UUID id;
 
     @Size(max = DatabaseConstants.LEN_USERNAME)
     @Column(name = DatabaseConstants.COL_USERNAME, unique = true)
@@ -89,6 +99,7 @@ public class User extends ProfileBaseEntity {
         if (role == null)
             throw new ValidationException(FIELD_ROLE + " is required");
 
+        this.id           = UUID.randomUUID();
         this.username     = username.trim();
         this.email        = email.trim();
         this.passwordHash = passwordHash;
@@ -99,6 +110,12 @@ public class User extends ProfileBaseEntity {
     // ------------------------------------------------------------------
     // Getters
     // ------------------------------------------------------------------
+
+    public UUID getId()             { return id; }
+    public void setId(UUID id) {
+        if (this.id != null) throw new ValidationException("ID is already set and cannot be changed");
+        this.id = id;
+    }
 
     public String getUsername()     { return username; }
     public String getEmail()        { return email; }

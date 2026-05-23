@@ -67,9 +67,7 @@ class ProviderServiceImplTest {
     void setUp() {
         mockProvider = mock(Provider.class);
         lenient().when(mockProvider.getId()).thenReturn(UUID.randomUUID());
-        lenient().when(mockProvider.getProviderCode()).thenReturn("PRV-000001");
-
-        patient = new Patient("MRN-000001", "John", "Doe");
+        patient = new Patient("John", "Doe");
     }
 
     // -------------------------------------------------------------------------
@@ -84,7 +82,6 @@ class ProviderServiceImplTest {
         ProviderProfileResponse response = service.getProfile(authId);
 
         assertThat(response.name()).isEqualTo("Dr. Smith");
-        assertThat(response.providerCode()).isEqualTo("PRV-000001");
         verify(providerDao).findByAuthId(authId);
     }
 
@@ -115,7 +112,7 @@ class ProviderServiceImplTest {
         List<PatientSummaryResponse> result = service.getPatients(authId, PageRequest.of(0, 20));
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).mrn()).isEqualTo("MRN-000001");
+        assertThat(result.get(0).firstName()).isEqualTo("John");
     }
 
     @Test
@@ -156,7 +153,6 @@ class ProviderServiceImplTest {
 
         PatientProfileResponse response = service.getPatient(authId, patientId);
 
-        assertThat(response.mrn()).isEqualTo("MRN-000001");
         assertThat(response.firstName()).isEqualTo("John");
     }
 

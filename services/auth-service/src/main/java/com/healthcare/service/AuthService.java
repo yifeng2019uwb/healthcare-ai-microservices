@@ -12,6 +12,9 @@ import com.healthcare.entity.AuditLog;
 import com.healthcare.entity.Patient;
 import com.healthcare.entity.Provider;
 import com.healthcare.entity.User;
+
+import java.time.LocalDate;
+import java.util.List;
 import com.healthcare.enums.ActionType;
 import com.healthcare.enums.Outcome;
 import com.healthcare.enums.UserRole;
@@ -75,45 +78,22 @@ public class AuthService {
      *
      * Flow:
      * 1. Check username + email availability
-     * 2. Find patient by MRN
-     * 3. Verify first/last name match
-     * 4. Check patient not already registered
-     * 5. Create User, link to Patient
-     * 6. Audit log + issue JWT pair
+     * 2. Validate patient record exists and is unlinked (0 → 422, 2+ → 422, already linked → 409)
+     * 3. Create User, link to Patient, audit + issue JWT pair
      */
     @Transactional
     public LoginResponse registerPatient(RegisterPatientRequest request) {
+        log.info("Register patient attempt: username={}, firstName={}, lastName={}, dob={}",
+                request.username(), request.firstName(), request.lastName(), request.birthdate());
         checkUsernameAndEmailAvailable(request.username(), request.email());
 
-        Patient patient = patientDao.findByMrn(request.mrn())
-                .orElseThrow(() -> new AuthServiceException(
-                        HttpStatus.NOT_FOUND,
-                        AuthServiceException.INVALID_CREDENTIALS,
-                        "MRN not found: " + request.mrn()));
-
-        if (!patient.matchesRegistrationCredentials(
-                request.mrn(), request.firstName(), request.lastName())) {
-            throw new AuthServiceException(
-                    HttpStatus.CONFLICT,
-                    AuthServiceException.INVALID_CREDENTIALS,
-                    "Registration credentials do not match patient record for MRN: " + request.mrn());
-        }
-
-        if (patient.isRegistered()) {
-            throw new AuthServiceException(
-                    HttpStatus.CONFLICT,
-                    AuthServiceException.INVALID_CREDENTIALS,
-                    "MRN already linked to an account: " + request.mrn());
-        }
-
+        Patient patient = findUniquePatient(request.firstName(), request.lastName(), request.birthdate());
         User user = createUser(request.username(), request.email(), request.password(), UserRole.PATIENT);
         patient.linkAuthAccount(user.getId());
-        user.setFhirId(patient.getId());
-        userDao.save(user);
         patientDao.save(patient);
 
         auditLogDao.insert(buildAuditLog(user, ActionType.CREATE, Outcome.SUCCESS));
-        log.info("Patient registered: username={} mrn={}", request.username(), request.mrn());
+        log.info("Patient registered: username={}", request.username());
 
         return issueTokenPair(user);
     }
@@ -123,46 +103,21 @@ public class AuthService {
      *
      * Flow:
      * 1. Check username + email availability
-     * 2. Find provider by provider_code
-     * 3. Verify first/last name match
-     * 4. Check provider not already registered
-     * 5. Create User, link to Provider
-     * 6. Audit log + issue JWT pair
+     * 2. Validate provider record exists and is unlinked (0 → 422, 2+ → 422, already linked → 409)
+     * 3. Create User, link to Provider, audit + issue JWT pair
      */
     @Transactional
     public LoginResponse registerProvider(RegisterProviderRequest request) {
+        log.info("Register provider attempt: username={}, name={}", request.username(), request.name());
         checkUsernameAndEmailAvailable(request.username(), request.email());
 
-        Provider provider = providerDao.findByProviderCode(request.providerCode())
-                .orElseThrow(() -> new AuthServiceException(
-                        HttpStatus.NOT_FOUND,
-                        AuthServiceException.INVALID_CREDENTIALS,
-                        "Provider code not found: " + request.providerCode()));
-
-        if (!provider.matchesRegistrationCredentials(
-                request.providerCode(), request.firstName() + " " + request.lastName())) {
-            throw new AuthServiceException(
-                    HttpStatus.CONFLICT,
-                    AuthServiceException.INVALID_CREDENTIALS,
-                    "Registration credentials do not match provider record for code: " + request.providerCode());
-        }
-
-        if (provider.isRegistered()) {
-            throw new AuthServiceException(
-                    HttpStatus.CONFLICT,
-                    AuthServiceException.INVALID_CREDENTIALS,
-                    "Provider code already linked to an account: " + request.providerCode());
-        }
-
+        Provider provider = findUniqueProvider(request.name());
         User user = createUser(request.username(), request.email(), request.password(), UserRole.PROVIDER);
         provider.linkAuthAccount(user.getId());
-        user.setFhirId(provider.getId());
-        userDao.save(user);
         providerDao.save(provider);
 
         auditLogDao.insert(buildAuditLog(user, ActionType.CREATE, Outcome.SUCCESS));
-        log.info("Provider registered: username={} providerCode={}",
-                request.username(), request.providerCode());
+        log.info("Provider registered: username={}", request.username());
 
         return issueTokenPair(user);
     }
@@ -292,6 +247,51 @@ public class AuthService {
     // =========================================================================
     // Private helpers
     // =========================================================================
+
+    private Patient findUniquePatient(String firstName, String lastName, LocalDate birthdate) {
+        List<Patient> matches =
+                patientDao.findByFirstNameAndLastNameAndBirthdate(firstName, lastName, birthdate);
+        if (matches.isEmpty()) {
+            throw new AuthServiceException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    AuthServiceException.RECORD_NOT_FOUND,
+                    "No matching patient record found for: " + firstName + " " + lastName);
+        }
+        if (matches.size() > 1) {
+            throw new AuthServiceException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    AuthServiceException.MULTIPLE_RECORDS_FOUND,
+                    "Multiple patient records match — contact support to resolve");
+        }
+        Patient patient = matches.get(0);
+        if (patient.isRegistered()) {
+            throw new AuthServiceException(HttpStatus.CONFLICT,
+                    AuthServiceException.ALREADY_REGISTERED,
+                    "An account is already linked to this patient record");
+        }
+        return patient;
+    }
+
+    // TODO: production registration should also validate organization name + NPI/license to
+    //  narrow the match; name-only is sufficient for Synthea data where duplicates are rare.
+    private Provider findUniqueProvider(String name) {
+        List<Provider> matches = providerDao.findByName(name);
+        if (matches.isEmpty()) {
+            throw new AuthServiceException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    AuthServiceException.RECORD_NOT_FOUND,
+                    "No matching provider record found for: " + name);
+        }
+        if (matches.size() > 1) {
+            throw new AuthServiceException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    AuthServiceException.MULTIPLE_RECORDS_FOUND,
+                    "Multiple provider records match — contact support to resolve");
+        }
+        Provider provider = matches.get(0);
+        if (provider.isRegistered()) {
+            throw new AuthServiceException(HttpStatus.CONFLICT,
+                    AuthServiceException.ALREADY_REGISTERED,
+                    "An account is already linked to this provider record");
+        }
+        return provider;
+    }
 
     private void checkUsernameAndEmailAvailable(String username, String email) {
         if (userDao.existsByUsername(username)) {

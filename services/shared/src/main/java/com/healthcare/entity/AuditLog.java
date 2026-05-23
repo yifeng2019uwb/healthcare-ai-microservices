@@ -29,7 +29,7 @@ import java.util.UUID;
  * Append only — never updated or deleted.
  * Retention: minimum 6 years per HIPAA requirement.
  *
- * Does NOT extend BaseEntity or ProfileBaseEntity —
+ * Does NOT extend BaseEntity —
  * audit_logs has no updated_at or updated_by columns.
  */
 @Entity

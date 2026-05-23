@@ -16,9 +16,7 @@ import java.time.OffsetDateTime;
 /**
  * Base entity providing audit fields for all healthcare entities.
  *
- * Does NOT include an id field — id management is handled by:
- *   - ProfileBaseEntity: auto-generated UUID for API-created entities
- *   - Direct @Id / @EmbeddedId: for entities with composite PKs (Condition, Allergy)
+ * Does NOT include an id field — each entity defines its own @Id or @EmbeddedId.
  *
  * DB level: all fields are nullable to support imported/legacy data.
  * Application level: always set by Hibernate or AuditListener.

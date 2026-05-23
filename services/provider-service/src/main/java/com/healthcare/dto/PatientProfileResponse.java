@@ -9,7 +9,6 @@ import java.util.UUID;
 
 public record PatientProfileResponse(
         @JsonProperty("id")                 UUID id,
-        @JsonProperty("mrn")                String mrn,
         @JsonProperty("first_name")         String firstName,
         @JsonProperty("middle_name")        String middleName,
         @JsonProperty("last_name")          String lastName,
@@ -31,7 +30,6 @@ public record PatientProfileResponse(
     public static PatientProfileResponse from(Patient p) {
         return new PatientProfileResponse(
                 p.getId(),
-                p.getMrn(),
                 p.getFirstName(),
                 p.getMiddleName(),
                 p.getLastName(),

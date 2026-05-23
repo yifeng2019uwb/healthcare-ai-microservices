@@ -160,7 +160,6 @@ class BaseEntityTest {
     @Test
     void testBaseEntityInheritance() {
         assertThat(testEntity).isInstanceOf(BaseEntity.class);
-        assertThat(testEntity).isInstanceOf(ProfileBaseEntity.class);
 
         assertThat(testEntity.getId()).isNull();
         assertThat(testEntity.getCreatedAt()).isNull();
@@ -191,7 +190,8 @@ class BaseEntityTest {
     /**
      * Test implementation of BaseEntity for testing purposes
      */
-    private static class TestEntity extends ProfileBaseEntity {
-        // Concrete subclass so BaseEntity + UUID id behavior can be exercised in tests
+    private static class TestEntity extends BaseEntity {
+        private java.util.UUID id;
+        public java.util.UUID getId() { return id; }
     }
 }

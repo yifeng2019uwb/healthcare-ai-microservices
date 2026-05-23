@@ -30,7 +30,6 @@ class ProviderEntityTest {
         assertThat(p.getIsActive()).isTrue();
         assertThat(p.isActive()).isTrue();
         assertThat(p.getAuthId()).isNull();
-        assertThat(p.getProviderCode()).isNull();
         assertThat(p.getUser()).isNull();
         assertThat(p.isRegistered()).isFalse();
     }
@@ -72,19 +71,6 @@ class ProviderEntityTest {
         assertThatThrownBy(() -> newProvider().linkAuthAccount(null))
                 .isInstanceOf(ValidationException.class)
                 .hasMessage("User ID cannot be null");
-    }
-
-    @Test
-    void matchesRegistrationCredentials() throws Exception {
-        Provider p = newProvider();
-        var codeField = Provider.class.getDeclaredField("providerCode");
-        codeField.setAccessible(true);
-        codeField.set(p, "PRV-000042");
-
-        assertThat(p.matchesRegistrationCredentials("prv-000042", "Dr. Jane Smith")).isTrue();
-        assertThat(p.matchesRegistrationCredentials("PRV-000042", "other")).isFalse();
-        assertThat(p.matchesRegistrationCredentials(null, "Dr. Jane Smith")).isFalse();
-        assertThat(p.matchesRegistrationCredentials("PRV-000042", null)).isFalse();
     }
 
     @Test

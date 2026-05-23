@@ -15,15 +15,12 @@ public final class TestAccounts {
 
     // ── Provider ─────────────────────────────────────────────────────────────
     public static final String PROVIDER_USERNAME =
-            System.getProperty("test.provider.username", "drDeckow");
+            System.getProperty("test.provider.username", "drDouglass");
     public static final String PROVIDER_PASSWORD =
             System.getProperty("test.provider.password", "Password1@");
     public static final String PROVIDER_EMAIL =
-            System.getProperty("test.provider.email", "smith@hospital.com");
-    public static final String PROVIDER_CODE =
-            System.getProperty("test.provider.code", "PRV-000001");
-    public static final String PROVIDER_FIRST_NAME = "Louann705";
-    public static final String PROVIDER_LAST_NAME  = "Deckow585";
+            System.getProperty("test.provider.email", "Douglass930@hospital.com");
+    public static final String PROVIDER_FULL_NAME = "Douglass930 Windler79";
 
     // ── Patient ───────────────────────────────────────────────────────────────
     public static final String PATIENT_USERNAME =
@@ -32,10 +29,14 @@ public final class TestAccounts {
             System.getProperty("test.patient.password", "Password1@");
     public static final String PATIENT_EMAIL =
             System.getProperty("test.patient.email", "test01@example.com");
-    public static final String PATIENT_MRN =
-            System.getProperty("test.patient.mrn", "MRN-000002");
-    public static final String PATIENT_FIRST_NAME = "Carly657";
-    public static final String PATIENT_LAST_NAME  = "Pollich983";
+    public static final String PATIENT_FIRST_NAME = "Jena102";
+    public static final String PATIENT_LAST_NAME  = "Gislason620";
+    public static final String PATIENT_DOB        = "1974-04-17";
+
+    // ── Unregistered Patient (for registration happy path test — run once per env) ─
+    public static final String UNREG_PATIENT_FIRST = "Monnie762";
+    public static final String UNREG_PATIENT_LAST  = "Haag279";
+    public static final String UNREG_PATIENT_DOB   = "2020-05-28";
 
     // ── Admin ─────────────────────────────────────────────────────────────────
     public static final String ADMIN_USERNAME =

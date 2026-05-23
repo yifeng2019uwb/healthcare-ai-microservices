@@ -43,7 +43,7 @@ class GetPatientProfileControllerTest {
 
     private PatientProfileResponse profile() {
         return new PatientProfileResponse(
-                UUID.randomUUID(), "MRN-000001", "John", null, "Doe",
+                UUID.randomUUID(),  "John", null, "Doe",
                 null, null, "1990-01-15", null, null, null,
                 null, null, null, null, null, null, null, null, null, null);
     }
@@ -60,7 +60,6 @@ class GetPatientProfileControllerTest {
                         .header("X-User-Id", AUTH_ID.toString())
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.mrn").value("MRN-000001"))
                 .andExpect(jsonPath("$.first_name").value("John"));
     }
 
@@ -96,8 +95,7 @@ class GetPatientProfileControllerTest {
                         .header("X-Username", "john_doe")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.mrn").value("MRN-000001"));
+                .andExpect(status().isOk());
     }
 
     @Test
