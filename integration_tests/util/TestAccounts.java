@@ -21,6 +21,7 @@ public final class TestAccounts {
     public static final String PROVIDER_EMAIL =
             System.getProperty("test.provider.email", "Douglass930@hospital.com");
     public static final String PROVIDER_FULL_NAME = "Douglass930 Windler79";
+    public static final String PROVIDER_ORG_NAME  = "NAVOS";
 
     // ── Patient ───────────────────────────────────────────────────────────────
     public static final String PATIENT_USERNAME =

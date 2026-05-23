@@ -34,5 +34,6 @@ CREATE INDEX IF NOT EXISTS idx_providers_organization ON providers(organization_
 CREATE INDEX IF NOT EXISTS idx_providers_auth_id ON providers(auth_id);
 CREATE INDEX IF NOT EXISTS idx_providers_speciality ON providers(speciality);
 CREATE INDEX IF NOT EXISTS idx_providers_active ON providers(is_active);
--- Registration lookup: match provider by name + org (Synthea data only; NPI/license added during onboarding)
-CREATE INDEX IF NOT EXISTS idx_providers_name ON providers(name, organization_id);
+-- Registration lookup: filter by org first, then narrow by name (org+name composite for unique match)
+DROP INDEX IF EXISTS idx_providers_name;
+CREATE INDEX IF NOT EXISTS idx_providers_org_name ON providers(organization_id, name);

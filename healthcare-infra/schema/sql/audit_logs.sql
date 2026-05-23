@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 -- Index for common audit queries
-CREATE INDEX IF NOT EXISTS idx_audit_auth_id ON audit_logs(auth_id);
-CREATE INDEX IF NOT EXISTS idx_audit_resource ON audit_logs(resource_type, resource_id);
+CREATE INDEX IF NOT EXISTS idx_audit_auth_id    ON audit_logs(auth_id);
+CREATE INDEX IF NOT EXISTS idx_audit_resource   ON audit_logs(resource_type, resource_id);
 CREATE INDEX IF NOT EXISTS idx_audit_created_at ON audit_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_action     ON audit_logs(action);
+CREATE INDEX IF NOT EXISTS idx_audit_outcome    ON audit_logs(outcome);

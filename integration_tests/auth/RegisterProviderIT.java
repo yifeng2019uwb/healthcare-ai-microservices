@@ -21,11 +21,13 @@ class RegisterProviderIT extends BaseIT {
     private static final String FIELD_EMAIL    = "email";
     private static final String FIELD_PASSWORD = "password";
     private static final String FIELD_NAME     = "name";
+    private static final String FIELD_ORG_NAME = "organization_name";
 
     // ── Known registered provider (seed data) ────────────────────────────────
     private static final String VALID_USED_USERNAME = TestAccounts.PROVIDER_USERNAME;
     private static final String VALID_USED_EMAIL    = TestAccounts.PROVIDER_EMAIL;
-    private static final String REGISTERED_NAME   = TestAccounts.PROVIDER_FULL_NAME;
+    private static final String REGISTERED_NAME     = TestAccounts.PROVIDER_FULL_NAME;
+    private static final String PROVIDER_ORG_NAME   = TestAccounts.PROVIDER_ORG_NAME;
 
     // ── Valid / invalid input constants ───────────────────────────────────────
     private static final String VALID_PASSWORD = "Password1@";
@@ -48,7 +50,8 @@ class RegisterProviderIT extends BaseIT {
                 FIELD_USERNAME, VALID_USED_USERNAME,
                 FIELD_EMAIL,    VALID_USED_EMAIL,
                 FIELD_PASSWORD, VALID_PASSWORD,
-                FIELD_NAME,     REGISTERED_NAME))
+                FIELD_NAME,     REGISTERED_NAME,
+                FIELD_ORG_NAME, PROVIDER_ORG_NAME))
         .when()
             .post(ApiPaths.REGISTER_PROVIDER)
         .then()
@@ -81,7 +84,8 @@ class RegisterProviderIT extends BaseIT {
                 FIELD_USERNAME, USERNAME_PATTERN.formatted(suffix),
                 FIELD_EMAIL,    EMAIL_PATTERN.formatted(suffix),
                 FIELD_PASSWORD, WEAK_PASSWORD,
-                FIELD_NAME,     "Nonexistent Provider"))
+                FIELD_NAME,     "Nonexistent Provider",
+                FIELD_ORG_NAME, PROVIDER_ORG_NAME))
         .when()
             .post(ApiPaths.REGISTER_PROVIDER)
         .then()
@@ -97,7 +101,8 @@ class RegisterProviderIT extends BaseIT {
                 FIELD_USERNAME, USERNAME_PATTERN.formatted(suffix),
                 FIELD_EMAIL,    INVALID_EMAIL,
                 FIELD_PASSWORD, VALID_PASSWORD,
-                FIELD_NAME,     "Nonexistent Provider"))
+                FIELD_NAME,     "Nonexistent Provider",
+                FIELD_ORG_NAME, PROVIDER_ORG_NAME))
         .when()
             .post(ApiPaths.REGISTER_PROVIDER)
         .then()
@@ -115,7 +120,8 @@ class RegisterProviderIT extends BaseIT {
                 FIELD_USERNAME, USERNAME_PATTERN.formatted(suffix),
                 FIELD_EMAIL,    EMAIL_PATTERN.formatted(suffix),
                 FIELD_PASSWORD, VALID_PASSWORD,
-                FIELD_NAME,     "Nonexistent Provider"))
+                FIELD_NAME,     "Nonexistent Provider",
+                FIELD_ORG_NAME, PROVIDER_ORG_NAME))
         .when()
             .post(ApiPaths.REGISTER_PROVIDER)
         .then()
@@ -131,7 +137,8 @@ class RegisterProviderIT extends BaseIT {
                 FIELD_USERNAME, USERNAME_PATTERN.formatted(suffix),
                 FIELD_EMAIL,    EMAIL_PATTERN.formatted(suffix),
                 FIELD_PASSWORD, VALID_PASSWORD,
-                FIELD_NAME,     REGISTERED_NAME))
+                FIELD_NAME,     REGISTERED_NAME,
+                FIELD_ORG_NAME, PROVIDER_ORG_NAME))
         .when()
             .post(ApiPaths.REGISTER_PROVIDER)
         .then()
@@ -147,7 +154,8 @@ class RegisterProviderIT extends BaseIT {
                 FIELD_USERNAME, VALID_USED_USERNAME,
                 FIELD_EMAIL,    EMAIL_PATTERN.formatted(suffix),
                 FIELD_PASSWORD, VALID_PASSWORD,
-                FIELD_NAME,     "Nonexistent Provider"))
+                FIELD_NAME,     "Nonexistent Provider",
+                FIELD_ORG_NAME, PROVIDER_ORG_NAME))
         .when()
             .post(ApiPaths.REGISTER_PROVIDER)
         .then()
@@ -163,7 +171,8 @@ class RegisterProviderIT extends BaseIT {
                 FIELD_USERNAME, USERNAME_PATTERN.formatted(suffix),
                 FIELD_EMAIL,    VALID_USED_EMAIL,
                 FIELD_PASSWORD, VALID_PASSWORD,
-                FIELD_NAME,     "Nonexistent Provider"))
+                FIELD_NAME,     "Nonexistent Provider",
+                FIELD_ORG_NAME, PROVIDER_ORG_NAME))
         .when()
             .post(ApiPaths.REGISTER_PROVIDER)
         .then()

@@ -27,6 +27,9 @@ CREATE TABLE IF NOT EXISTS encounters (
     updated_by          VARCHAR(100) DEFAULT 'system'
 );
 
-CREATE INDEX IF NOT EXISTS idx_encounters_patient ON encounters(patient_id);
-CREATE INDEX IF NOT EXISTS idx_encounters_provider ON encounters(provider_id);
-CREATE INDEX IF NOT EXISTS idx_encounters_start_time ON encounters(start_time DESC);
+CREATE INDEX IF NOT EXISTS idx_encounters_patient          ON encounters(patient_id);
+CREATE INDEX IF NOT EXISTS idx_encounters_provider         ON encounters(provider_id);
+CREATE INDEX IF NOT EXISTS idx_encounters_provider_time    ON encounters(provider_id, start_time DESC);
+CREATE INDEX IF NOT EXISTS idx_encounters_patient_time     ON encounters(patient_id,  start_time DESC);
+CREATE INDEX IF NOT EXISTS idx_encounters_provider_patient ON encounters(provider_id, patient_id);
+DROP INDEX IF EXISTS idx_encounters_start_time;

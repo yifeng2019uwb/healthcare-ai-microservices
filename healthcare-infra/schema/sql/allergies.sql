@@ -29,5 +29,6 @@ CREATE TABLE IF NOT EXISTS allergies (
     PRIMARY KEY (patient_id, encounter_id, code)
 );
 
-CREATE INDEX IF NOT EXISTS idx_allergies_patient ON allergies(patient_id);
-CREATE INDEX IF NOT EXISTS idx_allergies_category ON allergies(category);
+CREATE INDEX IF NOT EXISTS idx_allergies_patient  ON allergies(patient_id);
+CREATE INDEX IF NOT EXISTS idx_allergies_encounter ON allergies(encounter_id);
+CREATE INDEX IF NOT EXISTS idx_allergies_category  ON allergies(category);

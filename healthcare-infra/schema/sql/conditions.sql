@@ -20,5 +20,6 @@ CREATE TABLE IF NOT EXISTS conditions (
     PRIMARY KEY (patient_id, encounter_id, code)
 );
 
-CREATE INDEX IF NOT EXISTS idx_conditions_patient ON conditions(patient_id);
-CREATE INDEX IF NOT EXISTS idx_conditions_code ON conditions(code);
+CREATE INDEX IF NOT EXISTS idx_conditions_patient  ON conditions(patient_id);
+CREATE INDEX IF NOT EXISTS idx_conditions_encounter ON conditions(encounter_id);
+CREATE INDEX IF NOT EXISTS idx_conditions_code      ON conditions(code);
