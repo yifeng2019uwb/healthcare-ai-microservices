@@ -1,6 +1,6 @@
 # Healthcare AI Microservices Platform
 
-HIPAA-aware healthcare platform built on Spring Boot microservices, deployed on GCP Cloud Run.
+HIPAA-aware healthcare platform built on Spring Boot microservices, deployed on a dedicated VM via Docker Compose.
 
 ## Architecture
 
@@ -8,93 +8,101 @@ HIPAA-aware healthcare platform built on Spring Boot microservices, deployed on 
 Internet
     │
     ▼
-Gateway (Cloud Run, public)
+Gateway  :8080
   · RS256 JWT validation (JWKS from auth-service)
   · Path-based RBAC (PATIENT / PROVIDER / ADMIN roles)
-  · Injects X-User-Id / X-Username / X-User-Role / X-Fhir-Id headers
+  · Injects X-User-Id / X-Username / X-User-Role headers
     │
-    ├──▶ Auth Service      (Cloud Run, internal)  /api/auth/**
-    ├──▶ Patient Service   (Cloud Run, internal)  /api/patients/**
-    ├──▶ Provider Service  (Cloud Run, internal)  /api/provider/**  /api/admin/**
-    └──▶ (AI Service — planned)                  /api/ai/**
+    ├──▶ Auth Service      :8082  /api/auth/**
+    ├──▶ Patient Service   :8081  /api/patients/**
+    └──▶ Provider Service  :8083  /api/provider/**  /api/admin/**
     │
     ▼
-Cloud SQL PostgreSQL
+Supabase PostgreSQL
 ```
 
 ## Services
 
-| Service | Status | Description |
-|---------|--------|-------------|
-| gateway | ✅ deployed | JWT validation, path-based RBAC, header injection |
-| auth-service | ✅ deployed | Register, login, refresh, logout, JWKS endpoint |
-| patient-service | ✅ deployed | Patient profile, encounters, conditions, allergies |
-| provider-service | ✅ deployed | Provider profile, patient list/detail, conditions, allergies, admin import |
-| shared | ✅ library | JPA entities, DAOs, enums, security constants |
-| appointment-service | ⏳ deferred | Encounter history — code exists, not deployed (deprioritized for AI layer) |
-| ai-service | 🔜 planned | Vertex AI Gemini — clinical summarization, risk analysis |
+| Service | Port | Status | Description |
+|---------|------|--------|-------------|
+| gateway | 8080 | deployed | JWT validation, path-based RBAC, header injection |
+| auth-service | 8082 | deployed | Register, login, refresh, logout, JWKS endpoint |
+| patient-service | 8081 | deployed | Patient profile, encounters, conditions, allergies |
+| provider-service | 8083 | deployed | Provider profile, patient management, admin data import |
+| shared | — | library | JPA entities, DAOs, enums, security constants |
+| appointment-service | — | deferred | Booking — code exists, not deployed |
+| ai-service | — | planned | Clinical summarization, risk analysis |
 
 ## Stack
 
-- **Runtime**: Java 17, Spring Boot 3.2
-- **Cloud**: GCP Cloud Run, Cloud SQL (PostgreSQL), Artifact Registry, Secret Manager
-- **Infra**: Terraform
-- **Auth**: RS256 JWT, JWKS endpoint, `fhirId` claim (patients.id / providers.id)
-- **Data**: Synthea synthetic patient data (200 patients, HIPAA-safe)
+- **Runtime**: Java 21, Spring Boot 3.4.4
+- **Gateway**: Spring Cloud Gateway
+- **Auth**: RS256 JWT, JWKS endpoint, role-based header injection
+- **Database**: Supabase PostgreSQL
+- **Deploy**: Docker Compose on dedicated VM
+- **Test data**: Synthea synthetic patient data (HIPAA-safe)
 
 ## Local Development
 
 ```bash
 cd services
 
-# build all
+# Build all services
 ./dev.sh all build
 
-# test
-./dev.sh shared test
+# Run unit tests
+./dev.sh all test
 
-# run a service locally
+# Run a single service locally
 ./dev.sh auth-service run
 ```
 
-## Deploy
+## Deploy (VM)
+
+Services run as Docker containers managed by Compose:
 
 ```bash
-# deploy one service
-./scripts/deploy-services.sh patient-service
+cd docker
+docker-compose up --build -d
+```
 
-# deploy multiple
-./scripts/deploy-services.sh auth-service patient-service
+## Database Schema
 
-# deploy everything
-./scripts/deploy-services.sh all
+```bash
+cd healthcare-infra/schema
+
+# Deploy all tables (safe to re-run — IF NOT EXISTS guards)
+DATABASE_URL="postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres" \
+  ./run-schema.sh
+
+# Deploy a single table
+DATABASE_URL="..." ./run-schema.sh encounters
 ```
 
 ## Integration Tests
 
+Tests run against the live gateway via RestAssured. See [Integration Test Guide](docs/INTEGRATION_TEST_PLAN.md).
+
 ```bash
 cd integration_tests
 
-# run all tests
+# Run all suites
 ./run-it.sh all
 
-# run by suite
+# Run a specific suite
 ./run-it.sh auth
+./run-it.sh register
 ./run-it.sh patient
 ./run-it.sh provider
 ./run-it.sh admin
-```
 
-## Full CI Pipeline
-
-```bash
-./scripts/local-ci.sh --build --test       # before push
-./scripts/local-ci.sh --deploy             # deploy all
-./scripts/local-ci.sh --all               # full pipeline
+# Override gateway URL (default: http://localhost:8080)
+GATEWAY_URL=http://<vm-ip>:8080 ./run-it.sh all
 ```
 
 ## Docs
 
-- [`docs/`](docs/) — service design docs, roadmap, AI service discussion
-- [`healthcare-infra/`](healthcare-infra/) — Terraform, DB schema, Synthea data
-- [`scripts/`](scripts/) — CI/CD and deploy scripts
+- [`docs/`](docs/) — service design docs, ADRs, roadmap
+- [`healthcare-infra/`](healthcare-infra/) — DB schema, Synthea data
+- [`integration_tests/`](integration_tests/) — RestAssured black-box tests
+- [`docker/`](docker/) — Docker Compose deployment

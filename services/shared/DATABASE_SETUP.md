@@ -1,136 +1,49 @@
-# Database Setup Guide
+# Database Setup
 
-> **⚠️ NOTE: This document describes a generic PostgreSQL setup. For actual Supabase local restore setup, refer to your Supabase documentation.**
->
-> **Current Implementation**: Uses Supabase PostgreSQL restored locally on `localhost:54322` with database `postgres`, user `postgres`. See `application.yml` files for actual configuration.
+The platform uses Supabase PostgreSQL as its database. Schema is managed via SQL files in `healthcare-infra/schema/sql/`.
 
-## Overview
-
-This project uses PostgreSQL for both development and production, ensuring consistency between test and production environments. H2 is no longer used to avoid enum handling differences.
-
-## Database Configurations
-
-### 1. Development (`application.yml`)
-- **Database**: PostgreSQL
-- **Host**: localhost:5432
-- **Database**: healthcare_dev_db
-- **Username**: healthcare_dev
-- **Password**: dev_password
-- **DDL**: create-drop (recreates schema on startup)
-
-### 2. Testing (`application-test.yml`)
-- **Database**: PostgreSQL
-- **Host**: localhost:5432
-- **Database**: healthcare_test_db
-- **Username**: healthcare_test
-- **Password**: test_password
-- **DDL**: create-drop (recreates schema for each test)
-
-### 3. Production (`application-prod.yml`)
-- **Database**: PostgreSQL
-- **Host**: ${DB_HOST:localhost}:${DB_PORT:5432}
-- **Database**: ${DB_NAME:healthcare_prod_db}
-- **Username**: ${DB_USERNAME:healthcare_prod}
-- **Password**: ${DB_PASSWORD} (environment variable)
-- **DDL**: validate (never auto-create)
-
-## Setup Instructions
-
-### 1. Install PostgreSQL
-```bash
-# macOS with Homebrew
-brew install postgresql
-brew services start postgresql
-
-# Ubuntu/Debian
-sudo apt-get install postgresql postgresql-contrib
-sudo systemctl start postgresql
-
-# Windows
-# Download from https://www.postgresql.org/download/windows/
-```
-
-### 2. Create Databases and Users
-```sql
--- Connect to PostgreSQL as superuser
-psql -U postgres
-
--- Create development database and user
-CREATE DATABASE healthcare_dev_db;
-CREATE USER healthcare_dev WITH PASSWORD 'dev_password';
-GRANT ALL PRIVILEGES ON DATABASE healthcare_dev_db TO healthcare_dev;
-
--- Create test database and user
-CREATE DATABASE healthcare_test_db;
-CREATE USER healthcare_test WITH PASSWORD 'test_password';
-GRANT ALL PRIVILEGES ON DATABASE healthcare_test_db TO healthcare_test;
-
--- Create production database and user
-CREATE DATABASE healthcare_prod_db;
-CREATE USER healthcare_prod WITH PASSWORD 'your_secure_password';
-GRANT ALL PRIVILEGES ON DATABASE healthcare_prod_db TO healthcare_prod;
-```
-
-### 3. Run Tests
-```bash
-# Run tests with PostgreSQL test database
-./dev.sh test
-
-# Or with Maven
-mvn test -Dspring.profiles.active=test
-```
-
-### 4. Run Development Server
-```bash
-# Start development server
-./dev.sh run
-
-# Or with Maven
-mvn spring-boot:run
-```
-
-## Environment Variables for Production
-
-Set these environment variables in your production environment:
+## Schema Deployment
 
 ```bash
-export DB_HOST=your-postgres-host
-export DB_PORT=5432
-export DB_NAME=healthcare_prod_db
-export DB_USERNAME=healthcare_prod
-export DB_PASSWORD=your_secure_password
+cd healthcare-infra/schema
+
+# Deploy all tables (idempotent — safe to re-run)
+DATABASE_URL="postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres" \
+  ./run-schema.sh
+
+# Deploy a single table
+DATABASE_URL="..." ./run-schema.sh providers
 ```
 
-## Enum Handling
+Tables are deployed in dependency order: `users` → `organizations` → `patients` → `providers` → `encounters` → `conditions` → `allergies` → `audit_logs` → ...
 
-PostgreSQL enums are created in the schema files:
-- `test-schema.sql` - For testing
-- `schema.sql` - For development/production
+## Service Configuration
 
-All enum values match between test and production:
-- `status_enum`: ACTIVE, INACTIVE, SUSPENDED
-- `gender_enum`: MALE, FEMALE, OTHER, UNKNOWN
-- `role_enum`: PATIENT, PROVIDER
-- `appointment_status_enum`: AVAILABLE, SCHEDULED, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW
-- `appointment_type_enum`: REGULAR_CONSULTATION, FOLLOW_UP, NEW_PATIENT_INTAKE, PROCEDURE_CONSULTATION
-- `record_type_enum`: DIAGNOSIS, TREATMENT, SUMMARY, LAB_RESULT, PRESCRIPTION, NOTE, OTHER
-- `action_type_enum`: CREATE, READ, UPDATE, DELETE, LOGIN, LOGOUT
-- `resource_type_enum`: USER_PROFILE, PATIENT_PROFILE, PROVIDER_PROFILE, APPOINTMENT, MEDICAL_RECORD
-- `outcome_enum`: SUCCESS, FAILURE
+Each service connects to Supabase via environment variables injected by Docker Compose (`docker/docker-compose.yml`):
 
-## Troubleshooting
+```
+SPRING_DATASOURCE_URL      — jdbc:postgresql://db.<ref>.supabase.co:5432/postgres
+SPRING_DATASOURCE_USERNAME — postgres
+SPRING_DATASOURCE_PASSWORD — <password>
+```
 
-### Connection Issues
-1. Ensure PostgreSQL is running: `brew services list | grep postgresql`
-2. Check database exists: `psql -U postgres -l | grep healthcare`
-3. Verify user permissions: `psql -U postgres -c "\du"`
+For local development (`./dev.sh auth-service run`), set these in the service's `application.yml` or export them before running.
 
-### Enum Issues
-1. Ensure enums are created before tables
-2. Check enum values match between test and production
-3. Verify JPA annotations use `@Enumerated(EnumType.STRING)`
+## Schema Design
 
-### Test Failures
-1. Ensure test database is clean: `DROP DATABASE healthcare_test_db; CREATE DATABASE healthcare_test_db;`
-2. Check test profile is active: `mvn test -Dspring.profiles.active=test`
-3. Verify test data is loaded correctly
+- **UUIDs**: Assigned by the application layer — not DB-generated (Synthea data has stable UUIDs)
+- **Indexes**: All query methods in DAO interfaces must have a corresponding index in the SQL file
+- **Audit logs**: Append-only — no DELETE permitted (enforced at DAO layer via `AuditLogDao`)
+- **DDL mode**: `validate` in all service configs — Hibernate never modifies the schema
+
+## Enums
+
+All enums are stored as `VARCHAR` in the DB (`@Enumerated(EnumType.STRING)`). Current enums:
+
+| Enum | Values |
+|------|--------|
+| `UserRole` | PATIENT, PROVIDER, ADMIN |
+| `ActionType` | CREATE, READ, UPDATE, DELETE, LOGIN, LOGOUT |
+| `Outcome` | SUCCESS, FAILURE |
+| `EncounterStatus` | FINISHED, IN_PROGRESS, PLANNED |
+| `EncounterType` | AMB, EMER, IMP, ... |

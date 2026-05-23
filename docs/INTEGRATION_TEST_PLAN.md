@@ -1,220 +1,113 @@
-# Integration Test Plan - Local Database Testing
+# Integration Test Guide
 
-> **Quick Plan**: Essential integration tests for local DB testing (not comprehensive)
+Black-box RestAssured tests that run against the live deployed gateway.
+Tests exercise the full stack: gateway → service → Supabase DB.
 
-## 🎯 **Goal**
-Test critical service endpoints against local PostgreSQL database (`localhost:54322`) to verify end-to-end functionality.
+## Prerequisites
 
-## 📋 **Test Strategy**
+- Java 21 and Maven installed
+- Gateway reachable at `http://localhost:8080` (default) or set `GATEWAY_URL`
+- Test accounts seeded in the DB (see [Test Accounts](#test-accounts))
 
-### **Approach**
-- **Local DB**: Connect to existing PostgreSQL on `localhost:54322`
-- **Test Profile**: Use `application-test.yml` with test database config
-- **Test Data**: Create via API endpoints (POST requests)
-- **Cleanup**: **Skip cleanup** - HIPAA compliant (no DELETE for patient data)
-- **Isolation**: Use unique test data (UUIDs/timestamps) to avoid conflicts
+## Running Tests
 
-### **Test Scope** (Essential Only)
-Focus on **3 critical paths**:
-1. ✅ Patient Creation Flow
-2. ✅ Patient Profile Retrieval
-3. ✅ Health Check Endpoint
+```bash
+cd integration_tests
 
-## 🧪 **Integration Tests to Implement**
+# Verify test accounts are reachable before running suites
+./run-it.sh seed
 
-### **1. Patient Service Integration Tests** ⭐ Priority
+# Run all suites
+./run-it.sh all
 
-#### **1.1 PatientCreationIntegrationTest**
-**Purpose**: Verify patient creation works end-to-end with DB
+# Run specific suites
+./run-it.sh auth
+./run-it.sh register
+./run-it.sh patient
+./run-it.sh provider
+./run-it.sh admin
 
-**Tests**:
-- `testCreatePatient_Success()` - Valid patient creation
-- `testCreatePatient_DuplicateEmail()` - Conflict handling
-- `testCreatePatient_InvalidData()` - Validation errors
+# Run multiple suites
+./run-it.sh auth patient provider
 
-**Test Data**:
-- Valid patient: email, firstName, lastName, phone
-- Duplicate email for conflict test
-- Invalid email format for validation test
-
-**Location**: `services/patient-service/src/test/java/com/healthcare/controller/PatientCreationIntegrationTest.java`
-
-#### **1.2 PatientProfileIntegrationTest**
-**Purpose**: Verify patient profile retrieval from DB
-
-**Tests**:
-- `testGetPatientProfile_Success()` - Retrieve existing patient
-- `testGetPatientProfile_NotFound()` - 404 handling
-- `testGetPatientProfile_ByExternalUserId()` - Query by external ID
-
-**Test Data**:
-- Pre-created patient via API (POST /api/patients) with unique data
-- Non-existent externalUserId for 404 test
-- No cleanup needed (HIPAA compliant)
-
-**Location**: `services/patient-service/src/test/java/com/healthcare/controller/PatientProfileIntegrationTest.java`
-
-### **2. Health Check Integration Test** ⚡ Quick Win
-
-#### **2.1 HealthCheckIntegrationTest**
-**Purpose**: Verify service health and DB connectivity
-
-**Tests**:
-- `testHealthCheck_Success()` - Returns 200 OK
-- `testHealthCheck_IncludesDbStatus()` - Checks DB connection
-
-**Location**: `services/patient-service/src/test/java/com/healthcare/controller/HealthCheckIntegrationTest.java`
-
-## 🔧 **Implementation Setup**
-
-### **Required Dependencies**
-- Spring Boot Test (already in pom.xml)
-- PostgreSQL driver (already in pom.xml)
-
-### **Test Configuration File**
-**File**: `services/patient-service/src/test/resources/application-test.yml`
-- Configure test database connection (`localhost:54322`)
-- Use `test` profile
-- Set JPA `ddl-auto: validate` (use existing schema)
-
-### **Utility Classes to Create**
-
-#### **1. ApiUrlUtils.java**
-- Centralize API endpoint URLs
-- Methods: `getCreatePatientUrl()`, `getProfileUrl()`, `getHealthUrl()`, etc.
-- Use constants or base URL + endpoint paths
-
-#### **2. TestDataBuilder.java**
-- Helper functions for test input generation
-- Methods: `createTestPatientInput()`, `createUniqueEmail()`, `createUniqueExternalUserId()`, etc.
-- Generate unique test data (UUIDs/timestamps)
-
-## 🧹 **Integration Test Cleanup Strategy**
-
-### **No Cleanup - HIPAA Compliant**
-**Important**: Patient data cannot be deleted per HIPAA regulations. Integration tests will **skip cleanup**.
-
-**Approach**: Use **unique test data** (UUIDs/timestamps) to avoid conflicts between test runs.
-
-### **Why No Cleanup?**
-- ✅ **HIPAA Compliance**: Patient data must not be deleted
-- ✅ **Simpler Tests**: No cleanup code needed
-- ✅ **Unique Data**: UUIDs/timestamps prevent test conflicts
-- ✅ **Realistic**: Matches production behavior (data retention)
-
-## 📁 **File Structure**
-
-```
-services/patient-service/src/test/
-├── java/com/healthcare/
-│   ├── controller/
-│   │   ├── PatientCreationIntegrationTest.java    ⭐
-│   │   ├── PatientProfileIntegrationTest.java     ⭐
-│   │   └── HealthCheckIntegrationTest.java        ⚡
-│   ├── util/
-│   │   ├── ApiUrlUtils.java                       (API endpoint URLs)
-│   │   └── TestDataBuilder.java                   (Test input builders)
-│   └── BaseIntegrationTest.java                   (Base test class)
-├── resources/
-│   └── application-test.yml                       (test DB config)
+# Override gateway URL
+GATEWAY_URL=http://<vm-ip>:8080 ./run-it.sh all
 ```
 
-## 🚀 **Execution Plan**
+## Test Suites
 
-### **Phase 1: Quick Setup**
-1. Create `application-test.yml` with test DB config
-2. Create utility classes:
-   - `ApiUrlUtils.java` - Centralize API endpoint URLs
-   - `TestDataBuilder.java` - Helper functions for test input generation
-3. Create `BaseIntegrationTest` base class
-4. Implement `HealthCheckIntegrationTest` (simplest first - no cleanup needed)
+| Suite | Class | Description |
+|-------|-------|-------------|
+| `seed` | `util.SeedAccounts` | Verifies test accounts are reachable |
+| `auth` | `auth.AuthIT` | Login, refresh, logout flows |
+| `register` | `auth.RegisterPatientIT` + `auth.RegisterProviderIT` | Registration validation and error paths |
+| `patient` | `patient.PatientProfileIT` | Patient profile, encounters, conditions, allergies |
+| `provider` | `provider.ProviderProfileIT` | Provider profile, patient list |
+| `admin` | `admin.AdminImportIT` | Synthea CSV import endpoints |
 
-### **Phase 2: Core Tests**
-5. Implement `PatientCreationIntegrationTest` with 3 test cases
-   - Use `ApiUrlUtils` for endpoints
-   - Use `TestDataBuilder` for test input
-6. Implement `PatientProfileIntegrationTest` with 3 test cases
-   - Use `ApiUrlUtils` for endpoints
-   - Use `TestDataBuilder` for test input
+## Test Accounts
 
-### **Phase 3: Verification**
-7. Run tests locally: `./dev.sh patient-service test`
-8. Verify all tests pass against local DB
-9. Add to CI workflow if needed
+Defined in `integration_tests/util/TestAccounts.java`.
 
-## ✅ **Success Criteria**
+| Role | Username | Email | Notes |
+|------|----------|-------|-------|
+| Patient | `testpatient01` | `test01@example.com` | Jena102 Gislason620, DOB 1974-04-17 |
+| Patient 2 | `testpatient02` | `test02@example.com` | Cross-patient isolation tests |
+| Provider | `drDouglass` | `Douglass930@hospital.com` | Douglass930 Windler79, org NAVOS |
+| Admin | `admin123` | — | Synthea import tests |
 
-- ✅ All 7 integration tests pass against local DB
-- ✅ Unique test data prevents conflicts (UUIDs/timestamps)
-- ✅ Tests are isolated and can run in any order
-- ✅ HIPAA compliant - no patient data deletion
-- ✅ Test data remains in DB (as per HIPAA regulations)
+Override any account via system property:
+```bash
+GATEWAY_URL=... ./run-it.sh auth \
+  -Dtest.provider.username=other_provider \
+  -Dtest.provider.email=other@hospital.com
+```
 
-## 📝 **Test Data Strategy**
+## Stateful Tests
 
-### **Test Data Generation Utilities**
-Create utility classes/functions for:
-1. **API URL Utilities**: Centralize endpoint URLs (don't hardcode)
-   - Use utility class to get each API endpoint URL
-   - Example: `ApiUrlUtils.getCreatePatientUrl()`, `ApiUrlUtils.getProfileUrl()`
+Some happy-path registration tests are `@Disabled` — they register an account and cannot be re-run once the record is linked. To run them:
 
-2. **Test Input Builders**: Helper functions to create test input data
-   - Create function to generate `CreatePatientInput` with unique data
-   - Use UUIDs/timestamps for uniqueness (email, externalUserId, phone)
+1. Enable the `@Disabled` test in the relevant `Register*IT.java`
+2. Run: `./run-it.sh register`
+3. Re-disable immediately after a successful run
 
-3. **Unique Data Generation**
-   - Email: `test-{UUID}@example.com` - Guaranteed unique
-   - External User ID: `test-external-{timestamp}-{UUID}` - Guaranteed unique
-   - Phone: Pattern like `+1{timestamp}` for uniqueness
+Affected tests:
+- `RegisterPatientIT.register_withValidUnregisteredPatient_returns201`
+- `RegisterProviderIT.register_withValidUnregisteredProvider_returns201`
 
-**Result**: Each test run creates unique data, no conflicts, no cleanup needed
+## Admin Suite — Extra Setup
 
-## 🎓 **Testing Best Practices**
+The `admin` suite requires Synthea CSV data:
 
-1. **Naming**: `test<Action>_<Condition>()` pattern
-2. **Isolation**: Each test is independent with unique data
-3. **No Cleanup**: HIPAA compliant - patient data is not deleted
-4. **Assertions**: Verify both HTTP status and response body
-5. **Utility Classes**: Use `ApiUrlUtils` for endpoints, `TestDataBuilder` for test input
-6. **Unique Test Data**: Always use UUIDs and timestamps for uniqueness (prevents conflicts)
-7. **API-First**: Use actual API endpoints for setup (no SQL scripts)
-8. **HIPAA Compliance**: Never delete patient data - test data remains in DB
-9. **Code Organization**: Keep test utilities separate from test classes
+```bash
+# Generate test CSV data (n = number of patients)
+./healthcare-infra/synthea/run-synthea.sh test-data <n>
 
-## 🔄 **Future Enhancements** (Not in this plan)
+# Then run admin tests
+CSV_DIR=./integration_tests/test-data/csv ./run-it.sh admin
+```
 
-- Appointment booking integration tests
-- Provider service integration tests
-- Gateway service integration tests
-- Testcontainers for CI environment (optional)
+## Structure
 
-## 📋 **Cleanup Strategy - HIPAA Compliant**
-
-### **Approach: No Cleanup (HIPAA Compliant)**
-- ✅ **No DELETE endpoint** - Patient data cannot be deleted per HIPAA
-- ✅ **Unique test data** - UUIDs/timestamps prevent conflicts
-- ✅ **No cleanup code** - Simpler tests, no `@AfterEach` needed
-- ✅ **Data retention** - Test data remains in DB (as required by HIPAA)
-
-### **Benefits**
-1. **HIPAA Compliant**: Follows healthcare data retention regulations
-2. **Simpler**: No cleanup code to write/maintain
-3. **Faster Tests**: No cleanup overhead
-4. **Realistic**: Matches production behavior (data is not deleted)
-
-## 📋 **Utility Classes Overview**
-
-### **ApiUrlUtils**
-- Purpose: Centralize API endpoint URLs (no hardcoding)
-- Location: `services/patient-service/src/test/java/com/healthcare/util/ApiUrlUtils.java`
-- Methods: Get URLs for each API endpoint
-
-### **TestDataBuilder**
-- Purpose: Helper functions to create test input data
-- Location: `services/patient-service/src/test/java/com/healthcare/util/TestDataBuilder.java`
-- Methods: Build test input objects with unique data
-
----
-
-**Status**: 📋 Plan Ready (HIPAA Compliant - No Cleanup, Utility-Based)
-**Next Step**: Create utility classes (`ApiUrlUtils`, `TestDataBuilder`), then create `application-test.yml` and first test class
+```
+integration_tests/
+├── run-it.sh                    # main runner
+├── pom.xml
+└── src/test/java/
+    ├── util/
+    │   ├── BaseIT.java          # RestAssured base — reads GATEWAY_URL
+    │   ├── TestAccounts.java    # credential constants
+    │   ├── LoginHelper.java     # asPatient(), asProvider(), withToken()
+    │   ├── ApiPaths.java        # API path constants
+    │   └── SeedAccounts.java    # seed verification
+    ├── auth/
+    │   ├── AuthIT.java
+    │   ├── RegisterPatientIT.java
+    │   └── RegisterProviderIT.java
+    ├── patient/
+    │   └── PatientProfileIT.java
+    ├── provider/
+    │   └── ProviderProfileIT.java
+    └── admin/
+        └── AdminImportIT.java
+```

@@ -1,26 +1,24 @@
 # Database Design
 
-> Version: 1.0 | Last Updated: March 2026
-> Previous versions archived in `docs/archive/`
+> Version: 2.0 | Last Updated: May 2026
 
 ---
 
 ## Overview
 
-Single Cloud SQL PostgreSQL 15 instance, one database (`healthcare`), multiple
-tables. Each service connects with its own DB user — permissions enforced at
-the PostgreSQL role level, not just application code.
+Supabase PostgreSQL. All services share a single connection (no per-service DB users).
+Schema managed via SQL files in `healthcare-infra/schema/sql/` — deployed with `run-schema.sh`.
 
-**Database instance**: `healthcare-db-dev` (GCP us-west1)
-**Database name**: `healthcare`
-**Infrastructure**: See `healthcare-infra/terraform/cloud_sql.tf`
+**Database**: Supabase managed PostgreSQL
+**Connection**: injected via Docker Compose env vars — `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`
+**DDL mode**: `validate` in all service configs — Hibernate never modifies the schema
 
 ---
 
 ## Data Source
 
 All clinical tables (patients, organizations, providers, encounters, conditions,
-allergies) are populated from Synthea synthetic patient data — 200 Washington
+allergies) are populated from Synthea synthetic patient data — ~200 Washington
 state patients. No real patient data.
 
 See `healthcare-infra/synthea/` for generation and loading scripts.
@@ -29,128 +27,66 @@ See `healthcare-infra/synthea/` for generation and loading scripts.
 
 ## Patient Record Matching
 
-### Phase 1 — Best Effort Match
-```
-first_name + last_name + birthdate + gender
-```
-Limitation — not guaranteed unique for large datasets. Two patients
-could share the same name, birthdate, and gender.
+### Phase 1 — MRN
+`mrn` column in the `patients` table. Service-generated (e.g. `MRN-000001`), given
+to the patient by their provider. Used as the primary matching key at registration.
 
-### Phase 2 — MRN (Medical Record Number)
-`mrn` column is in the `patients` table. Service-generated, unique, given to patient by provider.
-More reliable than name+birthdate matching. Already active — no schema change needed.
+MRN is currently generated with `Random` — tracked in tech debt as a future fix
+to use a DB sequence (collision-safe, like `provider_code`).
 
-### Future — SSN Matching
-Synthea generates unique fake SSNs. Real healthcare systems use SSN
-for patient matching. Requires encryption at rest — not implemented
-in Phase 1.
+### Provider Matching
+Provider registration uses `organization_name` + full name (`findByNameAndOrganizationId`).
+Backed by composite index `(organization_id, name)` on the providers table.
 
 ---
 
 ## Table Ownership and Access
 
-| Table | Owner Service | Write Access | Read Access |
-|---|---|---|---|
+| Table | Owner Service | Write | Read |
+|-------|---------------|-------|------|
 | `users` | auth-service | auth-service only | auth-service only |
-| `patients` | patient-service | patient (own profile) + provider (create) | patient-service + provider-service |
-| `organizations` | provider-service | provider-service only | all services |
-| `providers` | provider-service | provider-service only | all services |
-| `encounters` | appointment-service | appointment-service (Phase 2) | all services |
-| `conditions` | patient-service | Phase 2 | patient-service + provider-service |
-| `allergies` | patient-service | Phase 2 | patient-service + provider-service |
+| `patients` | patient-service | patient (own) + provider (create) | patient-service + provider-service |
+| `organizations` | provider-service | provider-service | all services |
+| `providers` | provider-service | provider-service | all services |
+| `encounters` | appointment-service | appointment-service | all services |
+| `conditions` | patient-service | provider only | patient-service + provider-service |
+| `allergies` | patient-service | provider only | patient-service + provider-service |
 | `audit_logs` | all services | all services | admin only |
 
 ### Access Rules
 
-- **Patient** — reads/updates own profile only; reads own conditions, allergies,
-  encounters; cannot write clinical data
-- **Provider** — reads patient data where encounter exists; writes clinical data
-  (conditions, allergies) after visit; updates encounter records
-- **Auth service** — exclusive access to users table; no other service can read
-  or write credentials
+- **Patient** — reads/updates own profile only; reads own conditions, allergies, encounters; cannot write clinical data
+- **Provider** — reads patient data where encounter exists; writes clinical data (conditions, allergies) after visit
+- **Auth service** — exclusive access to users table; no other service touches credentials
 - **Audit logs** — every service writes; no service reads (admin/monitoring only)
-
-### Why Provider Writes conditions and allergies
-
-Provider is a qualified clinician — they add diagnoses and allergies after a
-patient visit. Patient cannot self-diagnose or add their own medical conditions.
-This follows the HIPAA minimum necessary rule — each role only performs actions
-their job requires.
-
----
-
-## PostgreSQL Roles and Permissions
-
-Each service connects with its own DB user assigned a role with restricted
-table permissions. Even if one service is compromised, the attacker can only
-access that service's permitted tables.
-
-See `healthcare-infra/schema/sql/permissions.sql` for full SQL.
-
-### Role Summary
-
-```
-auth_role
-    CRUD  → users
-
-patient_role
-    CRU   → patients
-    CRU   → conditions
-    CRU   → allergies
-    R     → providers, organizations, encounters
-    C     → audit_logs
-
-provider_role
-    CRUD  → providers, organizations
-    CRU   → conditions, allergies, encounters
-    R     → patients
-    C     → audit_logs
-
-appointment_role
-    CRU   → encounters
-    R     → patients, providers, organizations
-    C     → audit_logs
-```
-
-### Service DB Users
-
-| Service | DB User | Role Assigned | Secret Manager Key |
-|---|---|---|---|
-| auth-service | `auth_service_user` | `auth_role` | `db-password-auth-service` |
-| patient-service | `patient_service_user` | `patient_role` | `db-password-patient-service` |
-| provider-service | `provider_service_user` | `provider_role` | `db-password-provider-service` |
-| appointment-service | `appointment_service_user` | `appointment_role` | `db-password-appointment-service` |
 
 ---
 
 ## Schema Files
 
-All SQL files in `healthcare-infra/schema/sql/`:
+All SQL files in `healthcare-infra/schema/sql/` — idempotent (`CREATE TABLE IF NOT EXISTS`):
 
-| File | Tables | Phase |
-|---|---|---|
-| `users.sql` | users | 1 |
-| `patients.sql` | patients | 1 |
-| `organizations.sql` | organizations | 1 |
-| `providers.sql` | providers | 1 |
-| `encounters.sql` | encounters | 1 |
-| `conditions.sql` | conditions | 1 |
-| `allergies.sql` | allergies | 1 |
-| `audit_logs.sql` | audit_logs | 1 |
-| `permissions.sql` | roles + grants | 1 |
-| `medications.sql` | medications | 2 |
-| `observations.sql` | observations | 2 |
+| File | Tables |
+|------|--------|
+| `users.sql` | users |
+| `patients.sql` | patients |
+| `organizations.sql` | organizations |
+| `providers.sql` | providers |
+| `encounters.sql` | encounters |
+| `conditions.sql` | conditions |
+| `allergies.sql` | allergies |
+| `audit_logs.sql` | audit_logs |
 
 ---
 
 ## Table Definitions
 
 ### `users`
-Owner: auth-service. Stores login credentials and role. Not PHI.
+Owner: auth-service. Login credentials and role. Not PHI.
 
 | Column | Type | Notes |
-|---|---|---|
-| id | UUID PK DEFAULT gen_random_uuid() | |
+|--------|------|-------|
+| id | UUID PK | |
 | username | VARCHAR(100) UNIQUE NOT NULL | |
 | email | VARCHAR(255) UNIQUE NOT NULL | |
 | password_hash | VARCHAR(255) NOT NULL | BCrypt |
@@ -163,10 +99,10 @@ Owner: auth-service. Stores login credentials and role. Not PHI.
 Owner: patient-service. Synthea patients.csv + auth linkage.
 
 | Column | Type | Notes |
-|---|---|---|
+|--------|------|-------|
 | id | UUID PK | Set by service (Synthea UUID on import, `UUID.randomUUID()` for new records) |
 | auth_id | UUID UNIQUE | FK to users.id — null until registered |
-| mrn | VARCHAR(20) UNIQUE | Service-generated (e.g. MRN-000001). Given to patient for account registration. |
+| mrn | VARCHAR(20) UNIQUE | Service-generated (e.g. MRN-000001). Given to patient for registration. |
 | birthdate | DATE NOT NULL | |
 | deathdate | DATE | Null if alive |
 | prefix | VARCHAR(10) | |
@@ -198,16 +134,16 @@ Owner: patient-service. Synthea patients.csv + auth linkage.
 Owner: provider-service. Synthea organizations.csv.
 
 | Column | Type | Notes |
-|---|---|---|
-| id | UUID PK | Set by service (Synthea UUID on import, `UUID.randomUUID()` for new records) |
+|--------|------|-------|
+| id | UUID PK | Set by service (Synthea UUID on import) |
 | name | VARCHAR(255) NOT NULL | |
-| address | VARCHAR(255) NOT NULL | Required for registration |
+| address | VARCHAR(255) NOT NULL | |
 | city | VARCHAR(100) NOT NULL | |
 | state | VARCHAR(50) NOT NULL | |
 | zip | VARCHAR(20) NOT NULL | |
 | phone | VARCHAR(50) | |
-| lat | DECIMAL(10,6) | System derived via geocoding |
-| lon | DECIMAL(10,6) | System derived via geocoding |
+| lat | DECIMAL(10,6) | System derived |
+| lon | DECIMAL(10,6) | System derived |
 | revenue | DECIMAL(12,2) | Synthea metric, nullable |
 | utilization | INTEGER | Synthea metric, nullable |
 
@@ -216,11 +152,11 @@ Owner: provider-service. Synthea providers.csv + auth linkage.
 Address removed — derived from organization_id JOIN.
 
 | Column | Type | Notes |
-|---|---|---|
-| id | UUID PK | Set by service (Synthea UUID on import, `UUID.randomUUID()` for new records) |
+|--------|------|-------|
+| id | UUID PK | Set by service (Synthea UUID on import) |
 | organization_id | UUID NOT NULL FK → organizations | |
 | auth_id | UUID UNIQUE | FK to users.id — null until registered |
-| provider_code | VARCHAR(20) UNIQUE | Service-generated (e.g. PRV-000001). Given to provider for account registration. |
+| provider_code | VARCHAR(20) UNIQUE | Service-generated (e.g. PRV-000001). Given to provider for registration. |
 | name | VARCHAR(255) NOT NULL | |
 | gender | VARCHAR(1) | M/F |
 | speciality | VARCHAR(100) | Synthea spelling |
@@ -234,8 +170,8 @@ Owner: appointment-service. Synthea encounters.csv.
 organization_id kept as snapshot — org/provider may change after encounter.
 
 | Column | Type | Notes |
-|---|---|---|
-| id | UUID PK | Set by service (Synthea UUID on import, `UUID.randomUUID()` for new records) |
+|--------|------|-------|
+| id | UUID PK | Set by service (Synthea UUID on import) |
 | patient_id | UUID NOT NULL FK → patients | |
 | provider_id | UUID NOT NULL FK → providers | |
 | organization_id | UUID NOT NULL FK → organizations | Snapshot at time of encounter |
@@ -256,12 +192,12 @@ organization_id kept as snapshot — org/provider may change after encounter.
 Owner: patient-service. Write: provider only. Synthea conditions.csv.
 
 | Column | Type | Notes |
-|---|---|---|
+|--------|------|-------|
 | patient_id | UUID NOT NULL FK → patients | |
 | encounter_id | UUID NOT NULL FK → encounters | |
 | start_date | DATE NOT NULL | |
 | stop_date | DATE | Null if ongoing |
-| system | VARCHAR(20) NOT NULL DEFAULT 'SNOMED-CT' | Kept for future data sources |
+| system | VARCHAR(20) NOT NULL DEFAULT 'SNOMED-CT' | |
 | code | VARCHAR(20) NOT NULL | SNOMED-CT |
 | description | VARCHAR(255) NOT NULL | |
 | PRIMARY KEY | (patient_id, encounter_id, code) | Composite |
@@ -270,13 +206,13 @@ Owner: patient-service. Write: provider only. Synthea conditions.csv.
 Owner: patient-service. Write: provider only. Synthea allergies.csv.
 
 | Column | Type | Notes |
-|---|---|---|
+|--------|------|-------|
 | patient_id | UUID NOT NULL FK → patients | |
 | encounter_id | UUID NOT NULL FK → encounters | |
 | start_date | DATE NOT NULL | |
 | stop_date | DATE | |
 | code | VARCHAR(20) NOT NULL | |
-| system | VARCHAR(20) | RxNorm or SNOMED-CT or Unknown |
+| system | VARCHAR(20) | RxNorm or SNOMED-CT |
 | description | VARCHAR(255) NOT NULL | |
 | allergy_type | VARCHAR(20) | allergy / intolerance |
 | category | VARCHAR(20) | environment, food, drug |
@@ -294,7 +230,7 @@ HIPAA Security Rule 45 CFR § 164.312(b). Append only — no DELETE.
 Retention: 6 years minimum.
 
 | Column | Type | Notes |
-|---|---|---|
+|--------|------|-------|
 | id | UUID PK DEFAULT gen_random_uuid() | |
 | auth_id | VARCHAR(128) | Who made the request |
 | user_role | VARCHAR(20) | PATIENT, PROVIDER — minimum necessary rule |
@@ -308,43 +244,47 @@ Retention: 6 years minimum.
 
 ---
 
-## Phase 2 Tables
+## Indexes
 
-| Table | Owner | Notes |
-|---|---|---|
-| `medications` | patient-service | Synthea medications.csv — for Vertex AI |
-| `observations` | patient-service | Synthea observations.csv — for Vertex AI |
-| `payers` | appointment-service | Synthea payers.csv — billing/insurance |
+Every DAO query method has a corresponding DB index. Key composite indexes:
+
+| Index | Table | Columns | Reason |
+|-------|-------|---------|--------|
+| idx_providers_org_name | providers | (organization_id, name) | Provider registration lookup |
+| idx_encounters_provider_time | encounters | (provider_id, start_time DESC) | Provider encounter history |
+| idx_encounters_patient_time | encounters | (patient_id, start_time DESC) | Patient encounter history |
+| idx_encounters_provider_patient | encounters | (provider_id, patient_id) | Provider's patient list |
+| idx_allergies_encounter | allergies | (encounter_id) | Allergies by encounter |
+| idx_conditions_encounter | conditions | (encounter_id) | Conditions by encounter |
 
 ---
 
 ## Design Decisions
 
-**Why one database, multiple tables (not separate databases)?**
-Cost — one Cloud SQL instance, one database. Access control enforced at
-PostgreSQL role level per service user, not by separate databases.
+**Why the service sets UUIDs instead of the DB?**
+Service layer calls `UUID.randomUUID()` for new records and uses the Synthea UUID for
+imported records. DB enforces `PRIMARY KEY` uniqueness only. This keeps UUID generation
+predictable and testable, and lets import preserve Synthea's cross-table FK references.
 
-**Why does the service set UUIDs instead of the DB?**
-Service layer calls `UUID.randomUUID()` for new records and uses the Synthea UUID for imported records.
-DB enforces `PRIMARY KEY` uniqueness and refuses duplicates — it does not generate IDs.
-This keeps UUID generation predictable and testable without DB involvement, and lets import
-preserve Synthea's cross-table FK references without a mapping table.
+MRN and provider_code follow the same principle — service-generated, DB enforces uniqueness.
 
-MRN and provider_code follow the same principle — service-generated, DB enforces uniqueness only.
-
-**Why auth_id is VARCHAR in patients/providers, not FK to users?**
+**Why auth_id is not a strict FK to users?**
 Microservices pattern — no FK constraints crossing service boundaries.
 Services communicate via JWT claims, not shared DB constraints.
 
-**Why organization_id kept in encounters as snapshot?**
-Provider or org data may change after an encounter. The snapshot preserves
-what was true at the time of the visit — correct healthcare data modeling.
+**Why organization_id is kept in encounters as a snapshot?**
+Provider or org data may change after an encounter. The snapshot preserves what was
+true at the time of the visit — correct healthcare data modeling.
 
-**Why no DELETE permission on audit_logs?**
-HIPAA prohibits deleting PHI access records. Audit logs are append-only
-by design and policy.
+**Why no DELETE on audit_logs?**
+HIPAA prohibits deleting PHI access records. Audit logs are append-only by design.
 
-**Why provider writes conditions and allergies but doesn't own the table?**
-Ownership = who manages the table structure and schema.
+**Why provider writes conditions and allergies but doesn't own the tables?**
+Ownership = who manages the table structure.
 Write access = who can insert/update rows at runtime.
-Provider writes clinical data after visits but patient-service owns the schema.
+Provider writes clinical data after visits; patient-service owns the schema.
+
+**Why all services share one DB connection?**
+Running on a single VM with Supabase. Per-service DB users add operational complexity
+with no practical blast radius benefit at this scale. Access control is enforced at
+the application layer (service boundaries + JWT claims).

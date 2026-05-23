@@ -15,6 +15,52 @@
 
 ---
 
+## 2026-05-22
+
+**Provider registration by org + name**
+- Added `organization_name` field to `RegisterProviderRequest` (Jackson `@JsonProperty("organization_name")`)
+- Rewrote `AuthService.findUniqueProvider` — looks up org by name first, then `findByNameAndOrganizationId`; handles org not found, no match, multiple matches, already registered
+- Added `OrganizationDao` dependency to `AuthService`
+- Updated `AuthServiceTest` — 4 provider test methods now use `organizationDao` mock + org stub
+- Updated `TestAccounts` — added `PROVIDER_ORG_NAME = "NAVOS"`
+- Updated `RegisterProviderIT` — all 7 test request bodies include `organization_name`
+- Fixed `register_withAlreadyTakenEmail_returns409` returning 400 — was missing `organization_name`, triggering `@NotBlank` before service logic
+
+**Schema indexes**
+- `encounters.sql` — added composite indexes: `(provider_id, start_time DESC)`, `(patient_id, start_time DESC)`, `(provider_id, patient_id)`; dropped stale `idx_encounters_start_time`
+- `providers.sql` — replaced `idx_providers_name` with `idx_providers_org_name ON (organization_id, name)`
+- `audit_logs.sql` — added `idx_audit_action`, `idx_audit_outcome`
+- `allergies.sql` — added `idx_allergies_encounter`
+- `conditions.sql` — added `idx_conditions_encounter`
+- `shared/EncounterDaoTest` — removed unused imports (`EncounterStatus`, `EncounterType`) and unused constant `ORG_ID`
+
+**Documentation overhaul — 6 docs rewritten**
+- `README.md` — current Docker Compose VM architecture, Supabase, Java 21/Spring Boot 3.4.4
+- `docs/INTEGRATION_TEST_PLAN.md` — how-to guide: test suites, accounts (patient01/02, drDouglass/NAVOS), stateful test warning, admin CSV setup
+- `healthcare-infra/README.md` — Supabase DB, run-schema.sh, Synthea; removed GCP infra
+- `scripts/README.md` — dev.sh primary, local-ci.sh GCP stages noted as archived
+- `services/README.md` — all services deployed, correct ports
+- `services/shared/DATABASE_SETUP.md` — Supabase connection, schema deployment, DDL-validate mode, enum table
+
+**Doc archive and cleanup**
+- Moved to `docs/achieve/`: `PROJECT_STRUCTURE.md`, `.github/README.md`, `docs/guides/RBAC-Practice-Guide.md`
+- Deleted: `kubernetes/README.md`, `frontend/README.md`, `docs/SHARED_MODULE_IMPLEMENTATION.md`, `docs/guides/Data-Layer-and-Existing-Data-Discussion.md`
+- Created new `PROJECT_STRUCTURE.md` reflecting current structure
+- Rewrote `docs/system-design.md` — Docker Compose VM, Supabase, current services and ports, 5 security layers
+- Rewrote `docs/database-design.md` — removed Cloud SQL/GCP/per-service DB users; kept all table definitions + indexes summary + design decisions; added shared-connection rationale
+- Replaced `healthcare-infra/scripts/README.md` — removed old Terraform `deploy-all.sh` content, pointer to `run-schema.sh`
+
+**Backlog cleanup**
+- Removed stale epics: Azure migration, MIMIC-IV data model, old phase plans, Terraform task codes, all old completed task history
+- Removed resolved items: TD-1 (refresh 503), TD-2 (logout), TD-5 (Cloud Run 503)
+- Removed TD-3 (Gateway RBAC) — verified already implemented in `JwtAuthFilter` with prefix-matched `role-paths` config
+- Corrected TD-4 — fix is return 404 (not 403) for patients provider can't access; 403 leaks that the patient ID is valid
+- Removed provider_patients join table item — not a real issue; all registered patients have Synthea encounter history
+- Added: AI service (Java/RabbitMQ/Vertex AI Gemini, design in `ai-service-discussion.md`)
+- Added: eBPF EDR on healthcare VM (deploy agent, grant compute SA, add to `infra/main.go`)
+
+---
+
 ## 2026-04-15
 
 - Java 17 → 21, Spring Boot 3.2 → 3.4.4, Docker base image 17 → 21 (all services)

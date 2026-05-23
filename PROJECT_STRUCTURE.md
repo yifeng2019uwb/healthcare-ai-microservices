@@ -1,102 +1,103 @@
-# Healthcare AI Microservices - Project Structure
+# Project Structure
 
-## 📁 **Directory Overview**
+## Repository Layout
 
 ```
 healthcare-ai-microservices/
-├── .github/                    # GitHub Actions CI/CD workflows
-├── config/                     # Configuration files and templates
-├── docker/                     # Docker configurations and compose files
-├── docs/                       # Project documentation (already exists)
-├── frontend/                   # React frontend applications
-│   ├── patient-portal/         # Patient-facing application
-│   ├── provider-portal/        # Healthcare provider application
-│   └── admin-portal/           # Administrative interface
-├── services/                   # Backend microservices (Hybrid: Java + Python)
-│   ├── shared/                 # Shared Java modules and utilities
-│   ├── gateway/                # Spring Cloud Gateway (Port 8080) - Java
-│   ├── auth-service/           # Authentication service (Port 8001) - Java
-│   ├── patient-service/        # Patient management (Port 8002) - Java
-│   ├── provider-service/       # Provider management (Port 8003) - Java
-│   ├── appointment-service/    # Appointment management (Port 8004) - Java
-│   ├── ai-service/             # AI features (Port 8005) - Python/FastAPI
-│   └── file-storage-service/   # File management (Port 8006) - Java
-├── terraform/                  # Infrastructure as Code
-│   ├── environments/           # Environment-specific configurations
-│   ├── modules/                # Reusable Terraform modules
-│   └── main.tf                 # Main Terraform configuration
-├── kubernetes/                 # Kubernetes deployment manifests
-│   ├── base/                   # Base manifests for all services
-│   └── overlays/               # Environment-specific overrides
-├── monitoring/                 # Monitoring and observability setup
-├── scripts/                    # Deployment and utility scripts
-├── integration_tests/          # API testing and integration tests
-├── .gitignore                  # Git ignore rules
-├── README.md                   # Main project documentation
-├── deploy.sh                   # Main deployment script
-└── PROJECT_STRUCTURE.md        # This file
+├── services/                        # Spring Boot microservices
+│   ├── pom.xml                      # parent POM (Java 21, Spring Boot 3.4.4)
+│   ├── dev.sh                       # build/test/run script
+│   ├── shared/                      # JPA entities, DAOs, enums (library — not deployable)
+│   ├── gateway/                     # Spring Cloud Gateway — JWT auth, RBAC, routing
+│   ├── auth-service/                # register, login, refresh, logout, JWKS
+│   ├── patient-service/             # patient profile, encounters, conditions, allergies
+│   ├── provider-service/            # provider profile, patient management, admin import
+│   └── appointment-service/         # booking stub (not deployed)
+│
+├── healthcare-infra/                # database and test data
+│   ├── schema/
+│   │   ├── run-schema.sh            # deploy DDL to Supabase (idempotent)
+│   │   └── sql/                     # one SQL file per table
+│   │       ├── users.sql
+│   │       ├── organizations.sql
+│   │       ├── patients.sql
+│   │       ├── providers.sql
+│   │       ├── encounters.sql
+│   │       ├── conditions.sql
+│   │       ├── allergies.sql
+│   │       └── audit_logs.sql
+│   └── synthea/
+│       ├── run-synthea.sh           # generate synthetic patient data
+│       └── synthea-with-dependencies.jar
+│
+├── docker/
+│   ├── docker-compose.yml           # all services + env var injection
+│   └── README.md                    # deploy commands
+│
+├── integration_tests/               # black-box RestAssured tests against live gateway
+│   ├── run-it.sh
+│   ├── pom.xml
+│   └── src/test/java/
+│       ├── util/                    # BaseIT, TestAccounts, LoginHelper, ApiPaths
+│       ├── auth/                    # AuthIT, RegisterPatientIT, RegisterProviderIT
+│       ├── patient/                 # PatientProfileIT
+│       ├── provider/                # ProviderProfileIT
+│       └── admin/                   # AdminImportIT
+│
+├── scripts/
+│   └── local-ci.sh                  # --build --test stages usable; GCP stages archived
+│
+├── docs/
+│   ├── system-design.md             # architecture, tech stack, security layers
+│   ├── database-design.md           # table definitions, indexes, design decisions
+│   ├── INTEGRATION_TEST_PLAN.md     # how to run integration tests
+│   └── achieve/                     # archived stale docs
+│       ├── PROJECT_STRUCTURE.md
+│       ├── github-README.md
+│       └── RBAC-Practice-Guide.md
+│
+├── BACKLOG.md                       # tech debt + next-up items
+├── DAILY_WORK_LOG.md                # completed tasks log
+└── README.md                        # project overview and quick start
 ```
 
-## 🎯 **Implementation Phases**
+## Services
 
-### **Phase 1: Foundation (Weeks 1-2)**
-- [ ] Project structure setup ✅
-- [ ] Basic deployment scripts ✅
-- [ ] Shared data layer module
-- [ ] Auth service implementation
-- [ ] Basic database schema
+| Service | Port | Description |
+|---------|------|-------------|
+| gateway | 8080 | JWT validation, routing all `/api/**` |
+| auth-service | 8082 | register, login, refresh, logout, JWKS |
+| patient-service | 8081 | patient profile, encounters, conditions, allergies |
+| provider-service | 8083 | provider profile, patient management, admin CSV import |
+| appointment-service | — | deferred — stub exists, not deployed |
 
-### **Phase 2: Core Services (Weeks 3-4)**
-- [ ] Patient service
-- [ ] Provider service
-- [ ] Basic appointment management
-- [ ] Frontend integration
+## Key Scripts
 
-### **Phase 3: Support Services (Weeks 5-6)**
-- [ ] File storage service
-- [ ] AI service basic implementation
-- [ ] Advanced features and optimization
+```bash
+# Build / test services
+cd services
+./dev.sh auth-service build
+./dev.sh all test
 
-## 🏗️ **Architecture Alignment**
+# Deploy schema to Supabase
+cd healthcare-infra/schema
+DATABASE_URL="postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres" ./run-schema.sh
 
-- **Clear separation** of concerns
-- **Environment-specific** configurations
-- **Infrastructure as Code** with Terraform
-- **Container orchestration** with Kubernetes
-- **Comprehensive testing** structure
-- **Security-first** approach
+# Run integration tests against deployed gateway
+cd integration_tests
+./run-it.sh all
 
-## 🔧 **Technology Stack**
+# Deploy all services via Docker Compose
+cd docker
+# see docker/README.md
+```
 
-### **Java Services (6)**
-- **Framework**: Spring Boot 3.2+ with Java 17
-- **Build Tool**: Maven (multi-module project)
-- **Services**: Gateway, Auth, Patient, Provider, Appointment, File Storage
+## Shared Module
 
-### **Python Service (1)**
-- **Framework**: FastAPI with Python 3.11+
-- **AI Libraries**: TensorFlow, PyTorch, scikit-learn, healthcare AI
-- **Service**: AI Service for ML/AI capabilities
+`services/shared/` is a Maven library included by all services. It contains:
+- JPA entities: `User`, `Patient`, `Organization`, `Provider`, `Encounter`, `Condition`, `Allergy`, `AuditLog`
+- DAO interfaces (Spring Data JPA)
+- Enums: `UserRole`, `ActionType`, `Outcome`, `EncounterStatus`, `EncounterType`
 
-### **Shared Infrastructure**
-- **Containerization**: Docker
-- **Orchestration**: Kubernetes
-- **Infrastructure**: Terraform
-- **Database**: Supabase PostgreSQL
-- **File Storage**: AWS S3
-
-## 🚀 **Next Steps**
-
-1. **Review structure** - Ensure this aligns with your vision
-2. **Start with shared module** - Build the data access layer inside services/
-3. **Implement Auth Service** - First Java microservice
-4. **Add frontend portals** - React applications
-5. **Infrastructure setup** - Terraform and Kubernetes
-6. **AI Service** - Python FastAPI implementation
-
-## 📚 **Documentation**
-
-- **System Design**: `docs/system-design.md`
-- **Project Setup**: `docs/project-setup.md`
-- **API Documentation**: Will be added as services are implemented
-- **Deployment Guide**: Will be added as infrastructure is set up
+Entities are defined once; all services import the library. The shared module itself is
+not deployable — it has no `main` class.

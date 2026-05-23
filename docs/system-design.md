@@ -1,15 +1,14 @@
 # System Design
 
-> Version: 3.0 | Last Updated: March 2026
-> Previous versions archived in `docs/archive/`
+> Version: 4.0 | Last Updated: May 2026
 
 ---
 
 ## Overview
 
-A cloud-native healthcare API platform on GCP serving synthetic patient data
-with production-grade security. Built with Spring Boot microservices, Firebase
-Auth, and Synthea-generated data.
+Healthcare API platform serving synthetic patient data with production-grade security.
+Built with Spring Boot microservices deployed via Docker Compose on a single VM,
+backed by Supabase PostgreSQL.
 
 ---
 
@@ -19,98 +18,84 @@ Auth, and Synthea-generated data.
 Internet
     │
     ▼
-Cloud Armor (WAF)           ← OWASP Top 10 blocking
+VM — Docker Compose
     │
     ▼
-Cloud Run — API Gateway     ← RS256 JWT validation, routing
+Gateway (port 8080)         ← RS256 JWT validation, RBAC routing
     │
-    ├──────────────────────────────────┐
-    ▼                                  ▼
-Cloud Run — Patient Service    Cloud Run — Appointment Service
-    │                                  │
-    └──────────────┬───────────────────┘
-                   ▼
-           Cloud SQL PostgreSQL
-           (Private VPC — no public IP)
-
-GCP Secret Manager  ← All credentials
-Cloud Logging       ← Structured logs
-Cloud Audit Logs    ← GCP API audit trail
+    ├─────────────────────────────────────────┐
+    │                   │                     │
+    ▼                   ▼                     ▼
+auth-service        patient-service      provider-service
+(port 8082)         (port 8081)          (port 8083)
+    │                   │                     │
+    └───────────────────┴─────────────────────┘
+                         │
+                         ▼
+                 Supabase PostgreSQL
+                 (managed — no VPC)
 ```
 
 ---
 
 ## Services
 
-| Service | Phase | Responsibility |
-|---|---|---|
-| API Gateway | 1 | Routing, Firebase JWT validation |
-| Patient Service | 1 | Patient profile, medical history |
-| Appointment Service | 1 | Browse and book encounters |
-| Provider Service | 2 | Provider profiles, RBAC |
-| AI Service | 2 | Vertex AI Gemini patient analysis |
+| Service | Port | Status | Responsibility |
+|---------|------|--------|----------------|
+| gateway | 8080 | deployed | RS256 JWT validation, routing all `/api/**` |
+| auth-service | 8082 | deployed | register, login, refresh, logout, JWKS |
+| patient-service | 8081 | deployed | patient profile, encounters, conditions, allergies |
+| provider-service | 8083 | deployed | provider profile, patient management, admin import |
+| appointment-service | — | deferred | booking stub, not deployed |
 
 ---
 
 ## Tech Stack
 
 | Layer | Technology |
-|---|---|
-| Cloud | GCP (us-west1) |
-| Compute | Cloud Run |
-| Database | Cloud SQL PostgreSQL 15 |
-| Auth | RS256 JWT (self-issued, JWKS endpoint) |
-| Secrets | GCP Secret Manager |
-| WAF | Cloud Armor |
-| IaC | Terraform |
-| CI/CD | GitHub Actions + Workload Identity Federation |
-| Services | Spring Boot 3.2 / Java 17 |
-| Data | Synthea synthetic patient data (CSV) |
+|-------|------------|
+| Compute | Docker Compose on GCP VM |
+| Database | Supabase PostgreSQL |
+| Auth | RS256 JWT — self-issued by auth-service, validated at gateway |
+| Services | Spring Boot 3.4.4 / Java 21 |
+| Data | Synthea synthetic patient data (CSV import) |
+| CI | GitHub Actions |
 
 ---
 
 ## Security Layers
 
 ```
-Layer 1 — Network:   Cloud Armor WAF
-Layer 2 — Auth:      RS256 JWT validation at Gateway (self-issued)
-Layer 3 — Access:    RBAC (patient Phase 1, provider Phase 2)
-Layer 4 — Secrets:   GCP Secret Manager
-Layer 5 — Data:      Cloud SQL in private VPC, TLS in transit
-Layer 6 — Audit:     audit_logs table + Cloud Audit Logs
-Layer 7 — Scan:      OWASP ZAP in CI/CD pipeline
+Layer 1 — Auth:    RS256 JWT validation at gateway (self-issued, JWKS endpoint)
+Layer 2 — RBAC:    Role-based path enforcement at gateway (PATIENT/PROVIDER/ADMIN — prefix-matched in JwtAuthFilter)
+Layer 3 — Audit:   audit_logs table — append-only, every PHI access logged
+Layer 4 — Input:   Bean Validation on all request DTOs
+Layer 5 — Data:    All credentials injected via Docker Compose env vars (not hardcoded)
 ```
+
+Gateway RBAC (Layer 2) is tracked in tech debt TD-3 — currently not fully enforced.
 
 ---
 
 ## Data
 
-Synthea synthetic patient data — open-source generator from MITRE, used by
-CMS and federal health IT programs. 200 Washington state patients loaded into
-Cloud SQL.
+Synthea synthetic patient data — open-source generator from MITRE, used by CMS
+and federal health IT programs. ~200 Washington state patients loaded into Supabase.
 
 See `docs/database-design.md` for schema details.
+See `healthcare-infra/` for schema SQL files and Synthea generation scripts.
 
 ---
 
-## Infrastructure
+## Deployment
 
-GCP Project: `healthcare-ai-yifeng` | Region: `us-west1`
+Services are deployed as Docker containers via `docker/docker-compose.yml`.
+Each service connects to Supabase via injected environment variables:
 
-Terraform manages all GCP resources. State stored in GCS bucket.
-CI/CD uses Workload Identity Federation — no service account key files.
+```
+SPRING_DATASOURCE_URL      — jdbc:postgresql://db.<ref>.supabase.co:5432/postgres
+SPRING_DATASOURCE_USERNAME — postgres
+SPRING_DATASOURCE_PASSWORD — <password>
+```
 
-See `healthcare-infra/` for Terraform configs and deployment scripts.
-
----
-
-## Phase Status
-
-- [x] Phase 1 — GCP infrastructure (Cloud SQL, Cloud Run, Secret Manager, VPC)
-- [x] Phase 1 — Synthea data loaded into Cloud SQL
-- [x] Phase 1 — Gateway deployed to Cloud Run (RS256 JWT, Redis blacklist)
-- [x] Phase 1 — Auth service deployed (register, login, refresh, logout)
-- [x] Phase 1 — Patient service deployed (profile, encounters, conditions, allergies)
-- [ ] Phase 2 — Provider service + RBAC
-- [ ] Phase 2 — Cloud Armor WAF, OWASP ZAP
-- [ ] Phase 3 — Vertex AI Gemini analysis endpoint
+See `docker/README.md` for deployment commands.

@@ -1,91 +1,52 @@
 # Scripts
 
-## local-ci.sh — Main CI/CD Script
+## dev.sh — Primary Development Script
 
-Single script for all pipeline stages. Run individually depending on what
-you're working on that day.
+Located in `services/dev.sh`. All day-to-day build/test/run operations.
 
 ```bash
-chmod +x scripts/local-ci.sh
-./scripts/local-ci.sh          # show help and all options
+cd services
+
+# Build a single service (installs shared first)
+./dev.sh auth-service build
+./dev.sh patient-service build
+
+# Run unit tests
+./dev.sh shared test
+./dev.sh auth-service test
+./dev.sh all test
+
+# Build all services
+./dev.sh all build
+
+# Run a service locally with Spring Boot
+./dev.sh auth-service run
+
+# Package a service into a JAR
+./dev.sh auth-service package
+
+# Generate JaCoCo coverage report
+./dev.sh auth-service coverage
 ```
 
-### Stage reference
+Available services: `shared`, `auth-service`, `gateway`, `patient-service`, `provider-service`, `appointment-service`
 
-| Stage | Command | When to use |
-|---|---|---|
-| Setup | `--setup` | First time — install Java 17 + Maven |
-| Build | `--build` | Compile changed |
-| Test | `--test` | Unit tests + coverage |
-| Terraform | `--terraform` | Infra changed (plan only, safe) |
-| Terraform apply | `--terraform --apply` | Ready to apply infra changes |
-| Schema | `--schema` | Data model changed |
-| Data | `--data` | Generate + reload Synthea data |
-| Deploy | `--deploy` | Deploy services to Cloud Run |
-| Integration | `--integration` | Test against real Cloud SQL |
-| ZAP | `--zap` | Security scan against Cloud Run |
-| All | `--all` | Full pipeline before pushing |
+---
 
-### Day-to-day usage
+## local-ci.sh — Build + Test Pipeline
+
+The `--build` and `--test` stages are current and usable. The GCP stages (`--deploy`, `--schema`, `--terraform`, `--data`, `--integration`) reference the old Cloud Run infrastructure and are not used.
 
 ```bash
-# Changed Spring Boot code only
+# Before every push — compile + unit tests
 ./scripts/local-ci.sh --build --test
-
-# Changed Terraform only — check plan, no changes
-./scripts/local-ci.sh --terraform
-
-# Changed Terraform + schema
-./scripts/local-ci.sh --terraform --apply --schema
-
-# Changed data model — redeploy schema + reload data
-./scripts/local-ci.sh --schema --data
-
-# Ready to deploy
-./scripts/local-ci.sh --build --test --deploy
-
-# Full pipeline before pushing to main
-./scripts/local-ci.sh --all --skip-zap
-
-# Full pipeline including ZAP scan
-./scripts/local-ci.sh --all
 ```
 
 ---
 
-## deploy-services.sh — Service Deployment
-
-Build JAR + Docker image + deploy to Cloud Run for any combination of services.
-
-```bash
-# deploy one service
-./scripts/deploy-services.sh patient-service
-
-# deploy multiple (order doesn't matter — gateway always deploys last)
-./scripts/deploy-services.sh auth-service patient-service
-
-# deploy all
-./scripts/deploy-services.sh all
-```
-
-To add a new service: add `build_<name>()` and `deploy_<name>()` functions, then add to `ALL_SERVICES` and `DEPLOY_ORDER`.
-
----
-
-## Other scripts
-
-| Script | Purpose |
-|---|---|
-| `setup-dev.sh` | Install Java + Maven (same as `local-ci.sh --setup`) |
-
----
-
-## Pre-push checklist
+## Pre-push Checklist
 
 ```bash
 # Minimum before every push
-./scripts/local-ci.sh --build --test
-
-# Before merging to main
-./scripts/local-ci.sh --all --skip-zap
+cd services && ./dev.sh all test
 ```
