@@ -62,22 +62,6 @@ class AuditLogDaoTest {
     }
 
     @Test
-    void findByAction_returnsList() {
-        List<AuditLog> logs = List.of(newLog());
-        when(auditLogDao.findByAction(ActionType.READ)).thenReturn(logs);
-
-        assertThat(auditLogDao.findByAction(ActionType.READ)).hasSize(1);
-    }
-
-    @Test
-    void findByOutcome_returnsList() {
-        List<AuditLog> logs = List.of(newLog());
-        when(auditLogDao.findByOutcome(Outcome.SUCCESS)).thenReturn(logs);
-
-        assertThat(auditLogDao.findByOutcome(Outcome.SUCCESS)).hasSize(1);
-    }
-
-    @Test
     void findByCreatedAtBetween_returnsList() {
         OffsetDateTime start = OffsetDateTime.now().minusDays(7);
         OffsetDateTime end   = OffsetDateTime.now();
@@ -129,9 +113,7 @@ class AuditLogDaoTest {
         @Override public <S extends AuditLog, R> R findBy(org.springframework.data.domain.Example<S> example, java.util.function.Function<org.springframework.data.repository.query.FluentQuery.FetchableFluentQuery<S>, R> queryFunction) { return null; }
         @Override public java.util.List<AuditLog> findByAuthId(String authId) { return List.of(); }
         @Override public java.util.List<AuditLog> findByResourceTypeAndResourceId(String resourceType, UUID resourceId) { return List.of(); }
-        @Override public java.util.List<AuditLog> findByAction(ActionType action) { return List.of(); }
-        @Override public java.util.List<AuditLog> findByOutcome(Outcome outcome) { return List.of(); }
-        @Override public java.util.List<AuditLog> findByCreatedAtBetween(OffsetDateTime start, OffsetDateTime end) { return List.of(); }
+         @Override public java.util.List<AuditLog> findByCreatedAtBetween(OffsetDateTime start, OffsetDateTime end) { return List.of(); }
     };
 
     @Test

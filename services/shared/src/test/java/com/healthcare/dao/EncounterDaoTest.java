@@ -1,8 +1,6 @@
 package com.healthcare.dao;
 
 import com.healthcare.entity.Encounter;
-import com.healthcare.enums.EncounterStatus;
-import com.healthcare.enums.EncounterType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -27,7 +25,6 @@ class EncounterDaoTest {
 
     private static final UUID PATIENT_ID  = UUID.randomUUID();
     private static final UUID PROVIDER_ID = UUID.randomUUID();
-    private static final UUID ORG_ID      = UUID.randomUUID();
 
     private Encounter newEncounter() {
         return new Encounter(PROVIDER_ID, OffsetDateTime.now().plusDays(1));
@@ -58,60 +55,6 @@ class EncounterDaoTest {
 
         assertThat(encounterDao.findByProviderId(PROVIDER_ID)).hasSize(1);
         verify(encounterDao).findByProviderId(PROVIDER_ID);
-    }
-
-    @Test
-    void findByOrganizationId_returnsList() {
-        List<Encounter> encounters = List.of(newEncounter());
-        when(encounterDao.findByOrganizationId(ORG_ID)).thenReturn(encounters);
-
-        assertThat(encounterDao.findByOrganizationId(ORG_ID)).hasSize(1);
-    }
-
-    @Test
-    void findByStatus_returnsList() {
-        List<Encounter> encounters = List.of(newEncounter());
-        when(encounterDao.findByStatus(EncounterStatus.SCHEDULED)).thenReturn(encounters);
-
-        assertThat(encounterDao.findByStatus(EncounterStatus.SCHEDULED)).hasSize(1);
-    }
-
-    @Test
-    void findByPatientIdAndStatus_returnsList() {
-        List<Encounter> encounters = List.of(newEncounter());
-        when(encounterDao.findByPatientIdAndStatus(PATIENT_ID, EncounterStatus.COMPLETED))
-                .thenReturn(encounters);
-
-        assertThat(encounterDao.findByPatientIdAndStatus(PATIENT_ID, EncounterStatus.COMPLETED))
-                .hasSize(1);
-    }
-
-    @Test
-    void findByProviderIdAndStatus_returnsList() {
-        List<Encounter> encounters = List.of(newEncounter());
-        when(encounterDao.findByProviderIdAndStatus(PROVIDER_ID, EncounterStatus.AVAILABLE))
-                .thenReturn(encounters);
-
-        assertThat(encounterDao.findByProviderIdAndStatus(PROVIDER_ID, EncounterStatus.AVAILABLE))
-                .hasSize(1);
-    }
-
-    @Test
-    void findByEncounterType_returnsList() {
-        List<Encounter> encounters = List.of(newEncounter());
-        when(encounterDao.findByEncounterType(EncounterType.FOLLOW_UP)).thenReturn(encounters);
-
-        assertThat(encounterDao.findByEncounterType(EncounterType.FOLLOW_UP)).hasSize(1);
-    }
-
-    @Test
-    void findByStartTimeBetween_returnsList() {
-        OffsetDateTime start = OffsetDateTime.now();
-        OffsetDateTime end   = start.plusDays(7);
-        List<Encounter> encounters = List.of(newEncounter());
-        when(encounterDao.findByStartTimeBetween(start, end)).thenReturn(encounters);
-
-        assertThat(encounterDao.findByStartTimeBetween(start, end)).hasSize(1);
     }
 
     @Test

@@ -44,10 +44,4 @@ public interface ProviderDao extends JpaRepository<Provider, UUID> {
      */
     List<Provider> findByNameAndOrganizationId(String name, UUID organizationId);
 
-    /**
-     * Find providers by full name for auth registration lookup.
-     * Uses idx_providers_name index prefix scan on name column.
-     * Returns a list — caller must enforce exactly one match.
-     */
-    List<Provider> findByName(String name);
 }

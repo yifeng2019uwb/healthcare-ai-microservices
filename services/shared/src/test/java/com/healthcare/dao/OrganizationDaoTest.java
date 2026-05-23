@@ -47,32 +47,6 @@ class OrganizationDaoTest {
     }
 
     @Test
-    void findByCity_returnsList() {
-        List<Organization> orgs = List.of(newOrg(), newOrg());
-        when(organizationDao.findByCity("Seattle")).thenReturn(orgs);
-
-        List<Organization> result = organizationDao.findByCity("Seattle");
-
-        assertThat(result).hasSize(2);
-        verify(organizationDao).findByCity("Seattle");
-    }
-
-    @Test
-    void findByCity_returnsEmptyList_whenNone() {
-        when(organizationDao.findByCity("Unknown City")).thenReturn(List.of());
-
-        assertThat(organizationDao.findByCity("Unknown City")).isEmpty();
-    }
-
-    @Test
-    void findByState_returnsList() {
-        List<Organization> orgs = List.of(newOrg());
-        when(organizationDao.findByState("WA")).thenReturn(orgs);
-
-        assertThat(organizationDao.findByState("WA")).hasSize(1);
-    }
-
-    @Test
     void existsByName_returnsTrue() {
         when(organizationDao.existsByName("General Hospital")).thenReturn(true);
 

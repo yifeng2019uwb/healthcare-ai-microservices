@@ -53,34 +53,6 @@ class AllergyDaoTest {
     }
 
     @Test
-    void findByIdEncounterId_returnsList() {
-        List<Allergy> allergies = List.of(newAllergy());
-        when(allergyDao.findByIdEncounterId(ENCOUNTER_ID)).thenReturn(allergies);
-
-        assertThat(allergyDao.findByIdEncounterId(ENCOUNTER_ID)).hasSize(1);
-        verify(allergyDao).findByIdEncounterId(ENCOUNTER_ID);
-    }
-
-    @Test
-    void findByIdPatientIdAndStopDateIsNull_returnsActiveAllergies() {
-        List<Allergy> allergies = List.of(newAllergy());
-        when(allergyDao.findByIdPatientIdAndStopDateIsNull(PATIENT_ID)).thenReturn(allergies);
-
-        List<Allergy> result = allergyDao.findByIdPatientIdAndStopDateIsNull(PATIENT_ID);
-
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).isActive()).isTrue();
-    }
-
-    @Test
-    void findByIdPatientIdAndCategory_returnsList() {
-        List<Allergy> allergies = List.of(newAllergy());
-        when(allergyDao.findByIdPatientIdAndCategory(PATIENT_ID, "drug")).thenReturn(allergies);
-
-        assertThat(allergyDao.findByIdPatientIdAndCategory(PATIENT_ID, "drug")).hasSize(1);
-    }
-
-    @Test
     void save_returnsAllergy() {
         Allergy allergy = newAllergy();
         when(allergyDao.save(allergy)).thenReturn(allergy);

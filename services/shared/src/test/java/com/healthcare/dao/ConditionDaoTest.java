@@ -53,26 +53,6 @@ class ConditionDaoTest {
     }
 
     @Test
-    void findByIdEncounterId_returnsList() {
-        List<Condition> conditions = List.of(newCondition());
-        when(conditionDao.findByIdEncounterId(ENCOUNTER_ID)).thenReturn(conditions);
-
-        assertThat(conditionDao.findByIdEncounterId(ENCOUNTER_ID)).hasSize(1);
-        verify(conditionDao).findByIdEncounterId(ENCOUNTER_ID);
-    }
-
-    @Test
-    void findByIdPatientIdAndStopDateIsNull_returnsActiveConditions() {
-        List<Condition> conditions = List.of(newCondition());
-        when(conditionDao.findByIdPatientIdAndStopDateIsNull(PATIENT_ID)).thenReturn(conditions);
-
-        List<Condition> result = conditionDao.findByIdPatientIdAndStopDateIsNull(PATIENT_ID);
-
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).isOngoing()).isTrue();
-    }
-
-    @Test
     void findByIdCode_returnsList() {
         List<Condition> conditions = List.of(newCondition());
         when(conditionDao.findByIdCode(CODE)).thenReturn(conditions);

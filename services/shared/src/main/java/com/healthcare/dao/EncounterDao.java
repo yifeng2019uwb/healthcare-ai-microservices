@@ -1,8 +1,6 @@
 package com.healthcare.dao;
 
 import com.healthcare.entity.Encounter;
-import com.healthcare.enums.EncounterStatus;
-import com.healthcare.enums.EncounterType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -21,20 +19,6 @@ public interface EncounterDao extends JpaRepository<Encounter, UUID> {
 
     List<Encounter> findByProviderId(UUID providerId);
 
-    List<Encounter> findByOrganizationId(UUID organizationId);
-
-    List<Encounter> findByStatus(EncounterStatus status);
-
-    List<Encounter> findByPatientIdAndStatus(UUID patientId, EncounterStatus status);
-
-    List<Encounter> findByProviderIdAndStatus(UUID providerId, EncounterStatus status);
-
-    List<Encounter> findByEncounterType(EncounterType encounterType);
-
-    List<Encounter> findByStartTimeBetween(OffsetDateTime start, OffsetDateTime end);
-
-    // TODO: composite indexes (provider_id, start_time) and (patient_id, start_time) would be
-    //  faster than separate single-column indexes for these range queries — tech debt
     List<Encounter> findByProviderIdAndStartTimeBetween(
             UUID providerId, OffsetDateTime start, OffsetDateTime end);
 

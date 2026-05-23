@@ -16,23 +16,5 @@ import java.util.UUID;
 @Repository
 public interface AllergyDao extends JpaRepository<Allergy, AllergyId> {
 
-    /**
-     * Find all allergies for a patient.
-     */
     List<Allergy> findByIdPatientId(UUID patientId);
-
-    /**
-     * Find all allergies recorded in a specific encounter.
-     */
-    List<Allergy> findByIdEncounterId(UUID encounterId);
-
-    /**
-     * Find active allergies for a patient (no stop date).
-     */
-    List<Allergy> findByIdPatientIdAndStopDateIsNull(UUID patientId);
-
-    /**
-     * Find allergies by category (environment, food, drug).
-     */
-    List<Allergy> findByIdPatientIdAndCategory(UUID patientId, String category);
 }

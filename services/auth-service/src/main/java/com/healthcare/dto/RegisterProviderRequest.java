@@ -1,5 +1,6 @@
 package com.healthcare.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.healthcare.constants.AuthConstants;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -33,5 +34,10 @@ public record RegisterProviderRequest(
 
         @NotBlank(message = "Name is required")
         @Size(max = 100, message = "Name cannot exceed 100 characters")
-        String name
+        String name,
+
+        @JsonProperty("organization_name")
+        @NotBlank(message = "Organization name is required")
+        @Size(max = 255, message = "Organization name cannot exceed 255 characters")
+        String organizationName
 ) {}

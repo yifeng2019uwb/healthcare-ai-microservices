@@ -1,6 +1,7 @@
 package com.healthcare.service;
 
 import com.healthcare.dao.AuditLogDao;
+import com.healthcare.dao.OrganizationDao;
 import com.healthcare.dao.PatientDao;
 import com.healthcare.dao.ProviderDao;
 import com.healthcare.dao.UserDao;
@@ -9,6 +10,7 @@ import com.healthcare.dto.LoginResponse;
 import com.healthcare.dto.RegisterPatientRequest;
 import com.healthcare.dto.RegisterProviderRequest;
 import com.healthcare.entity.AuditLog;
+import com.healthcare.entity.Organization;
 import com.healthcare.entity.Patient;
 import com.healthcare.entity.Provider;
 import com.healthcare.entity.User;
@@ -51,6 +53,7 @@ public class AuthService {
     private final UserDao userDao;
     private final PatientDao patientDao;
     private final ProviderDao providerDao;
+    private final OrganizationDao organizationDao;
     private final AuditLogDao auditLogDao;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
@@ -58,12 +61,14 @@ public class AuthService {
     public AuthService(UserDao userDao,
                        PatientDao patientDao,
                        ProviderDao providerDao,
+                       OrganizationDao organizationDao,
                        AuditLogDao auditLogDao,
                        JwtService jwtService,
                        PasswordEncoder passwordEncoder) {
         this.userDao = userDao;
         this.patientDao = patientDao;
         this.providerDao = providerDao;
+        this.organizationDao = organizationDao;
         this.auditLogDao = auditLogDao;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
@@ -111,7 +116,7 @@ public class AuthService {
         log.info("Register provider attempt: username={}, name={}", request.username(), request.name());
         checkUsernameAndEmailAvailable(request.username(), request.email());
 
-        Provider provider = findUniqueProvider(request.name());
+        Provider provider = findUniqueProvider(request.name(), request.organizationName());
         User user = createUser(request.username(), request.email(), request.password(), UserRole.PROVIDER);
         provider.linkAuthAccount(user.getId());
         providerDao.save(provider);
@@ -270,14 +275,16 @@ public class AuthService {
         return patient;
     }
 
-    // TODO: production registration should also validate organization name + NPI/license to
-    //  narrow the match; name-only is sufficient for Synthea data where duplicates are rare.
-    private Provider findUniqueProvider(String name) {
-        List<Provider> matches = providerDao.findByName(name);
+    private Provider findUniqueProvider(String name, String organizationName) {
+        Organization org = organizationDao.findByName(organizationName)
+                .orElseThrow(() -> new AuthServiceException(HttpStatus.UNPROCESSABLE_ENTITY,
+                        AuthServiceException.RECORD_NOT_FOUND,
+                        "No matching organization found for: " + organizationName));
+        List<Provider> matches = providerDao.findByNameAndOrganizationId(name, org.getId());
         if (matches.isEmpty()) {
             throw new AuthServiceException(HttpStatus.UNPROCESSABLE_ENTITY,
                     AuthServiceException.RECORD_NOT_FOUND,
-                    "No matching provider record found for: " + name);
+                    "No matching provider record found for: " + name + " in organization: " + organizationName);
         }
         if (matches.size() > 1) {
             throw new AuthServiceException(HttpStatus.UNPROCESSABLE_ENTITY,

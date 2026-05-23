@@ -1,6 +1,7 @@
 package com.healthcare.service;
 
 import com.healthcare.dao.AuditLogDao;
+import com.healthcare.dao.OrganizationDao;
 import com.healthcare.dao.PatientDao;
 import com.healthcare.dao.ProviderDao;
 import com.healthcare.dao.UserDao;
@@ -8,6 +9,7 @@ import com.healthcare.dto.LoginRequest;
 import com.healthcare.dto.LoginResponse;
 import com.healthcare.dto.RegisterPatientRequest;
 import com.healthcare.dto.RegisterProviderRequest;
+import com.healthcare.entity.Organization;
 import com.healthcare.entity.Patient;
 import com.healthcare.entity.Provider;
 import com.healthcare.entity.User;
@@ -47,6 +49,7 @@ class AuthServiceTest {
     @Mock private UserDao userDao;
     @Mock private PatientDao patientDao;
     @Mock private ProviderDao providerDao;
+    @Mock private OrganizationDao organizationDao;
     @Mock private AuditLogDao auditLogDao;
     @Mock private JwtService jwtService;
     @Mock private PasswordEncoder passwordEncoder;
@@ -126,17 +129,21 @@ class AuthServiceTest {
     void registerProvider_happyPath_returnsTokenPair() {
         when(mockUser.getId()).thenReturn(userId);
         when(mockUser.getRole()).thenReturn(UserRole.PROVIDER);
-        Provider provider = new Provider(UUID.randomUUID(), "Dr. Jane Smith");
+        UUID orgId = UUID.randomUUID();
+        Organization org = mock(Organization.class);
+        when(org.getId()).thenReturn(orgId);
+        Provider provider = new Provider(orgId, "Dr. Jane Smith");
         when(userDao.existsByUsername("jane_doe")).thenReturn(false);
         when(userDao.existsByEmail("jane@example.com")).thenReturn(false);
-        when(providerDao.findByName("Dr. Jane Smith")).thenReturn(List.of(provider));
+        when(organizationDao.findByName("ACME Health")).thenReturn(Optional.of(org));
+        when(providerDao.findByNameAndOrganizationId("Dr. Jane Smith", orgId)).thenReturn(List.of(provider));
         when(passwordEncoder.encode(anyString())).thenReturn("$2a$encoded");
         when(userDao.save(any())).thenReturn(mockUser);
         when(jwtService.issueAccessToken(mockUser)).thenReturn("access-token");
         when(jwtService.issueRefreshToken(mockUser)).thenReturn("refresh-token");
 
         LoginResponse response = authService.registerProvider(
-                new RegisterProviderRequest("jane_doe", "jane@example.com", "Password1@", "Dr. Jane Smith"));
+                new RegisterProviderRequest("jane_doe", "jane@example.com", "Password1@", "Dr. Jane Smith", "ACME Health"));
 
         assertThat(response.accessToken()).isEqualTo("access-token");
         assertThat(response.refreshToken()).isEqualTo("refresh-token");
@@ -302,12 +309,16 @@ class AuthServiceTest {
 
     @Test
     void registerProvider_noMatchingRecord_throws422() {
+        UUID orgId = UUID.randomUUID();
+        Organization org = mock(Organization.class);
+        when(org.getId()).thenReturn(orgId);
         when(userDao.existsByUsername("jane_doe")).thenReturn(false);
         when(userDao.existsByEmail("jane@example.com")).thenReturn(false);
-        when(providerDao.findByName("Dr. Jane Smith")).thenReturn(List.of());
+        when(organizationDao.findByName("ACME Health")).thenReturn(Optional.of(org));
+        when(providerDao.findByNameAndOrganizationId("Dr. Jane Smith", orgId)).thenReturn(List.of());
 
         assertThatThrownBy(() -> authService.registerProvider(
-                new RegisterProviderRequest("jane_doe", "jane@example.com", "Password1@", "Dr. Jane Smith")))
+                new RegisterProviderRequest("jane_doe", "jane@example.com", "Password1@", "Dr. Jane Smith", "ACME Health")))
                 .isInstanceOfSatisfying(AuthServiceException.class, ex -> {
                     assertThat(ex.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
                     assertThat(ex.getErrorCode()).isEqualTo(AuthServiceException.RECORD_NOT_FOUND);
@@ -317,14 +328,17 @@ class AuthServiceTest {
     @Test
     void registerProvider_multipleRecordsFound_throws422() {
         UUID orgId = UUID.randomUUID();
+        Organization org = mock(Organization.class);
+        when(org.getId()).thenReturn(orgId);
         when(userDao.existsByUsername("jane_doe")).thenReturn(false);
         when(userDao.existsByEmail("jane@example.com")).thenReturn(false);
-        when(providerDao.findByName("Dr. Jane Smith"))
+        when(organizationDao.findByName("ACME Health")).thenReturn(Optional.of(org));
+        when(providerDao.findByNameAndOrganizationId("Dr. Jane Smith", orgId))
                 .thenReturn(List.of(new Provider(orgId, "Dr. Jane Smith"),
                                     new Provider(orgId, "Dr. Jane Smith")));
 
         assertThatThrownBy(() -> authService.registerProvider(
-                new RegisterProviderRequest("jane_doe", "jane@example.com", "Password1@", "Dr. Jane Smith")))
+                new RegisterProviderRequest("jane_doe", "jane@example.com", "Password1@", "Dr. Jane Smith", "ACME Health")))
                 .isInstanceOfSatisfying(AuthServiceException.class, ex -> {
                     assertThat(ex.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
                     assertThat(ex.getErrorCode()).isEqualTo(AuthServiceException.MULTIPLE_RECORDS_FOUND);
@@ -333,14 +347,18 @@ class AuthServiceTest {
 
     @Test
     void registerProvider_alreadyRegistered_throws409() {
-        Provider provider = new Provider(UUID.randomUUID(), "Dr. Jane Smith");
+        UUID orgId = UUID.randomUUID();
+        Organization org = mock(Organization.class);
+        when(org.getId()).thenReturn(orgId);
+        Provider provider = new Provider(orgId, "Dr. Jane Smith");
         provider.linkAuthAccount(UUID.randomUUID());
         when(userDao.existsByUsername("jane_doe")).thenReturn(false);
         when(userDao.existsByEmail("jane@example.com")).thenReturn(false);
-        when(providerDao.findByName("Dr. Jane Smith")).thenReturn(List.of(provider));
+        when(organizationDao.findByName("ACME Health")).thenReturn(Optional.of(org));
+        when(providerDao.findByNameAndOrganizationId("Dr. Jane Smith", orgId)).thenReturn(List.of(provider));
 
         assertThatThrownBy(() -> authService.registerProvider(
-                new RegisterProviderRequest("jane_doe", "jane@example.com", "Password1@", "Dr. Jane Smith")))
+                new RegisterProviderRequest("jane_doe", "jane@example.com", "Password1@", "Dr. Jane Smith", "ACME Health")))
                 .isInstanceOfSatisfying(AuthServiceException.class, ex -> {
                     assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
                     assertThat(ex.getErrorCode()).isEqualTo(AuthServiceException.ALREADY_REGISTERED);

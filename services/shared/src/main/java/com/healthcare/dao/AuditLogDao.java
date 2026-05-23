@@ -1,8 +1,6 @@
 package com.healthcare.dao;
 
 import com.healthcare.entity.AuditLog;
-import com.healthcare.enums.ActionType;
-import com.healthcare.enums.Outcome;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -26,10 +24,6 @@ public interface AuditLogDao extends JpaRepository<AuditLog, UUID> {
     List<AuditLog> findByAuthId(String authId);
 
     List<AuditLog> findByResourceTypeAndResourceId(String resourceType, UUID resourceId);
-
-    List<AuditLog> findByAction(ActionType action);
-
-    List<AuditLog> findByOutcome(Outcome outcome);
 
     List<AuditLog> findByCreatedAtBetween(OffsetDateTime start, OffsetDateTime end);
 
