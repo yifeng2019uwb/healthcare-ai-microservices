@@ -1,30 +1,12 @@
 # Auth Service — Architecture Decision Records (ADR)
 
-> Version: 1.2 | Last Updated: March 2026
+> Version: 1.3 | Last Updated: 2026-05-23
 > These ADRs document why each security-critical decision was made,
 > what alternatives were considered, and what trade-offs were accepted.
 >
 > **Engineering principle:** Always research how the industry has solved a problem
 > before designing a custom solution. Standards exist for good reasons —
 > they are battle-tested, interoperable, and understood by other engineers.
-
----
-
-## Evaluation Principle: GCP-Native First
-
-This project runs entirely on GCP (Cloud Run, Cloud SQL, Secret Manager, VPC).
-When evaluating any infrastructure option, GCP-native services are always
-evaluated first before considering third-party or cross-cloud alternatives.
-
-Reasons:
-- **Integration**: Native IAM, VPC, Workload Identity — no extra auth plumbing
-- **Operations**: Single console, single billing account, unified audit logs
-- **Security**: No cross-cloud credential management or network exposure
-- **Cost**: No egress charges between GCP services in the same region
-- **Consistency**: Terraform GCP provider covers everything in one place
-
-Third-party or self-hosted options are only chosen when the GCP-native equivalent
-is absent, significantly more expensive, or technically inferior for the use case.
 
 ---
 
@@ -97,7 +79,7 @@ control at no additional cost.
 
 ### Consequences
 
-- Private key stored in GCP Secret Manager (`jwt-private-key`)
+- Private key injected via Docker Compose environment variable (`JWT_PRIVATE_KEY`)
 - Public key served via industry standard JWKS endpoint (`/.well-known/jwks.json`, RFC 7517)
 - JWT header includes `kid` claim — gateway uses it to look up correct key in JWKS cache
 - Gateway caches JWKS with TTL (5min) + re-fetches on `kid` miss (rate limited)
@@ -163,50 +145,29 @@ mechanism that closes this gap without sacrificing performance.
   access token theft.
 - Cost: Free
 
-### Decision: GCP Cloud Memorystore Basic (Redis) + 1hr Refresh Token + 8hr Absolute Session Cap
+### Decision: JWT TTL only (Redis blacklist removed)
 
-**GCP-native evaluation:** GCP Cloud Memorystore is the native managed Redis
-service — fully integrated with VPC, IAM, and Cloud Monitoring. No cross-cloud
-credential management, no egress charges from Cloud Run in the same region,
-Terraform-provisioned in one resource block. This is the correct first choice
-for a GCP-native stack.
+Redis was initially implemented (Option B) but subsequently removed. The Redis
+blacklist added infrastructure complexity (managed Redis instance, connection
+pooling, Redis in auth critical path) with marginal security benefit for a
+portfolio system using short-lived tokens. The system now runs on Docker Compose
+on a single Oracle OCI VM — adding a managed Redis dependency adds cost and
+operational overhead that isn't justified at this stage.
 
-Redis provides immediate revocation with sub-millisecond performance. Cloud
-Memorystore Basic 1GB costs ~$11-12/mo — within the $300 GCP credit budget
-for this 90-day portfolio project (~$22-24 total over the project lifetime).
-The managed service eliminates ops burden and demonstrates production-grade
-infrastructure thinking to portfolio reviewers.
+Access tokens use a short expiry (15 minutes). Logout clears the client-side
+token. For a portfolio system with synthetic data this is an accepted trade-off.
 
-Self-hosted Redis on the existing VM was considered but rejected: it adds
-manual configuration complexity, shares RAM with unrelated workloads (佳佳),
-and provides no portfolio benefit over a Terraform-managed Cloud Memorystore
-instance. The project is torn down after 90 days, so operational simplicity
-outweighs the marginal cost saving.
-
-Refresh token expiry is 1 hour — not 7 days. A long-lived refresh token
-completely undermines the 15-minute access token: a stolen refresh token
-gives an attacker a multi-day window to keep generating fresh access tokens,
-making the short access token expiry meaningless. Banking-level systems
-expire sessions on browser close or after minutes of inactivity. 1 hour
-matches this standard for a healthcare system handling PHI.
-
-An 8-hour absolute session cap (enforced via `original_iat` claim carried
-forward through every refresh) prevents indefinite sessions via constant
-token refresh activity. Users must re-authenticate once per working day.
+The Redis blacklist remains the correct choice for a production healthcare system
+handling real PHI — the analysis in the comparison table above is still valid.
+The implementation would be self-hosted Redis in Docker Compose (same VM) rather
+than GCP Cloud Memorystore.
 
 ### Consequences
 
-- GCP Cloud Memorystore (Redis) required — Terraform config needed
-- Redis AUTH password stored in GCP Secret Manager
-- Blacklist key pattern: `blacklist:{jti}`, TTL = remaining token lifetime
-- Both access token and refresh token jti blacklisted on logout
-- Refresh token rotation — old jti blacklisted immediately on every refresh
-- `jti` (UUID) claim added to all JWTs
-- `original_iat` claim added to refresh tokens — enforces 8hr absolute cap
-- Every call to `/internal/auth/validate` checks Redis blacklist
-- Every call to `/api/auth/refresh` checks blacklist + absolute session cap
-- Redis becomes part of auth critical path — connection pooling required
-- Users must re-login after 8 hours regardless of activity
+- No additional infrastructure required — no Redis instance
+- Logout clears client token only; server-side revocation not enforced
+- Access tokens expire after 15 minutes — maximum post-logout valid window
+- Future upgrade path: add self-hosted Redis container to Docker Compose with blacklist implementation
 
 ---
 
@@ -268,26 +229,29 @@ logging, and access control — especially critical for a healthcare system.
   on GCP. HCP Vault costs $0.03+/hr (~$22+/mo) minimum.
 - Cost: Free (self-hosted OSS) or $22+/mo (HCP Vault Starter)
 
-### Decision: GCP Secret Manager + Workload Identity Federation
+### Decision: Docker Compose environment variable injection
 
-Secret Manager is the natural choice for a GCP-native stack. It provides
-versioning, IAM-based access control, and full audit logging at negligible cost.
-Combined with Workload Identity Federation (no JSON key files), auth-service
-accesses secrets via its Cloud Run service account identity automatically —
-no credentials needed to access credentials.
+The system runs on Docker Compose on a single Oracle OCI VM. Secrets are
+injected as environment variables in `docker-compose.yml`, sourced from a
+`.env` file on the host VM (not committed to git). This is Option B from the
+comparison table.
 
-Vault was rejected as operational overkill for a GCP-native project. Environment
-variables were rejected due to secret visibility in Cloud Run console and lack
-of audit trail.
+GCP Secret Manager (Option C) remains the correct choice for a production system
+or any GCP-hosted deployment — the analysis above is still valid. It was not
+chosen here because the system is no longer on GCP (moved to Oracle OCI), and
+adding a cross-cloud dependency solely for secret management adds complexity
+without meaningful benefit for a synthetic-data portfolio project.
+
+Vault was rejected as operational overkill. Hardcoded secrets were rejected entirely.
 
 ### Consequences
 
-- Secrets: `jwt-private-key`, `jwt-public-key`, `redis-auth-password` in Secret Manager
-- Cloud Run service account bound to Secret Manager Secret Accessor role via IAM
-- Spring Cloud GCP dependency required for `${sm://...}` property resolution
-- Rotation procedure: add new secret version → restart Cloud Run service →
-  old tokens expire naturally within 15 minutes (access token lifetime)
-- All secret access logged in Cloud Audit Logs
+- Secrets (`JWT_PRIVATE_KEY`, `JWT_PUBLIC_KEY`, `DB_PASSWORD`) in host `.env` file
+- `.env` file is not committed to git — added to `.gitignore`
+- `docker-compose.yml` references env vars — no secret values in the file itself
+- Rotation procedure: update `.env` on VM → `docker compose up -d` to redeploy
+- No audit trail on secret access at this stage
+- Future upgrade path: HashiCorp Vault or cloud-native secret manager when moving to production
 
 ---
 
@@ -427,23 +391,12 @@ input errors the client caused and needs to correct, not internal system state.
 
 
 
-| Factor | Value |
-|---|---|
-| Timeline | 90 days (torn down after demo) |
-| GCP credit budget | $300 |
-| Estimated monthly burn | ~$48-50/mo (Cloud Run + Cloud SQL + Memorystore + Secret Manager) |
-| Total estimated spend | ~$145-150 over 90 days |
-| Credit remaining for buffer | ~$150 |
-| Infrastructure principle | GCP-native first |
-
----
-
 ## Decision Summary
 
 | Decision | Chosen | Runner-up | Key Reason |
 |---|---|---|---|
 | JWT algorithm | RS256 + JWKS (RFC 7517) | HS256 | Industry standard — private key never leaves auth-service, zero-downtime rotation via kid-based key lookup |
-| Token revocation | GCP Memorystore (Redis) + 1hr refresh + 8hr cap | Self-hosted Redis on VM | GCP-native, Terraform-managed, ~$22 total over 90 days |
-| Secret storage | GCP Secret Manager | Environment variables | Audit trail + rotation + Workload Identity |
+| Token revocation | JWT TTL only (Redis removed) | Redis blacklist | No managed Redis needed; acceptable trade-off for synthetic-data portfolio project |
+| Secret storage | Docker Compose env vars (`.env` on host) | GCP Secret Manager | System runs on Oracle OCI, not GCP — cross-cloud secret manager adds complexity without benefit at this stage |
 | Password hashing | BCrypt (strength 12) | Argon2id | Native Spring Security support + battle-tested |
 | Exception design | Single `AuthServiceException` + internal errorCode | One class per error | Clean service layer, no detail leaked, precise internal logging |
