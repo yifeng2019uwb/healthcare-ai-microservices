@@ -4,7 +4,7 @@ import com.healthcare.entity.AiAnalysisResult;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -12,13 +12,12 @@ import java.util.UUID;
 public interface AiAnalysisResultDao extends JpaRepository<AiAnalysisResult, UUID> {
 
     /**
-     * Most recent analysis for a patient — used by the read API and freshness check.
+     * Most recent analysis for a patient — used for snapshot diff before calling Gemini.
      */
     Optional<AiAnalysisResult> findTopByPatientIdOrderByGeneratedAtDesc(UUID patientId);
 
     /**
-     * Freshness check before calling Gemini: returns true if a result exists
-     * generated after the given threshold.
+     * Full history for a patient — used by the governance/audit API.
      */
-    boolean existsByPatientIdAndGeneratedAtAfter(UUID patientId, OffsetDateTime threshold);
+    List<AiAnalysisResult> findByPatientIdOrderByGeneratedAtDesc(UUID patientId);
 }

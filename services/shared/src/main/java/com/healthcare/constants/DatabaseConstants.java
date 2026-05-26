@@ -341,8 +341,10 @@ public final class DatabaseConstants {
     public static final String COL_MODEL_VERSION     = "model_version";
     public static final String COL_INPUT_RECORD_IDS  = "input_record_ids";
 
+    public static final String COL_LAST_ENCOUNTER_ID = "last_encounter_id";
+
     public static final String INDEX_AI_RESULTS_PATIENT_HISTORY = "idx_ai_results_patient_history";
-    public static final String INDEX_AI_RESULTS_GENERATED_AT    = "idx_ai_results_generated_at";
+    public static final String INDEX_AI_RESULTS_ENCOUNTER       = "idx_ai_results_encounter";
 
     public static final int LEN_TRIGGER_TYPE  = 50;
     public static final int LEN_MODEL_VERSION = 100;

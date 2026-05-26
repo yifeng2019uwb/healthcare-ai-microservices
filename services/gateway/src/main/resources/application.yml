@@ -37,6 +37,10 @@ spring:
           uri: "${APPOINTMENT_SERVICE_URL:http://localhost:8084}"
           predicates:
             - Path=/api/encounters/**
+        - id: ai-service
+          uri: "${AI_SERVICE_URL:http://localhost:8085}"
+          predicates:
+            - Path=/api/ai/**
 
 logging:
   structured:
@@ -64,3 +68,4 @@ gateway:
     "[/api/admin/]": ADMIN
     "[/api/encounters/me/]": PATIENT
     "[/api/encounters/provider/]": PROVIDER
+    "[/api/ai/]": PROVIDER

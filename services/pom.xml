@@ -28,6 +28,7 @@
         <module>patient-service</module>
         <module>provider-service</module>
         <module>appointment-service</module>
+        <module>ai-service</module>
     </modules>
 
     <dependencyManagement>

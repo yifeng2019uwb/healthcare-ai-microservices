@@ -18,8 +18,8 @@ import java.util.UUID;
         indexes = {
             @Index(name = DatabaseConstants.INDEX_AI_RESULTS_PATIENT_HISTORY,
                    columnList = DatabaseConstants.COL_PATIENT_ID + "," + DatabaseConstants.COL_GENERATED_AT),
-            @Index(name = DatabaseConstants.INDEX_AI_RESULTS_GENERATED_AT,
-                   columnList = DatabaseConstants.COL_GENERATED_AT)
+            @Index(name = DatabaseConstants.INDEX_AI_RESULTS_ENCOUNTER,
+                   columnList = DatabaseConstants.COL_LAST_ENCOUNTER_ID + "," + DatabaseConstants.COL_GENERATED_AT)
         })
 public class AiAnalysisResult {
 
@@ -59,6 +59,9 @@ public class AiAnalysisResult {
             columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private String inputRecordIds;
 
+    @Column(name = DatabaseConstants.COL_LAST_ENCOUNTER_ID, updatable = false)
+    private UUID lastEncounterId;
+
     @Column(name = DatabaseConstants.COL_ARCHIVED, nullable = false)
     private boolean archived = false;
 
@@ -70,16 +73,17 @@ public class AiAnalysisResult {
 
     public AiAnalysisResult(UUID patientId, String summary, String riskFlags,
                              AiTriggerType triggerType, UUID triggeredBy,
-                             String modelVersion, String inputRecordIds) {
-        this.patientId      = patientId;
-        this.generatedAt    = OffsetDateTime.now();
-        this.summary        = summary;
-        this.riskFlags      = riskFlags;
-        this.triggerType    = triggerType;
-        this.triggeredBy    = triggeredBy;
-        this.modelVersion   = modelVersion;
-        this.inputRecordIds = inputRecordIds;
-        this.archived       = false;
+                             String modelVersion, String inputRecordIds, UUID lastEncounterId) {
+        this.patientId       = patientId;
+        this.generatedAt     = OffsetDateTime.now();
+        this.summary         = summary;
+        this.riskFlags       = riskFlags;
+        this.triggerType     = triggerType;
+        this.triggeredBy     = triggeredBy;
+        this.modelVersion    = modelVersion;
+        this.inputRecordIds  = inputRecordIds;
+        this.lastEncounterId = lastEncounterId;
+        this.archived        = false;
     }
 
     public UUID getId()                    { return id; }
@@ -91,6 +95,7 @@ public class AiAnalysisResult {
     public UUID getTriggeredBy()           { return triggeredBy; }
     public String getModelVersion()        { return modelVersion; }
     public String getInputRecordIds()      { return inputRecordIds; }
+    public UUID getLastEncounterId()       { return lastEncounterId; }
     public boolean isArchived()            { return archived; }
     public OffsetDateTime getCreatedAt()   { return createdAt; }
 

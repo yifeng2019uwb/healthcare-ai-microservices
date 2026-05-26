@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS ai_analysis_results (
     triggered_by     UUID,                             -- provider user_id; null if debounce merged multiple providers
     model_version    VARCHAR(100) NOT NULL,            -- e.g. 'gemini-1.5-pro-002'
     input_record_ids JSONB        NOT NULL,            -- UUIDs of conditions/allergies included in this call
+    last_encounter_id UUID,                              -- encounter that triggered this analysis; null for legacy rows
     archived         BOOLEAN      NOT NULL DEFAULT FALSE, -- set by nightly maintenance; rows are never hard-deleted
     created_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW()
     -- no updated_at / updated_by: this table is append-only, rows never change after insert
@@ -25,9 +26,6 @@ CREATE TABLE IF NOT EXISTS ai_analysis_results (
 CREATE INDEX IF NOT EXISTS idx_ai_results_patient_history
     ON ai_analysis_results (patient_id, generated_at DESC);
 
--- standalone index: time-range governance queries across all patients
-CREATE INDEX IF NOT EXISTS idx_ai_results_generated_at
-    ON ai_analysis_results (generated_at DESC);
-
--- TODO: idx_ai_results_model_version (model_version, generated_at DESC)
---       add when model drift monitoring is implemented
+-- encounter index: latest analysis per encounter (read API + provider history)
+CREATE INDEX IF NOT EXISTS idx_ai_results_encounter
+    ON ai_analysis_results (last_encounter_id, generated_at DESC);
