@@ -6,6 +6,8 @@ import com.healthcare.dao.ConditionDao;
 import com.healthcare.dao.EncounterDao;
 import com.healthcare.dao.PatientDao;
 import com.healthcare.dao.ProviderDao;
+import com.healthcare.dto.AddAllergyRequest;
+import com.healthcare.dto.AddConditionRequest;
 import com.healthcare.dto.AllergyResponse;
 import com.healthcare.dto.ConditionResponse;
 import com.healthcare.dto.PatientProfileResponse;
@@ -268,5 +270,119 @@ class ProviderServiceImplTest {
                 .isInstanceOf(ProviderServiceException.class)
                 .satisfies(e -> assertThat(((ProviderServiceException) e).getStatus())
                         .isEqualTo(HttpStatus.FORBIDDEN));
+    }
+
+    // -------------------------------------------------------------------------
+    // addCondition
+    // -------------------------------------------------------------------------
+
+    @Test
+    void addCondition_savesAndReturnsCondition_whenOwner() {
+        UUID providerId = mockProvider.getId();
+        UUID encounterId = UUID.randomUUID();
+        when(providerDao.findByAuthId(authId)).thenReturn(Optional.of(mockProvider));
+
+        Encounter encounter = new Encounter(providerId, OffsetDateTime.now());
+        encounter.setPatientId(patientId);
+        when(encounterDao.findById(encounterId)).thenReturn(Optional.of(encounter));
+
+        AddConditionRequest req = new AddConditionRequest("44054006", "Diabetes", LocalDate.of(2022, 1, 1), null);
+
+        ConditionResponse result = service.addCondition(authId, encounterId, req);
+
+        assertThat(result.code()).isEqualTo("44054006");
+        assertThat(result.status()).isEqualTo("active");
+        verify(conditionDao).save(any());
+    }
+
+    @Test
+    void addCondition_throws403_whenNotOwner() {
+        UUID encounterId = UUID.randomUUID();
+        when(providerDao.findByAuthId(authId)).thenReturn(Optional.of(mockProvider));
+
+        Encounter encounter = new Encounter(UUID.randomUUID(), OffsetDateTime.now());
+        encounter.setPatientId(patientId);
+        when(encounterDao.findById(encounterId)).thenReturn(Optional.of(encounter));
+
+        AddConditionRequest req = new AddConditionRequest("44054006", "Diabetes", LocalDate.of(2022, 1, 1), null);
+
+        assertThatThrownBy(() -> service.addCondition(authId, encounterId, req))
+                .isInstanceOf(ProviderServiceException.class)
+                .satisfies(e -> assertThat(((ProviderServiceException) e).getStatus())
+                        .isEqualTo(HttpStatus.FORBIDDEN));
+    }
+
+    @Test
+    void addCondition_throws404_whenEncounterNotFound() {
+        UUID encounterId = UUID.randomUUID();
+        when(providerDao.findByAuthId(authId)).thenReturn(Optional.of(mockProvider));
+        when(encounterDao.findById(encounterId)).thenReturn(Optional.empty());
+
+        AddConditionRequest req = new AddConditionRequest("44054006", "Diabetes", LocalDate.of(2022, 1, 1), null);
+
+        assertThatThrownBy(() -> service.addCondition(authId, encounterId, req))
+                .isInstanceOf(ProviderServiceException.class)
+                .satisfies(e -> assertThat(((ProviderServiceException) e).getStatus())
+                        .isEqualTo(HttpStatus.NOT_FOUND));
+    }
+
+    // -------------------------------------------------------------------------
+    // addAllergy
+    // -------------------------------------------------------------------------
+
+    @Test
+    void addAllergy_savesAndReturnsAllergy_whenOwner() {
+        UUID providerId = mockProvider.getId();
+        UUID encounterId = UUID.randomUUID();
+        when(providerDao.findByAuthId(authId)).thenReturn(Optional.of(mockProvider));
+
+        Encounter encounter = new Encounter(providerId, OffsetDateTime.now());
+        encounter.setPatientId(patientId);
+        when(encounterDao.findById(encounterId)).thenReturn(Optional.of(encounter));
+
+        AddAllergyRequest req = new AddAllergyRequest(
+                "417532002", "Allergy to fish", LocalDate.of(2021, 6, 1), null,
+                null, "food", null, null, null, null, null, null);
+
+        AllergyResponse result = service.addAllergy(authId, encounterId, req);
+
+        assertThat(result.code()).isEqualTo("417532002");
+        assertThat(result.category()).isEqualTo("food");
+        verify(allergyDao).save(any());
+    }
+
+    @Test
+    void addAllergy_throws403_whenNotOwner() {
+        UUID encounterId = UUID.randomUUID();
+        when(providerDao.findByAuthId(authId)).thenReturn(Optional.of(mockProvider));
+
+        Encounter encounter = new Encounter(UUID.randomUUID(), OffsetDateTime.now());
+        encounter.setPatientId(patientId);
+        when(encounterDao.findById(encounterId)).thenReturn(Optional.of(encounter));
+
+        AddAllergyRequest req = new AddAllergyRequest(
+                "417532002", "Allergy to fish", LocalDate.of(2021, 6, 1), null,
+                null, "food", null, null, null, null, null, null);
+
+        assertThatThrownBy(() -> service.addAllergy(authId, encounterId, req))
+                .isInstanceOf(ProviderServiceException.class)
+                .satisfies(e -> assertThat(((ProviderServiceException) e).getStatus())
+                        .isEqualTo(HttpStatus.FORBIDDEN));
+    }
+
+    @Test
+    void addAllergy_throws404_whenEncounterNotFound() {
+        UUID encounterId = UUID.randomUUID();
+        when(providerDao.findByAuthId(authId)).thenReturn(Optional.of(mockProvider));
+        when(encounterDao.findById(encounterId)).thenReturn(Optional.empty());
+
+        AddAllergyRequest req = new AddAllergyRequest(
+                "417532002", "Allergy to fish", LocalDate.of(2021, 6, 1), null,
+                null, "food", null, null, null, null, null, null);
+
+        assertThatThrownBy(() -> service.addAllergy(authId, encounterId, req))
+                .isInstanceOf(ProviderServiceException.class)
+                .satisfies(e -> assertThat(((ProviderServiceException) e).getStatus())
+                        .isEqualTo(HttpStatus.NOT_FOUND));
     }
 }

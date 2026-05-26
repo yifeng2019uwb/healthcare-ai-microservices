@@ -1,16 +1,22 @@
 package com.healthcare.controller;
 
+import com.healthcare.dto.AddAllergyRequest;
+import com.healthcare.dto.AddConditionRequest;
 import com.healthcare.dto.AllergyResponse;
 import com.healthcare.dto.ConditionResponse;
 import com.healthcare.dto.PatientProfileResponse;
 import com.healthcare.dto.PatientSummaryResponse;
 import com.healthcare.dto.ProviderProfileResponse;
 import com.healthcare.service.ProviderService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,7 +24,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.healthcare.constants.SecurityConstants;
 import com.healthcare.exception.ProviderServiceException;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.UUID;
@@ -77,6 +82,26 @@ public class ProviderController {
             @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId,
             @PathVariable String id) {
         return ResponseEntity.ok(providerService.getPatientAllergies(authId, parseUuid(id)));
+    }
+
+    /** POST /api/provider/encounters/{encounterId}/conditions */
+    @PostMapping("/encounters/{encounterId}/conditions")
+    public ResponseEntity<ConditionResponse> addCondition(
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId,
+            @PathVariable UUID encounterId,
+            @Valid @RequestBody AddConditionRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(providerService.addCondition(authId, encounterId, request));
+    }
+
+    /** POST /api/provider/encounters/{encounterId}/allergies */
+    @PostMapping("/encounters/{encounterId}/allergies")
+    public ResponseEntity<AllergyResponse> addAllergy(
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) UUID authId,
+            @PathVariable UUID encounterId,
+            @Valid @RequestBody AddAllergyRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(providerService.addAllergy(authId, encounterId, request));
     }
 
     private static UUID parseUuid(String id) {

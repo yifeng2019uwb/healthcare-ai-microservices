@@ -6,12 +6,18 @@ import com.healthcare.dao.ConditionDao;
 import com.healthcare.dao.EncounterDao;
 import com.healthcare.dao.PatientDao;
 import com.healthcare.dao.ProviderDao;
+import com.healthcare.dto.AddAllergyRequest;
+import com.healthcare.dto.AddConditionRequest;
 import com.healthcare.dto.AllergyResponse;
 import com.healthcare.dto.ConditionResponse;
 import com.healthcare.dto.PatientProfileResponse;
 import com.healthcare.dto.PatientSummaryResponse;
 import com.healthcare.dto.ProviderProfileResponse;
+import com.healthcare.entity.Allergy;
+import com.healthcare.entity.AllergyId;
 import com.healthcare.entity.AuditLog;
+import com.healthcare.entity.Condition;
+import com.healthcare.entity.ConditionId;
 import com.healthcare.entity.Encounter;
 import com.healthcare.entity.Patient;
 import com.healthcare.entity.Provider;
@@ -165,6 +171,78 @@ public class ProviderServiceImpl implements ProviderService {
                 .stream()
                 .map(AllergyResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public ConditionResponse addCondition(UUID authId, UUID encounterId, AddConditionRequest request) {
+        Provider provider = requireProvider(authId);
+
+        Encounter encounter = encounterDao.findById(encounterId)
+                .orElseThrow(() -> new ProviderServiceException(
+                        HttpStatus.NOT_FOUND,
+                        ProviderServiceException.ENCOUNTER_NOT_FOUND,
+                        "Encounter not found: " + encounterId));
+
+        if (!provider.getId().equals(encounter.getProviderId())) {
+            throw new ProviderServiceException(
+                    HttpStatus.FORBIDDEN,
+                    ProviderServiceException.ACCESS_DENIED,
+                    "Provider not associated with encounter: " + encounterId);
+        }
+
+        ConditionId id = new ConditionId(encounter.getPatientId(), encounterId, request.code());
+        Condition condition = new Condition(id, request.startDate());
+        condition.setDescription(request.description());
+        condition.setStopDate(request.stopDate());
+        conditionDao.save(condition);
+
+        auditLogDao.insert(new AuditLog(ActionType.CREATE, RESOURCE_CONDITIONS, Outcome.SUCCESS)
+                .withAuthId(authId.toString())
+                .withUserRole(UserRole.PROVIDER)
+                .withResourceId(encounter.getPatientId()));
+
+        return ConditionResponse.from(condition);
+    }
+
+    @Override
+    @Transactional
+    public AllergyResponse addAllergy(UUID authId, UUID encounterId, AddAllergyRequest request) {
+        Provider provider = requireProvider(authId);
+
+        Encounter encounter = encounterDao.findById(encounterId)
+                .orElseThrow(() -> new ProviderServiceException(
+                        HttpStatus.NOT_FOUND,
+                        ProviderServiceException.ENCOUNTER_NOT_FOUND,
+                        "Encounter not found: " + encounterId));
+
+        if (!provider.getId().equals(encounter.getProviderId())) {
+            throw new ProviderServiceException(
+                    HttpStatus.FORBIDDEN,
+                    ProviderServiceException.ACCESS_DENIED,
+                    "Provider not associated with encounter: " + encounterId);
+        }
+
+        AllergyId id = new AllergyId(encounter.getPatientId(), encounterId, request.code());
+        Allergy allergy = new Allergy(id, request.startDate());
+        allergy.setDescription(request.description());
+        allergy.setStopDate(request.stopDate());
+        allergy.setAllergyType(request.allergyType());
+        allergy.setCategory(request.category());
+        allergy.setReaction1(request.reaction1());
+        allergy.setDescription1(request.description1());
+        allergy.setSeverity1(request.severity1());
+        allergy.setReaction2(request.reaction2());
+        allergy.setDescription2(request.description2());
+        allergy.setSeverity2(request.severity2());
+        allergyDao.save(allergy);
+
+        auditLogDao.insert(new AuditLog(ActionType.CREATE, RESOURCE_ALLERGIES, Outcome.SUCCESS)
+                .withAuthId(authId.toString())
+                .withUserRole(UserRole.PROVIDER)
+                .withResourceId(encounter.getPatientId()));
+
+        return AllergyResponse.from(allergy);
     }
 
     // -------------------------------------------------------------------------

@@ -1,6 +1,10 @@
 package com.healthcare.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.healthcare.dto.AddAllergyRequest;
+import com.healthcare.dto.AddConditionRequest;
+import com.healthcare.dto.AllergyResponse;
+import com.healthcare.dto.ConditionResponse;
 import com.healthcare.dto.PatientProfileResponse;
 import com.healthcare.dto.PatientSummaryResponse;
 import com.healthcare.dto.ProviderProfileResponse;
@@ -13,6 +17,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
@@ -23,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -34,8 +40,9 @@ class ProviderControllerTest {
     @Autowired ObjectMapper objectMapper;
     @MockBean  ProviderService providerService;
 
-    private static final UUID AUTH_ID    = UUID.randomUUID();
-    private static final UUID PATIENT_ID = UUID.randomUUID();
+    private static final UUID AUTH_ID      = UUID.randomUUID();
+    private static final UUID PATIENT_ID   = UUID.randomUUID();
+    private static final UUID ENCOUNTER_ID = UUID.randomUUID();
 
     private ProviderProfileResponse providerProfile() {
         return new ProviderProfileResponse(
@@ -172,6 +179,100 @@ class ProviderControllerTest {
     @Test
     void getPatientAllergies_returns400_whenMissingHeader() throws Exception {
         mockMvc.perform(get("/api/provider/patients/{id}/allergies", PATIENT_ID))
+                .andExpect(status().isBadRequest());
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /api/provider/encounters/{encounterId}/conditions
+    // -------------------------------------------------------------------------
+
+    @Test
+    void addCondition_returns201_withCondition() throws Exception {
+        ConditionResponse resp = new ConditionResponse("44054006", null, "Diabetes", LocalDate.of(2022, 1, 1), null, "active");
+        when(providerService.addCondition(eq(AUTH_ID), eq(ENCOUNTER_ID), any())).thenReturn(resp);
+
+        AddConditionRequest req = new AddConditionRequest("44054006", "Diabetes", LocalDate.of(2022, 1, 1), null);
+
+        mockMvc.perform(post("/api/provider/encounters/{encounterId}/conditions", ENCOUNTER_ID)
+                        .header("X-User-Id", AUTH_ID.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").value("44054006"))
+                .andExpect(jsonPath("$.status").value("active"));
+    }
+
+    @Test
+    void addCondition_returns403_whenProviderNotOwner() throws Exception {
+        when(providerService.addCondition(eq(AUTH_ID), eq(ENCOUNTER_ID), any()))
+                .thenThrow(new ProviderServiceException(HttpStatus.FORBIDDEN, ProviderServiceException.ACCESS_DENIED, "Forbidden"));
+
+        AddConditionRequest req = new AddConditionRequest("44054006", "Diabetes", LocalDate.of(2022, 1, 1), null);
+
+        mockMvc.perform(post("/api/provider/encounters/{encounterId}/conditions", ENCOUNTER_ID)
+                        .header("X-User-Id", AUTH_ID.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void addCondition_returns400_whenMissingHeader() throws Exception {
+        AddConditionRequest req = new AddConditionRequest("44054006", "Diabetes", LocalDate.of(2022, 1, 1), null);
+
+        mockMvc.perform(post("/api/provider/encounters/{encounterId}/conditions", ENCOUNTER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest());
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /api/provider/encounters/{encounterId}/allergies
+    // -------------------------------------------------------------------------
+
+    @Test
+    void addAllergy_returns201_withAllergy() throws Exception {
+        AllergyResponse resp = new AllergyResponse("417532002", null, "Allergy to fish", null, "food", null, LocalDate.of(2021, 6, 1), null);
+        when(providerService.addAllergy(eq(AUTH_ID), eq(ENCOUNTER_ID), any())).thenReturn(resp);
+
+        AddAllergyRequest req = new AddAllergyRequest(
+                "417532002", "Allergy to fish", LocalDate.of(2021, 6, 1), null,
+                null, "food", null, null, null, null, null, null);
+
+        mockMvc.perform(post("/api/provider/encounters/{encounterId}/allergies", ENCOUNTER_ID)
+                        .header("X-User-Id", AUTH_ID.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").value("417532002"))
+                .andExpect(jsonPath("$.category").value("food"));
+    }
+
+    @Test
+    void addAllergy_returns403_whenProviderNotOwner() throws Exception {
+        when(providerService.addAllergy(eq(AUTH_ID), eq(ENCOUNTER_ID), any()))
+                .thenThrow(new ProviderServiceException(HttpStatus.FORBIDDEN, ProviderServiceException.ACCESS_DENIED, "Forbidden"));
+
+        AddAllergyRequest req = new AddAllergyRequest(
+                "417532002", "Allergy to fish", LocalDate.of(2021, 6, 1), null,
+                null, "food", null, null, null, null, null, null);
+
+        mockMvc.perform(post("/api/provider/encounters/{encounterId}/allergies", ENCOUNTER_ID)
+                        .header("X-User-Id", AUTH_ID.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void addAllergy_returns400_whenMissingHeader() throws Exception {
+        AddAllergyRequest req = new AddAllergyRequest(
+                "417532002", "Allergy to fish", LocalDate.of(2021, 6, 1), null,
+                null, "food", null, null, null, null, null, null);
+
+        mockMvc.perform(post("/api/provider/encounters/{encounterId}/allergies", ENCOUNTER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest());
     }
 }

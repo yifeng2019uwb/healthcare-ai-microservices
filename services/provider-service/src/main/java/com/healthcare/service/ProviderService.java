@@ -1,5 +1,7 @@
 package com.healthcare.service;
 
+import com.healthcare.dto.AddAllergyRequest;
+import com.healthcare.dto.AddConditionRequest;
 import com.healthcare.dto.AllergyResponse;
 import com.healthcare.dto.ConditionResponse;
 import com.healthcare.dto.PatientProfileResponse;
@@ -21,4 +23,8 @@ public interface ProviderService {
     List<ConditionResponse> getPatientConditions(UUID authId, UUID patientId);
 
     List<AllergyResponse> getPatientAllergies(UUID authId, UUID patientId);
+
+    ConditionResponse addCondition(UUID authId, UUID encounterId, AddConditionRequest request);
+
+    AllergyResponse addAllergy(UUID authId, UUID encounterId, AddAllergyRequest request);
 }
