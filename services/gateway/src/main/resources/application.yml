@@ -20,27 +20,27 @@ spring:
         - id: auth-service
           uri: "${AUTH_SERVICE_URL:http://localhost:8082}"
           predicates:
-            - Path=/api/auth/**
-        - id: patient-service
-          uri: "${PATIENT_SERVICE_URL:http://localhost:8081}"
-          predicates:
-            - Path=/api/patients/**
+            - Path=/api/auth/login, /api/auth/refresh, /api/auth/logout, /api/auth/register/patient, /api/auth/register/provider
+
         - id: provider-service
           uri: "${PROVIDER_SERVICE_URL:http://localhost:8083}"
           predicates:
-            - Path=/api/provider/**
+            - Path=/api/provider/me, /api/provider/patients, /api/provider/patients/*, /api/provider/patients/*/conditions, /api/provider/patients/*/allergies, /api/provider/encounters/*/conditions, /api/provider/encounters/*/allergies
+
         - id: provider-admin
           uri: "${PROVIDER_SERVICE_URL:http://localhost:8083}"
           predicates:
-            - Path=/api/admin/**
+            - Path=/api/admin/import/organizations, /api/admin/import/patients, /api/admin/import/providers, /api/admin/import/encounters, /api/admin/import/conditions, /api/admin/import/allergies
+
         - id: encounter-service
           uri: "${APPOINTMENT_SERVICE_URL:http://localhost:8084}"
           predicates:
-            - Path=/api/encounters/**
+            - Path=/api/encounters/me, /api/encounters/me/*, /api/encounters/provider, /api/encounters/provider/*, /api/encounters/provider/patients/*
+
         - id: ai-service
           uri: "${AI_SERVICE_URL:http://localhost:8085}"
           predicates:
-            - Path=/api/ai/**
+            - Path=/api/ai/encounters/*/request, /api/ai/patient/*, /api/ai/patient/*/history
 
 logging:
   structured:
@@ -63,7 +63,6 @@ gateway:
     - /api/auth/refresh
     - /actuator/health
   role-paths:
-    "[/api/patients/]": PATIENT
     "[/api/provider/]": PROVIDER
     "[/api/admin/]": ADMIN
     "[/api/encounters/me/]": PATIENT

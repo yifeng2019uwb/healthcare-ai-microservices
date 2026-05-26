@@ -9,11 +9,9 @@ public interface AiAnalysisService {
 
     /**
      * Provider requests AI analysis for an encounter on demand.
-     * ADMIN role bypasses ownership check, using encounter.getProviderId() as effective provider.
-     * PROVIDER role requires encounter.getProviderId() == requesterId.
-     * Runs analysis synchronously and returns the full result.
+     * Validates the provider (by authId) owns the encounter before running analysis.
      */
-    AiAnalysisResponse requestAnalysis(UUID encounterId, UUID requesterId, String requesterRole);
+    AiAnalysisResponse requestAnalysis(UUID encounterId, UUID authId);
 
     /**
      * Returns the most recent analysis result for the patient across all encounters.

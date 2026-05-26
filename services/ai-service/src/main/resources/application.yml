@@ -16,11 +16,12 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
 server:
-  port: 8084
+  port: ${PORT:8085}
 
 gemini:
   api-key: ${GEMINI_API_KEY}
-  model: ${GEMINI_MODEL:gemini-1.5-pro}
+  model: ${GEMINI_MODEL:gemini-2.5-flash}
+  fallback-model: ${GEMINI_FALLBACK_MODEL:gemini-1.5-flash}
   base-url: https://generativelanguage.googleapis.com
 
 management:

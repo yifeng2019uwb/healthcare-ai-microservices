@@ -7,6 +7,7 @@ import com.healthcare.dao.AuditLogDao;
 import com.healthcare.dao.ConditionDao;
 import com.healthcare.dao.EncounterDao;
 import com.healthcare.dao.PatientDao;
+import com.healthcare.dao.ProviderDao;
 import com.healthcare.dto.AiAnalysisResponse;
 import com.healthcare.dto.GeminiAnalysisResult;
 import com.healthcare.entity.AiAnalysisResult;
@@ -14,6 +15,7 @@ import com.healthcare.entity.Condition;
 import com.healthcare.entity.ConditionId;
 import com.healthcare.entity.Encounter;
 import com.healthcare.entity.Patient;
+import com.healthcare.entity.Provider;
 import com.healthcare.enums.AiTriggerType;
 import com.healthcare.exception.AiServiceException;
 import com.healthcare.service.impl.AiAnalysisServiceImpl;
@@ -35,6 +37,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -47,6 +50,7 @@ class AiAnalysisServiceImplTest {
     @Mock private ConditionDao        conditionDao;
     @Mock private AllergyDao          allergyDao;
     @Mock private EncounterDao        encounterDao;
+    @Mock private ProviderDao         providerDao;
     @Mock private AuditLogDao         auditLogDao;
     @Mock private GeminiClient        geminiClient;
 
@@ -55,12 +59,17 @@ class AiAnalysisServiceImplTest {
 
     private final UUID patientId   = UUID.randomUUID();
     private final UUID encounterId = UUID.randomUUID();
+    private final UUID authId      = UUID.randomUUID();
     private final UUID providerId  = UUID.randomUUID();
+
+    private Provider mockProvider;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(service, "modelVersion", "gemini-1.5-pro");
         ReflectionTestUtils.setField(service, "objectMapper", new ObjectMapper());
+        mockProvider = mock(Provider.class);
+        when(mockProvider.getId()).thenReturn(providerId);
     }
 
     // -------------------------------------------------------------------------
@@ -78,17 +87,18 @@ class AiAnalysisServiceImplTest {
         AiAnalysisResult saved = new AiAnalysisResult(
                 patientId, "Summary.", "[]", AiTriggerType.MANUAL, null, "gemini-1.5-pro", "{}", encounterId);
 
+        when(providerDao.findByAuthId(authId)).thenReturn(Optional.of(mockProvider));
         when(encounterDao.findById(encounterId)).thenReturn(Optional.of(encounter));
         when(patientDao.findById(patientId)).thenReturn(Optional.of(patient));
         when(conditionDao.findByIdPatientId(patientId)).thenReturn(List.of());
         when(allergyDao.findByIdPatientId(patientId)).thenReturn(List.of());
         when(encounterDao.findByPatientId(patientId)).thenReturn(List.of(encounter));
         when(aiAnalysisResultDao.findTopByPatientIdOrderByGeneratedAtDesc(patientId))
-                .thenReturn(Optional.empty())    // snapshotUnchanged check
-                .thenReturn(Optional.of(saved)); // fetch after save
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(saved));
         when(geminiClient.analyze(any())).thenReturn(geminiResult);
 
-        AiAnalysisResponse response = service.requestAnalysis(encounterId, providerId, "PROVIDER");
+        AiAnalysisResponse response = service.requestAnalysis(encounterId, authId);
 
         verify(geminiClient).analyze(any());
         verify(aiAnalysisResultDao).save(any(AiAnalysisResult.class));
@@ -124,16 +134,16 @@ class AiAnalysisServiceImplTest {
         enc.setId(encounterId);
         enc.setPatientId(patientId);
 
+        when(providerDao.findByAuthId(authId)).thenReturn(Optional.of(mockProvider));
         when(encounterDao.findById(encounterId)).thenReturn(Optional.of(encounter));
         when(patientDao.findById(patientId)).thenReturn(Optional.of(patient));
         when(conditionDao.findByIdPatientId(patientId)).thenReturn(List.of(condition));
         when(allergyDao.findByIdPatientId(patientId)).thenReturn(List.of());
         when(encounterDao.findByPatientId(patientId)).thenReturn(List.of(enc));
         when(aiAnalysisResultDao.findTopByPatientIdOrderByGeneratedAtDesc(patientId))
-                .thenReturn(Optional.of(lastResult));  // snapshotUnchanged returns true
-                                                        // second call also returns lastResult
+                .thenReturn(Optional.of(lastResult));
 
-        AiAnalysisResponse response = service.requestAnalysis(encounterId, providerId, "PROVIDER");
+        AiAnalysisResponse response = service.requestAnalysis(encounterId, authId);
 
         verify(geminiClient, never()).analyze(any());
         verify(aiAnalysisResultDao, never()).save(any());
@@ -141,10 +151,21 @@ class AiAnalysisServiceImplTest {
     }
 
     @Test
+    void requestAnalysis_throws403_whenProviderNotFound() {
+        when(providerDao.findByAuthId(authId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.requestAnalysis(encounterId, authId))
+                .isInstanceOf(AiServiceException.class)
+                .satisfies(e -> assertThat(((AiServiceException) e).getStatus())
+                        .isEqualTo(HttpStatus.FORBIDDEN));
+    }
+
+    @Test
     void requestAnalysis_throws404_whenEncounterNotFound() {
+        when(providerDao.findByAuthId(authId)).thenReturn(Optional.of(mockProvider));
         when(encounterDao.findById(encounterId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.requestAnalysis(encounterId, providerId, "PROVIDER"))
+        assertThatThrownBy(() -> service.requestAnalysis(encounterId, authId))
                 .isInstanceOf(AiServiceException.class)
                 .satisfies(e -> assertThat(((AiServiceException) e).getStatus())
                         .isEqualTo(HttpStatus.NOT_FOUND));
@@ -156,41 +177,13 @@ class AiAnalysisServiceImplTest {
         encounter.setId(encounterId);
         encounter.setPatientId(patientId);
 
+        when(providerDao.findByAuthId(authId)).thenReturn(Optional.of(mockProvider));
         when(encounterDao.findById(encounterId)).thenReturn(Optional.of(encounter));
 
-        assertThatThrownBy(() -> service.requestAnalysis(encounterId, providerId, "PROVIDER"))
+        assertThatThrownBy(() -> service.requestAnalysis(encounterId, authId))
                 .isInstanceOf(AiServiceException.class)
                 .satisfies(e -> assertThat(((AiServiceException) e).getStatus())
                         .isEqualTo(HttpStatus.FORBIDDEN));
-    }
-
-    @Test
-    void requestAnalysis_adminBypasses_ownershipCheck() {
-        UUID encounterOwner = UUID.randomUUID();
-        Encounter encounter = new Encounter(encounterOwner, OffsetDateTime.now());
-        encounter.setId(encounterId);
-        encounter.setPatientId(patientId);
-
-        Patient patient = new Patient("Jane", "Doe");
-        GeminiAnalysisResult geminiResult = new GeminiAnalysisResult("Summary.", List.of(), "AI-generated.");
-        AiAnalysisResult saved = new AiAnalysisResult(
-                patientId, "Summary.", "[]", AiTriggerType.MANUAL, null, "gemini-1.5-pro", "{}", encounterId);
-
-        when(encounterDao.findById(encounterId)).thenReturn(Optional.of(encounter));
-        when(patientDao.findById(patientId)).thenReturn(Optional.of(patient));
-        when(conditionDao.findByIdPatientId(patientId)).thenReturn(List.of());
-        when(allergyDao.findByIdPatientId(patientId)).thenReturn(List.of());
-        when(encounterDao.findByPatientId(patientId)).thenReturn(List.of(encounter));
-        when(aiAnalysisResultDao.findTopByPatientIdOrderByGeneratedAtDesc(patientId))
-                .thenReturn(Optional.empty())
-                .thenReturn(Optional.of(saved));
-        when(geminiClient.analyze(any())).thenReturn(geminiResult);
-
-        // providerId != encounterOwner, but ADMIN bypasses ownership
-        AiAnalysisResponse response = service.requestAnalysis(encounterId, providerId, "ADMIN");
-
-        verify(geminiClient).analyze(any());
-        assertThat(response.summary()).isEqualTo("Summary.");
     }
 
     // -------------------------------------------------------------------------

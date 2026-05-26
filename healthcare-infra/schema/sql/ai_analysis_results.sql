@@ -22,6 +22,12 @@ CREATE TABLE IF NOT EXISTS ai_analysis_results (
     -- exception: archived flag is set by maintenance job (not a business update)
 );
 
+-- Migrations (idempotent — safe to re-run, must run before indexes)
+ALTER TABLE ai_analysis_results
+    ADD COLUMN IF NOT EXISTS last_encounter_id UUID REFERENCES encounters(id);
+ALTER TABLE ai_analysis_results
+    ADD COLUMN IF NOT EXISTS archived BOOLEAN NOT NULL DEFAULT FALSE;
+
 -- composite index: covers all patient history queries (patient_id lookup + time ordering)
 CREATE INDEX IF NOT EXISTS idx_ai_results_patient_history
     ON ai_analysis_results (patient_id, generated_at DESC);

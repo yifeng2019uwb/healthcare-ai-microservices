@@ -9,14 +9,14 @@ Runs against a live stack via the gateway at `http://localhost:8080` (or `$GATEW
 
 | Endpoint | Role | Purpose |
 |---|---|---|
-| `POST /api/encounters/{encounterId}/conditions` | PROVIDER | Provider documents a condition |
-| `POST /api/encounters/{encounterId}/allergies` | PROVIDER | Provider documents an allergy |
+| `POST /api/provider/encounters/{encounterId}/conditions` | PROVIDER | Provider documents a condition on an encounter |
+| `POST /api/provider/encounters/{encounterId}/allergies` | PROVIDER | Provider documents an allergy on an encounter |
 | `POST /api/ai/encounters/{encounterId}/request` | PROVIDER / ADMIN | Request AI analysis on demand — sync 200 + full result |
 | `GET /api/ai/patient/{patientId}` | PROVIDER / ADMIN | Get latest AI result |
 | `GET /api/ai/patient/{patientId}/history` | PROVIDER / ADMIN | Get all AI results |
 
-The AI trigger is completely independent of condition/allergy writes.
-Provider calls it whenever they want analysis — no lifecycle dependency.
+Conditions and allergies are provider write actions scoped under `/api/provider/` — they do not modify the encounter itself and do not collide with the appointment service's `/api/encounters/` path.
+The AI trigger is completely independent of condition/allergy writes; provider calls it whenever they want analysis.
 
 ---
 
@@ -99,7 +99,7 @@ Each provider uses their own JWT — same code path as a real provider.
      Get JWT for providerFhirId from cached logins
      If no test account for this provider → skip row (provider not registered)
 
-     POST /api/encounters/{encounterId}/conditions  (provider JWT)
+     POST /api/provider/encounters/{encounterId}/conditions  (provider JWT)
      Body: { code, description, start_date, stop_date }
      Assert: 201
 
@@ -107,7 +107,7 @@ Each provider uses their own JWT — same code path as a real provider.
    For each patient: scan allergies list for matching PATIENT
    For each matching allergy row:
      Look up providerFhirId from allergy's ENCOUNTER
-     POST /api/encounters/{encounterId}/allergies  (provider JWT)
+     POST /api/provider/encounters/{encounterId}/allergies  (provider JWT)
      Body: { code, description, start_date, stop_date, ... }
      Assert: 201
 
@@ -175,11 +175,11 @@ integration_tests/
 
 ---
 
-## Service Dependencies (not yet implemented)
+## Service Dependencies
 
-### 1. provider-service: condition write endpoint
+### ✅ 1. provider-service: condition write endpoint
 ```
-POST /api/encounters/{encounterId}/conditions
+POST /api/provider/encounters/{encounterId}/conditions
 Header: X-User-Id: {providerId}
 Body:   { "code": "E11", "description": "...", "start_date": "2021-01-15", "stop_date": null }
 Logic:  verify encounter.getProviderId() == providerId (403 if mismatch)
@@ -188,16 +188,16 @@ Logic:  verify encounter.getProviderId() == providerId (403 if mismatch)
 Return: 201 + ConditionResponse
 ```
 
-### 2. provider-service: allergy write endpoint
+### ✅ 2. provider-service: allergy write endpoint
 ```
-POST /api/encounters/{encounterId}/allergies
+POST /api/provider/encounters/{encounterId}/allergies
 Header: X-User-Id: {providerId}
 Body:   { "code": "...", "description": "...", "start_date": "...", ... }
 Logic:  same ownership check as conditions
 Return: 201 + AllergyResponse
 ```
 
-### 3. ai-service: on-demand analysis endpoint
+### ✅ 3. ai-service: on-demand analysis endpoint
 ```
 POST /api/ai/encounters/{encounterId}/request
 Header: X-User-Id: {providerId}, X-User-Role: {role}
@@ -207,35 +207,29 @@ Logic:  if ADMIN → skip ownership check, use encounter.getProviderId() as effe
 Return: 200 + AiAnalysisResponse (full result, not 202)
 ```
 
-### 4. ai-service: remove windowed queue
-- Delete `ConcurrentHashMap<UUID, PendingTrigger> pendingPatients`
-- Delete `@Scheduled drainPendingPatients()`
-- Delete `queuePatientEvent()` from interface and impl
-- Delete `windowMinutes` `@Value` field
-- Delete `PendingTrigger` DTO
+### ✅ 4. ai-service: remove windowed queue
+- Deleted `ConcurrentHashMap<UUID, PendingTrigger> pendingPatients`
+- Deleted `@Scheduled drainPendingPatients()`
+- Deleted `queuePatientEvent()` from interface and impl
+- Deleted `windowMinutes` `@Value` field
+- Deleted `PendingTrigger` DTO
 
-### 5. ai-service: remove Kafka listener
-- Delete `HealthcareEventListener.java`
-- Remove Kafka consumer config from `application.yml`
+### ✅ 5. ai-service: remove Kafka listener
+- Deleted `HealthcareEventListener.java`
+- Removed Kafka consumer config from `application.yml`
 
-### 6. gateway: ADMIN role bypass
-```java
-// JwtAuthFilter.checkRole()
-if (required.equals(role) || "ADMIN".equals(role)) return Mono.empty();
-```
-
-### 7. gateway: add PROVIDER role for new write paths
+### 6. gateway: add PROVIDER role for new write paths
 ```yaml
 role-paths:
-  "[/api/encounters/]": PROVIDER    # conditions + allergies write
-  "[/api/ai/]":         PROVIDER    # AI trigger + read
+  "[/api/provider/]": PROVIDER    # all provider endpoints (conditions, allergies, read)
+  "[/api/ai/]":       PROVIDER    # AI trigger + read
 ```
 
-### 8. ApiPaths additions
+### 7. ApiPaths additions
 ```java
-public static final String ENCOUNTER_CONDITIONS = "/api/encounters/{encounterId}/conditions";
-public static final String ENCOUNTER_ALLERGIES  = "/api/encounters/{encounterId}/allergies";
-public static final String AI_REQUEST           = "/api/ai/encounters/{encounterId}/request";
-public static final String AI_LATEST_RESULT     = "/api/ai/patient/{patientId}";
-public static final String AI_HISTORY           = "/api/ai/patient/{patientId}/history";
+public static final String PROVIDER_ENCOUNTER_CONDITIONS = "/api/provider/encounters/{encounterId}/conditions";
+public static final String PROVIDER_ENCOUNTER_ALLERGIES  = "/api/provider/encounters/{encounterId}/allergies";
+public static final String AI_REQUEST                    = "/api/ai/encounters/{encounterId}/request";
+public static final String AI_LATEST_RESULT              = "/api/ai/patient/{patientId}";
+public static final String AI_HISTORY                    = "/api/ai/patient/{patientId}/history";
 ```

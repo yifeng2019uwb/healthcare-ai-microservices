@@ -17,6 +17,7 @@ import org.springframework.web.client.RestClient;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.client.HttpServerErrorException;
 
 @Component
 public class GeminiClientImpl implements GeminiClient {
@@ -36,10 +37,26 @@ public class GeminiClientImpl implements GeminiClient {
         this.restClient   = RestClient.create();
     }
 
+    private static final int  MAX_RETRIES    = 3;
+    private static final long RETRY_DELAY_MS = 2_000;
+
     @Override
     public GeminiAnalysisResult analyze(String prompt) {
+        try {
+            return callWithRetry(config.getModel(), prompt);
+        } catch (AiServiceException e) {
+            String fallback = config.getFallbackModel();
+            if (fallback != null && !fallback.isBlank()) {
+                log.warn("Primary model {} unavailable, falling back to {}", config.getModel(), fallback);
+                return callWithRetry(fallback, prompt);
+            }
+            throw e;
+        }
+    }
+
+    private GeminiAnalysisResult callWithRetry(String model, String prompt) {
         String url = config.getBaseUrl()
-                + "/v1beta/models/" + config.getModel()
+                + "/v1/models/" + model
                 + ":generateContent?key=" + config.getApiKey();
 
         Map<String, Object> requestBody = Map.of(
@@ -48,23 +65,40 @@ public class GeminiClientImpl implements GeminiClient {
                 ))
         );
 
-        try {
-            String rawResponse = restClient.post()
-                    .uri(url)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(requestBody)
-                    .retrieve()
-                    .body(String.class);
+        int attempt = 0;
+        while (true) {
+            try {
+                String rawResponse = restClient.post()
+                        .uri(url)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(requestBody)
+                        .retrieve()
+                        .body(String.class);
 
-            return parseGeminiResponse(rawResponse);
-        } catch (AiServiceException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Gemini API call failed: {}", e.getMessage(), e);
-            throw new AiServiceException(
-                    org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR,
-                    AiServiceException.GEMINI_ERROR,
-                    "Gemini API call failed: " + e.getMessage());
+                return parseGeminiResponse(rawResponse);
+
+            } catch (AiServiceException e) {
+                throw e;
+            } catch (HttpServerErrorException e) {
+                if (e.getStatusCode().value() == 503 && attempt < MAX_RETRIES) {
+                    attempt++;
+                    log.warn("Gemini 503 on model={} attempt {}/{}, retrying in {}ms",
+                            model, attempt, MAX_RETRIES, RETRY_DELAY_MS * attempt);
+                    try { Thread.sleep(RETRY_DELAY_MS * attempt); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+                } else {
+                    log.error("Gemini API call failed model={}: {}", model, e.getMessage());
+                    throw new AiServiceException(
+                            org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR,
+                            AiServiceException.GEMINI_ERROR,
+                            "Gemini API call failed: " + e.getMessage());
+                }
+            } catch (Exception e) {
+                log.error("Gemini API call failed model={}: {}", model, e.getMessage(), e);
+                throw new AiServiceException(
+                        org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR,
+                        AiServiceException.GEMINI_ERROR,
+                        "Gemini API call failed: " + e.getMessage());
+            }
         }
     }
 
@@ -87,7 +121,11 @@ public class GeminiClientImpl implements GeminiClient {
                         "Gemini response missing text content");
             }
 
-            JsonNode analysisJson = objectMapper.readTree(textNode.asText());
+            String text = textNode.asText().strip();
+            if (text.startsWith("```")) {
+                text = text.replaceFirst("^```[a-zA-Z]*\\s*", "").replaceFirst("```\\s*$", "").strip();
+            }
+            JsonNode analysisJson = objectMapper.readTree(text);
 
             String summary    = analysisJson.path("summary").asText();
             String disclaimer = analysisJson.has("disclaimer")

@@ -191,7 +191,7 @@ class ProviderControllerTest {
         ConditionResponse resp = new ConditionResponse("44054006", null, "Diabetes", LocalDate.of(2022, 1, 1), null, "active");
         when(providerService.addCondition(eq(AUTH_ID), eq(ENCOUNTER_ID), any())).thenReturn(resp);
 
-        AddConditionRequest req = new AddConditionRequest("44054006", "Diabetes", LocalDate.of(2022, 1, 1), null);
+        AddConditionRequest req = new AddConditionRequest("44054006", null, "Diabetes", LocalDate.of(2022, 1, 1), null);
 
         mockMvc.perform(post("/api/provider/encounters/{encounterId}/conditions", ENCOUNTER_ID)
                         .header("X-User-Id", AUTH_ID.toString())
@@ -207,7 +207,7 @@ class ProviderControllerTest {
         when(providerService.addCondition(eq(AUTH_ID), eq(ENCOUNTER_ID), any()))
                 .thenThrow(new ProviderServiceException(HttpStatus.FORBIDDEN, ProviderServiceException.ACCESS_DENIED, "Forbidden"));
 
-        AddConditionRequest req = new AddConditionRequest("44054006", "Diabetes", LocalDate.of(2022, 1, 1), null);
+        AddConditionRequest req = new AddConditionRequest("44054006", null, "Diabetes", LocalDate.of(2022, 1, 1), null);
 
         mockMvc.perform(post("/api/provider/encounters/{encounterId}/conditions", ENCOUNTER_ID)
                         .header("X-User-Id", AUTH_ID.toString())
@@ -218,7 +218,7 @@ class ProviderControllerTest {
 
     @Test
     void addCondition_returns400_whenMissingHeader() throws Exception {
-        AddConditionRequest req = new AddConditionRequest("44054006", "Diabetes", LocalDate.of(2022, 1, 1), null);
+        AddConditionRequest req = new AddConditionRequest("44054006", null, "Diabetes", LocalDate.of(2022, 1, 1), null);
 
         mockMvc.perform(post("/api/provider/encounters/{encounterId}/conditions", ENCOUNTER_ID)
                         .contentType(MediaType.APPLICATION_JSON)

@@ -27,11 +27,10 @@ public class AiController {
     @PostMapping("/encounters/{encounterId}/request")
     public ResponseEntity<AiAnalysisResponse> requestAnalysis(
             @PathVariable UUID encounterId,
-            @RequestHeader(SecurityConstants.HEADER_USER_ID)   String userId,
-            @RequestHeader(SecurityConstants.HEADER_USER_ROLE) String userRole) {
+            @RequestHeader(SecurityConstants.HEADER_USER_ID) String authId) {
 
         return ResponseEntity.ok(aiAnalysisService.requestAnalysis(
-                encounterId, UUID.fromString(userId), userRole));
+                encounterId, UUID.fromString(authId)));
     }
 
     @GetMapping("/patient/{patientId}")

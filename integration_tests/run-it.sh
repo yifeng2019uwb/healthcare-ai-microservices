@@ -11,8 +11,10 @@
 #   register      — auth.RegisterPatientIT + auth.RegisterProviderIT
 #   patient       — patient.PatientProfileIT
 #   provider      — provider.ProviderProfileIT
+#   ai            — ai.AiAnalysisIT (excludes @Tag("ai-live") Gemini call)
+#   ai-live       — ai.AiAnalysisIT full suite including Gemini trigger (slow, costs API quota)
 #   admin         — admin.AdminImportIT  (requires test-data: run-synthea.sh test-data <n>)
-#   all           — run all tests in order
+#   all           — run all tests in order (excludes ai-live)
 #
 # Migration status:
 #   auth/admin → JUnit 5 (Failsafe)
@@ -106,6 +108,23 @@ for arg in "$@"; do
     provider)
       run_junit "Provider profile endpoints"       "provider.ProviderProfileIT"
       ;;
+    ai)
+      stage "AI analysis endpoints (excluding live Gemini call)"
+      mvn failsafe:integration-test failsafe:verify -f "$POM" \
+        $GATEWAY_PROP \
+        -Dit.test="ai.AiAnalysisIT" \
+        -Dgroups="!ai-live" \
+        -q
+      ok "AI analysis tests passed"
+      ;;
+    ai-live)
+      stage "AI analysis endpoints — full suite including Gemini trigger"
+      mvn failsafe:integration-test failsafe:verify -f "$POM" \
+        $GATEWAY_PROP \
+        -Dit.test="ai.AiAnalysisIT" \
+        -q
+      ok "AI live tests passed"
+      ;;
     admin)
       run_admin
       ;;
@@ -116,9 +135,16 @@ for arg in "$@"; do
       run_junit "Register provider endpoint"       "auth.RegisterProviderIT"
       run_junit "Patient profile endpoints"        "patient.PatientProfileIT"
       run_junit "Provider profile endpoints"       "provider.ProviderProfileIT"
+      stage "AI analysis endpoints (excluding live Gemini call)"
+      mvn failsafe:integration-test failsafe:verify -f "$POM" \
+        $GATEWAY_PROP \
+        -Dit.test="ai.AiAnalysisIT" \
+        -Dgroups="!ai-live" \
+        -q
+      ok "AI analysis tests passed"
       run_admin
       ;;
-    *) fail "Unknown test: $arg  (known: seed auth register patient provider admin all)" ;;
+    *) fail "Unknown test: $arg  (known: seed auth register patient provider ai ai-live admin all)" ;;
   esac
 done
 

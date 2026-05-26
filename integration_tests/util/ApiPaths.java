@@ -33,6 +33,15 @@ public final class ApiPaths {
     public static final String ENCOUNTERS_PROVIDER_DETAIL  = "/api/encounters/provider/{id}";
     public static final String ENCOUNTERS_PROVIDER_PATIENT = "/api/encounters/provider/patients/{patientId}";
 
+    // ── Provider — encounter write ────────────────────────────────────────────
+    public static final String PROVIDER_ENCOUNTER_CONDITIONS = "/api/provider/encounters/{encounterId}/conditions";
+    public static final String PROVIDER_ENCOUNTER_ALLERGIES  = "/api/provider/encounters/{encounterId}/allergies";
+
+    // ── AI analysis ───────────────────────────────────────────────────────────
+    public static final String AI_REQUEST = "/api/ai/encounters/{encounterId}/request";
+    public static final String AI_LATEST  = "/api/ai/patient/{patientId}";
+    public static final String AI_HISTORY = "/api/ai/patient/{patientId}/history";
+
     // ── Admin import ──────────────────────────────────────────────────────────
     public static final String ADMIN_IMPORT_ORGANIZATIONS = "/api/admin/import/organizations";
     public static final String ADMIN_IMPORT_PATIENTS      = "/api/admin/import/patients";

@@ -9,13 +9,16 @@ public class GeminiConfig {
 
     private String apiKey;
     private String model;
+    private String fallbackModel;
     private String baseUrl;
 
-    public String getApiKey()  { return apiKey; }
-    public String getModel()   { return model; }
-    public String getBaseUrl() { return baseUrl; }
+    public String getApiKey()       { return apiKey; }
+    public String getModel()        { return model; }
+    public String getFallbackModel() { return fallbackModel; }
+    public String getBaseUrl()      { return baseUrl; }
 
-    public void setApiKey(String apiKey)   { this.apiKey = apiKey; }
-    public void setModel(String model)     { this.model = model; }
-    public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
+    public void setApiKey(String apiKey)             { this.apiKey = apiKey; }
+    public void setModel(String model)               { this.model = model; }
+    public void setFallbackModel(String fallbackModel) { this.fallbackModel = fallbackModel; }
+    public void setBaseUrl(String baseUrl)           { this.baseUrl = baseUrl; }
 }

@@ -9,6 +9,7 @@ import java.time.LocalDate;
 public record AddConditionRequest(
         @NotBlank
         @JsonProperty("code")        String code,
+        @JsonProperty("system")      String system,
         @JsonProperty("description") String description,
         @NotNull
         @JsonProperty("start_date")  LocalDate startDate,

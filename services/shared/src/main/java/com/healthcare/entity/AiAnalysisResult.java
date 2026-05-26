@@ -9,6 +9,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -39,6 +41,7 @@ public class AiAnalysisResult {
             columnDefinition = DatabaseConstants.COLUMN_DEFINITION_TEXT)
     private String summary;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = DatabaseConstants.COL_RISK_FLAGS, nullable = false, updatable = false,
             columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private String riskFlags;
@@ -55,6 +58,7 @@ public class AiAnalysisResult {
             length = DatabaseConstants.LEN_MODEL_VERSION)
     private String modelVersion;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = DatabaseConstants.COL_INPUT_RECORD_IDS, nullable = false, updatable = false,
             columnDefinition = DatabaseConstants.COLUMN_DEFINITION_JSONB)
     private String inputRecordIds;
@@ -74,6 +78,7 @@ public class AiAnalysisResult {
     public AiAnalysisResult(UUID patientId, String summary, String riskFlags,
                              AiTriggerType triggerType, UUID triggeredBy,
                              String modelVersion, String inputRecordIds, UUID lastEncounterId) {
+        this.id              = UUID.randomUUID();
         this.patientId       = patientId;
         this.generatedAt     = OffsetDateTime.now();
         this.summary         = summary;

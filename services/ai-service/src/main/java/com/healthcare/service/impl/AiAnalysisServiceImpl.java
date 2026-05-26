@@ -3,13 +3,13 @@ package com.healthcare.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.healthcare.constants.SecurityConstants;
 import com.healthcare.dao.AiAnalysisResultDao;
 import com.healthcare.dao.AllergyDao;
 import com.healthcare.dao.AuditLogDao;
 import com.healthcare.dao.ConditionDao;
 import com.healthcare.dao.EncounterDao;
 import com.healthcare.dao.PatientDao;
+import com.healthcare.dao.ProviderDao;
 import com.healthcare.dto.AiAnalysisResponse;
 import com.healthcare.dto.ClinicalSnapshot;
 import com.healthcare.dto.GeminiAnalysisResult;
@@ -21,6 +21,7 @@ import com.healthcare.entity.AuditLog;
 import com.healthcare.entity.Condition;
 import com.healthcare.entity.Encounter;
 import com.healthcare.entity.Patient;
+import com.healthcare.entity.Provider;
 import com.healthcare.enums.ActionType;
 import com.healthcare.enums.AiTriggerType;
 import com.healthcare.enums.Outcome;
@@ -59,6 +60,7 @@ public class AiAnalysisServiceImpl implements AiAnalysisService {
     private final ConditionDao        conditionDao;
     private final AllergyDao          allergyDao;
     private final EncounterDao        encounterDao;
+    private final ProviderDao         providerDao;
     private final AuditLogDao         auditLogDao;
     private final GeminiClient        geminiClient;
     private final ObjectMapper        objectMapper;
@@ -71,6 +73,7 @@ public class AiAnalysisServiceImpl implements AiAnalysisService {
                                   ConditionDao conditionDao,
                                   AllergyDao allergyDao,
                                   EncounterDao encounterDao,
+                                  ProviderDao providerDao,
                                   AuditLogDao auditLogDao,
                                   GeminiClient geminiClient,
                                   ObjectMapper objectMapper) {
@@ -79,6 +82,7 @@ public class AiAnalysisServiceImpl implements AiAnalysisService {
         this.conditionDao        = conditionDao;
         this.allergyDao          = allergyDao;
         this.encounterDao        = encounterDao;
+        this.providerDao         = providerDao;
         this.auditLogDao         = auditLogDao;
         this.geminiClient        = geminiClient;
         this.objectMapper        = objectMapper;
@@ -86,24 +90,24 @@ public class AiAnalysisServiceImpl implements AiAnalysisService {
 
     @Override
     @Transactional
-    public AiAnalysisResponse requestAnalysis(UUID encounterId, UUID requesterId, String requesterRole) {
+    public AiAnalysisResponse requestAnalysis(UUID encounterId, UUID authId) {
+        Provider provider = providerDao.findByAuthId(authId)
+                .orElseThrow(() -> new AiServiceException(
+                        HttpStatus.FORBIDDEN,
+                        AiServiceException.PROVIDER_NOT_AUTHORIZED,
+                        "No provider record for authId: " + authId));
+
         Encounter encounter = encounterDao.findById(encounterId)
                 .orElseThrow(() -> new AiServiceException(
                         HttpStatus.NOT_FOUND,
                         AiServiceException.ENCOUNTER_NOT_FOUND,
                         "Encounter not found: " + encounterId));
 
-        UUID effectiveProviderId;
-        if (SecurityConstants.ROLE_ADMIN.equals(requesterRole)) {
-            effectiveProviderId = encounter.getProviderId();
-        } else {
-            if (!requesterId.equals(encounter.getProviderId())) {
-                throw new AiServiceException(
-                        HttpStatus.FORBIDDEN,
-                        AiServiceException.PROVIDER_NOT_AUTHORIZED,
-                        "Provider not associated with encounter: " + encounterId);
-            }
-            effectiveProviderId = requesterId;
+        if (!provider.getId().equals(encounter.getProviderId())) {
+            throw new AiServiceException(
+                    HttpStatus.FORBIDDEN,
+                    AiServiceException.PROVIDER_NOT_AUTHORIZED,
+                    "Provider not associated with encounter: " + encounterId);
         }
 
         UUID patientId = encounter.getPatientId();
@@ -117,7 +121,7 @@ public class AiAnalysisServiceImpl implements AiAnalysisService {
                         "No analysis result available for patient: " + patientId));
 
         auditLogDao.insert(new AuditLog(ActionType.READ, RESOURCE_AI, Outcome.SUCCESS)
-                .withAuthId(effectiveProviderId.toString())
+                .withAuthId(authId.toString())
                 .withUserRole(UserRole.PROVIDER)
                 .withResourceId(patientId));
 

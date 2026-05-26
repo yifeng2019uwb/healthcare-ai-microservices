@@ -193,6 +193,7 @@ public class ProviderServiceImpl implements ProviderService {
 
         ConditionId id = new ConditionId(encounter.getPatientId(), encounterId, request.code());
         Condition condition = new Condition(id, request.startDate());
+        condition.setSystem(request.system() != null ? request.system() : "SNOMED-CT");
         condition.setDescription(request.description());
         condition.setStopDate(request.stopDate());
         conditionDao.save(condition);

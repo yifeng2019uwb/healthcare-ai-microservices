@@ -96,6 +96,8 @@ public class AuthService {
         User user = createUser(request.username(), request.email(), request.password(), UserRole.PATIENT);
         patient.linkAuthAccount(user.getId());
         patientDao.save(patient);
+        user.setFhirId(patient.getId());
+        userDao.save(user);
 
         auditLogDao.insert(buildAuditLog(user, ActionType.CREATE, Outcome.SUCCESS));
         log.info("Patient registered: username={}", request.username());
@@ -120,6 +122,8 @@ public class AuthService {
         User user = createUser(request.username(), request.email(), request.password(), UserRole.PROVIDER);
         provider.linkAuthAccount(user.getId());
         providerDao.save(provider);
+        user.setFhirId(provider.getId());
+        userDao.save(user);
 
         auditLogDao.insert(buildAuditLog(user, ActionType.CREATE, Outcome.SUCCESS));
         log.info("Provider registered: username={}", request.username());

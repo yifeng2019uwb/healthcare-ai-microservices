@@ -54,11 +54,10 @@ class AiControllerTest {
 
     @Test
     void requestAnalysis_returns200_withResult() throws Exception {
-        when(aiAnalysisService.requestAnalysis(any(), any(), any())).thenReturn(sampleResponse());
+        when(aiAnalysisService.requestAnalysis(any(), any())).thenReturn(sampleResponse());
 
         mockMvc.perform(post("/api/ai/encounters/{encounterId}/request", ENCOUNTER_ID)
-                        .header("X-User-Id",   PROVIDER_ID.toString())
-                        .header("X-User-Role", "PROVIDER"))
+                        .header("X-User-Id", PROVIDER_ID.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.summary").value("Patient has Type 2 diabetes."))
                 .andExpect(jsonPath("$.patient_id").value(PATIENT_ID.toString()))
@@ -68,29 +67,27 @@ class AiControllerTest {
 
     @Test
     void requestAnalysis_returns403_whenProviderNotOwner() throws Exception {
-        when(aiAnalysisService.requestAnalysis(any(), any(), any()))
+        when(aiAnalysisService.requestAnalysis(any(), any()))
                 .thenThrow(new AiServiceException(
                         HttpStatus.FORBIDDEN,
                         AiServiceException.PROVIDER_NOT_AUTHORIZED,
                         "Provider not associated with encounter"));
 
         mockMvc.perform(post("/api/ai/encounters/{encounterId}/request", ENCOUNTER_ID)
-                        .header("X-User-Id",   PROVIDER_ID.toString())
-                        .header("X-User-Role", "PROVIDER"))
+                        .header("X-User-Id", PROVIDER_ID.toString()))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void requestAnalysis_returns404_whenEncounterNotFound() throws Exception {
-        when(aiAnalysisService.requestAnalysis(any(), any(), any()))
+        when(aiAnalysisService.requestAnalysis(any(), any()))
                 .thenThrow(new AiServiceException(
                         HttpStatus.NOT_FOUND,
                         AiServiceException.ENCOUNTER_NOT_FOUND,
                         "Encounter not found"));
 
         mockMvc.perform(post("/api/ai/encounters/{encounterId}/request", ENCOUNTER_ID)
-                        .header("X-User-Id",   PROVIDER_ID.toString())
-                        .header("X-User-Role", "PROVIDER"))
+                        .header("X-User-Id", PROVIDER_ID.toString()))
                 .andExpect(status().isNotFound());
     }
 

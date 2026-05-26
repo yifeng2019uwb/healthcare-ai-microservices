@@ -286,7 +286,7 @@ class ProviderServiceImplTest {
         encounter.setPatientId(patientId);
         when(encounterDao.findById(encounterId)).thenReturn(Optional.of(encounter));
 
-        AddConditionRequest req = new AddConditionRequest("44054006", "Diabetes", LocalDate.of(2022, 1, 1), null);
+        AddConditionRequest req = new AddConditionRequest("44054006", null, "Diabetes", LocalDate.of(2022, 1, 1), null);
 
         ConditionResponse result = service.addCondition(authId, encounterId, req);
 
@@ -304,7 +304,7 @@ class ProviderServiceImplTest {
         encounter.setPatientId(patientId);
         when(encounterDao.findById(encounterId)).thenReturn(Optional.of(encounter));
 
-        AddConditionRequest req = new AddConditionRequest("44054006", "Diabetes", LocalDate.of(2022, 1, 1), null);
+        AddConditionRequest req = new AddConditionRequest("44054006", null, "Diabetes", LocalDate.of(2022, 1, 1), null);
 
         assertThatThrownBy(() -> service.addCondition(authId, encounterId, req))
                 .isInstanceOf(ProviderServiceException.class)
@@ -318,7 +318,7 @@ class ProviderServiceImplTest {
         when(providerDao.findByAuthId(authId)).thenReturn(Optional.of(mockProvider));
         when(encounterDao.findById(encounterId)).thenReturn(Optional.empty());
 
-        AddConditionRequest req = new AddConditionRequest("44054006", "Diabetes", LocalDate.of(2022, 1, 1), null);
+        AddConditionRequest req = new AddConditionRequest("44054006", null, "Diabetes", LocalDate.of(2022, 1, 1), null);
 
         assertThatThrownBy(() -> service.addCondition(authId, encounterId, req))
                 .isInstanceOf(ProviderServiceException.class)
