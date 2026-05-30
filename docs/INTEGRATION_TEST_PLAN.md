@@ -43,6 +43,8 @@ GATEWAY_URL=http://<vm-ip>:8080 ./run-it.sh all
 | `register` | `auth.RegisterPatientIT` + `auth.RegisterProviderIT` | Registration validation and error paths |
 | `patient` | `patient.PatientProfileIT` | Patient profile, encounters, conditions, allergies |
 | `provider` | `provider.ProviderProfileIT` | Provider profile, patient list |
+| `ai` | `ai.AiAnalysisIT` | Condition write + AI analysis request/read (excludes `@Tag("ai-live")`) |
+| `ai-live` | `ai.AiAnalysisIT` | Full AI suite including live Gemini call (slow, costs API quota) |
 | `admin` | `admin.AdminImportIT` | Synthea CSV import endpoints |
 
 ## Test Accounts
@@ -108,6 +110,8 @@ integration_tests/
     │   └── PatientProfileIT.java
     ├── provider/
     │   └── ProviderProfileIT.java
+    ├── ai/
+    │   └── AiAnalysisIT.java
     └── admin/
         └── AdminImportIT.java
 ```

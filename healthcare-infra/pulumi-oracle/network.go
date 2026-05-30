@@ -46,15 +46,14 @@ func deployNetwork(ctx *pulumi.Context, compartmentId string) (*core.Subnet, err
 		return nil, err
 	}
 
-	// Instance 1 (gateway): expose 8080 publicly.
-	// Instance 2 (backend): no public ports — only reachable from within VCN.
-	// Both: SSH open for admin access; restrict to your IP in production.
+	// All ingress/egress rules for the healthcare VCN are defined here.
+	// To add a new port: add a rule below and re-run make oracle-up.
 	securityList, err := core.NewSecurityList(ctx, "healthcare-sl", &core.SecurityListArgs{
 		CompartmentId: pulumi.String(compartmentId),
 		VcnId:         vcn.ID(),
 		DisplayName:   pulumi.String("healthcare-sl"),
 		IngressSecurityRules: core.SecurityListIngressSecurityRuleArray{
-			// SSH — admin access both instances
+			// SSH port 22
 			&core.SecurityListIngressSecurityRuleArgs{
 				Protocol:   pulumi.String("6"),
 				Source:     pulumi.String("0.0.0.0/0"),
@@ -64,7 +63,7 @@ func deployNetwork(ctx *pulumi.Context, compartmentId string) (*core.Subnet, err
 					Max: pulumi.Int(22),
 				},
 			},
-			// Gateway public endpoint
+			// Gateway public endpoint (instance-1)
 			&core.SecurityListIngressSecurityRuleArgs{
 				Protocol:   pulumi.String("6"),
 				Source:     pulumi.String("0.0.0.0/0"),
@@ -74,7 +73,7 @@ func deployNetwork(ctx *pulumi.Context, compartmentId string) (*core.Subnet, err
 					Max: pulumi.Int(8080),
 				},
 			},
-			// Internal VCN — instance 1 routes to instance 2 services
+			// Internal VCN — instance-1 routes to instance-2 services (8083, 8085)
 			&core.SecurityListIngressSecurityRuleArgs{
 				Protocol:   pulumi.String("all"),
 				Source:     pulumi.String(vcnCidr),
@@ -82,7 +81,7 @@ func deployNetwork(ctx *pulumi.Context, compartmentId string) (*core.Subnet, err
 			},
 		},
 		EgressSecurityRules: core.SecurityListEgressSecurityRuleArray{
-			// All outbound — Docker pulls, Vertex AI calls, GCP logging
+			// All outbound — Docker pulls, Gemini API calls
 			&core.SecurityListEgressSecurityRuleArgs{
 				Protocol:        pulumi.String("all"),
 				Destination:     pulumi.String("0.0.0.0/0"),

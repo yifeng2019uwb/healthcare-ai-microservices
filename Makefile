@@ -10,10 +10,7 @@ stop:           ## Stop Docker Compose stack
 	cd docker && docker compose down
 
 build:          ## Build JARs only (no Docker)
-	cd services/shared && mvn install -DskipTests -q
-	for svc in auth-service provider-service gateway; do \
-	  cd services/$$svc && mvn clean package -DskipTests -q && cd ../..; \
-	done
+	cd services && mvn -pl auth-service,provider-service,ai-service,gateway -am clean package -DskipTests -q
 
 test:           ## Run unit tests
 	./dev.sh test

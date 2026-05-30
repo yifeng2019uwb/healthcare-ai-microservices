@@ -30,7 +30,7 @@ ok "Environment loaded"
 stage "Building JARs"
 warn "shared..."
 (cd "$SERVICES_DIR/shared" && mvn install -DskipTests -q) && ok "shared"
-for svc in auth-service provider-service patient-service gateway; do
+for svc in auth-service provider-service ai-service gateway; do
   warn "$svc..."
   (cd "$SERVICES_DIR/$svc" && mvn clean package -DskipTests -q) && ok "$svc"
 done

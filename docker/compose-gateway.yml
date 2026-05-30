@@ -1,0 +1,60 @@
+services:
+  auth-service:
+    build:
+      context: ../services/auth-service
+    container_name: healthcare-auth
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: "${SPRING_DATASOURCE_URL}"
+      SPRING_DATASOURCE_USERNAME: "${SPRING_DATASOURCE_USERNAME}"
+      SPRING_DATASOURCE_PASSWORD: "${SPRING_DATASOURCE_PASSWORD}"
+      JWT_PRIVATE_KEY: "${JWT_PRIVATE_KEY}"
+      JWT_PUBLIC_KEY: "${JWT_PUBLIC_KEY}"
+      JWT_KEY_ID: "${JWT_KEY_ID:-auth-key-v1}"
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ""
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "2"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      JAVA_TOOL_OPTIONS: "-Xmx200m -Xms64m -XX:MaxMetaspaceSize=96m -XX:+UseSerialGC -XX:TieredStopAtLevel=1"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health"
+      SERVER_TOMCAT_THREADS_MAX: "10"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
+    networks:
+      - healthcare
+
+  gateway:
+    build:
+      context: ../services/gateway
+    container_name: healthcare-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      # auth-service is on this VM — use Docker service name
+      AUTH_SERVICE_URL: "http://auth-service:8082"
+      # provider-service and ai-service are on VM2 — use backend IP
+      PROVIDER_SERVICE_URL: "http://${BACKEND_VM_IP}:8083"
+      AI_SERVICE_URL: "http://${BACKEND_VM_IP}:8085"
+      JWT_PUBLIC_KEY: "${JWT_PUBLIC_KEY}"
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ""
+      JAVA_TOOL_OPTIONS: "-Xmx200m -Xms64m -XX:MaxMetaspaceSize=96m -XX:+UseSerialGC -XX:TieredStopAtLevel=1"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      auth-service:
+        condition: service_healthy
+    networks:
+      - healthcare
+
+networks:
+  healthcare:
+    driver: bridge

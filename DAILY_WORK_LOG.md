@@ -4,6 +4,40 @@
 
 ---
 
+## 2026-05-29 — Oracle VM Deploy + Memory Optimization
+
+### Deployed all 4 services to Oracle Cloud VMs
+
+- **VM1** (163.192.46.25): gateway + auth-service
+- **VM2** (163.192.30.193): provider-service + ai-service
+- All integration tests passing against live VM deployment (`./run-it.sh auth` ✅)
+
+### Fixed VM stability issues
+
+- Root cause: VMs have 498MB RAM each; Docker image builds on VM spiked CPU to 100% and froze OS
+- Fixed `deploy-vm.sh` to build images sequentially (one at a time) instead of parallel `--build`
+- Fixed swap not persisting across reboots — added `/etc/fstab` entry in `setup-vm.sh`
+- Fixed SSH connection drops during large JAR uploads — switched from `scp` to `rsync -az --partial`
+- Fixed `deploy-vm.sh` SSH timeouts — added `ServerAliveInterval=15` to SSH_OPTS
+
+### Memory optimization — all 4 services now use ~270MB combined
+
+Added to all compose files (`compose-gateway.yml`, `compose-backend.yml`, `docker-compose.yml`):
+- `JAVA_TOOL_OPTIONS`: `-Xmx200m -Xms64m -XX:MaxMetaspaceSize=96m -XX:+UseSerialGC -XX:TieredStopAtLevel=1`
+- `SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE`: 5 → 2
+- `MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE`: health only
+- `SERVER_TOMCAT_THREADS_MAX`: 10 (was default 200)
+
+Results on VM: auth 30MB, gateway 80MB, provider 30MB, ai 129MB = **269MB total**
+
+### Security fixes
+
+- Removed hardcoded VM console password from `compute.go` — now read from Pulumi config secret (`vmPassword`)
+- Added `Pulumi.dev.yaml` to `.gitignore`
+- Updated `setup.sh` and `env.example` to include `VM_CONSOLE_PASSWORD`
+
+---
+
 ## 📅 **Daily Log**
 
 ### **Date**: 2025-09-15
@@ -58,6 +92,22 @@
 - Removed provider_patients join table item — not a real issue; all registered patients have Synthea encounter history
 - Added: AI service (Java/RabbitMQ/Vertex AI Gemini, design in `ai-service-discussion.md`)
 - Added: eBPF EDR on healthcare VM (deploy agent, grant compute SA, add to `infra/main.go`)
+
+---
+
+## 2026-05-26
+
+**AI service — end-to-end fix and integration tests passing**
+
+- Fixed `AiController.requestAnalysis` to use `X-User-Id` header (authId) instead of `X-Fhir-Id`; encounter ownership now validated via `providerDao.findByAuthId()` in `AiAnalysisServiceImpl`
+- Fixed `AuthService.registerProvider` and `registerPatient` to call `user.setFhirId(entity.getId()); userDao.save(user)` after persisting the clinical record so the JWT `fhirId` claim is populated for all new registrations
+- Fixed Gemini API: changed model to `gemini-2.5-flash`, URL from `/v1beta/models/` to `/v1/models/`
+- Added markdown code fence stripping in `GeminiClientImpl.parseGeminiResponse()` — `gemini-2.5-flash` wraps JSON responses in triple-backtick fences
+- Added 503 retry logic in `GeminiClientImpl.callWithRetry()` (3 retries, 2 s / 4 s / 6 s backoff) and fallback model chain: `gemini-2.5-flash` → `gemini-1.5-flash`
+- Added `fallbackModel` field to `GeminiConfig` and `gemini.fallback-model` property in `application.yml`
+- Fixed `AiAnalysisResult` entity: `this.id = UUID.randomUUID()` added to constructor (JPA `@Id` without `@GeneratedValue` requires manual assignment); added `@JdbcTypeCode(SqlTypes.JSON)` to `riskFlags` and `inputRecordIds` fields (Hibernate 6 needs explicit hint to send `jsonb`, not `varchar`)
+- Moved `AiAnalysisIT.java` from `integration_tests/provider/` to new `integration_tests/ai/` package; changed package declaration; removed three `.log().body()` debug calls; updated `run-it.sh` references from `provider.AiAnalysisIT` → `ai.AiAnalysisIT`
+- All 12 AI integration tests passing (`./run-it.sh ai` and `./run-it.sh ai-live`)
 
 ---
 

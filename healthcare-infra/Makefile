@@ -3,7 +3,7 @@ PULUMI_DIR    := pulumi-oracle
 
 .PHONY: help \
         gcp-plan gcp-apply gcp-destroy \
-        oracle-up oracle-destroy oracle-preview \
+        oracle-up oracle-down oracle-destroy oracle-preview \
         pg-dump
 
 help:
@@ -41,8 +41,13 @@ oracle-preview:
 oracle-up:
 	cd $(PULUMI_DIR) && pulumi up
 
+oracle-setup:
+	../docker/setup-vm.sh
+
+oracle-down: oracle-destroy
+
 oracle-destroy:
-	cd $(PULUMI_DIR) && pulumi destroy
+	cd $(PULUMI_DIR) && pulumi destroy --yes
 
 # ── Data ───────────────────────────────────────────────────────────────────────
 

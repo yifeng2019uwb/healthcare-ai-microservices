@@ -133,12 +133,15 @@ debezium.sink.kafka.producer.bootstrap.servers=redpanda:9092
 
 **Provider**: Google AI Studio (`generativelanguage.googleapis.com`)
 **Authentication**: API key only — no GCP project, no SA credentials
-**Model**: `gemini-1.5-pro` (or latest stable)
+**Model**: `gemini-2.5-flash` (primary), `gemini-1.5-flash` (fallback on 503)
 **Java integration**: REST call via Spring's `RestClient` — no SDK needed
 
 ```
-POST https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={API_KEY}
+POST https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={API_KEY}
 ```
+
+503 retry logic: 3 retries (2 s / 4 s / 6 s backoff), then falls back to `gemini-1.5-flash`.
+Response parsing strips markdown code fences (` ```json ``` `) before JSON parse.
 
 Configured via environment variable `GEMINI_API_KEY` — injected by Docker Compose.
 
@@ -271,12 +274,14 @@ tail -n +502 conditions.csv >> conditions_sim.csv
 
 ## Implementation Checklist
 
-- [ ] `pulumi-supabase/` — create Go Pulumi stack with `postgresql.Publication` + `postgresql.ReplicationSlot`
+- [x] `services/ai-service/` — Spring Boot service with on-demand HTTP trigger + Gemini REST call (deployed 2026-05-26)
+- [x] `healthcare-infra/schema/sql/ai_analysis_results.sql` — deployed via `run-schema.sh`
+- [x] Gateway `application.yml` — `/api/ai/` PROVIDER role-path + ai-service route
+- [x] Encounter ownership validation — `providerDao.findByAuthId(authId)` before Gemini call
+- [x] `AiAnalysisResult` entity — UUID constructor assignment, `@JdbcTypeCode(SqlTypes.JSON)` for jsonb columns
+- [ ] `pulumi-supabase/` — create Go Pulumi stack with `postgresql.Publication` + `postgresql.ReplicationSlot` (needed for Debezium auto-trigger)
 - [ ] `docker/debezium/application.properties` — Debezium Server config file
-- [ ] `docker-compose.yml` — add Redpanda + Debezium Server containers
-- [ ] `services/ai-service/` — new Spring Boot module with Kafka consumer + Gemini REST call
-- [ ] `healthcare-infra/schema/sql/ai_analysis_results.sql` — already exists, deploy via `run-schema.sh`
-- [ ] Gateway `application.yml` — add `/api/ai/` PROVIDER role-path + ai-service route
+- [ ] `docker-compose.yml` — add Redpanda + Debezium Server containers (auto-trigger path)
 - [ ] `pulumi-oracle/compute.go` — remove stale `/data/postgres` setup (using Supabase not local PG)
 - [ ] eBPF baseline — after Oracle VM deployment, verify ai-service only touches expected endpoints
 

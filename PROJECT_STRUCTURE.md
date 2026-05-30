@@ -12,6 +12,7 @@ healthcare-ai-microservices/
 │   ├── auth-service/                # register, login, refresh, logout, JWKS
 │   ├── patient-service/             # patient profile, encounters, conditions, allergies
 │   ├── provider-service/            # provider profile, patient management, admin import
+│   ├── ai-service/                  # on-demand clinical summarization + risk analysis (Gemini)
 │   └── appointment-service/         # booking stub (not deployed)
 │
 ├── healthcare-infra/                # database and test data
@@ -42,6 +43,7 @@ healthcare-ai-microservices/
 │       ├── auth/                    # AuthIT, RegisterPatientIT, RegisterProviderIT
 │       ├── patient/                 # PatientProfileIT
 │       ├── provider/                # ProviderProfileIT
+│       ├── ai/                      # AiAnalysisIT (condition write + AI trigger)
 │       └── admin/                   # AdminImportIT
 │
 ├── scripts/
@@ -69,6 +71,7 @@ healthcare-ai-microservices/
 | auth-service | 8082 | register, login, refresh, logout, JWKS |
 | patient-service | 8081 | patient profile, encounters, conditions, allergies |
 | provider-service | 8083 | provider profile, patient management, admin CSV import |
+| ai-service | 8085 | on-demand clinical summarization + risk analysis (Gemini) |
 | appointment-service | — | deferred — stub exists, not deployed |
 
 ## Key Scripts

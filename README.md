@@ -40,7 +40,7 @@ PostgreSQL (Supabase)
 - **Runtime**: Java 21, Spring Boot 3.4.4
 - **Gateway**: Spring Cloud Gateway (specific path predicates — no wildcard routes)
 - **Auth**: RS256 JWT, JWKS endpoint, role-based header injection
-- **AI**: Google Gemini via REST (`gemini-1.5-pro`)
+- **AI**: Google Gemini via REST (`gemini-2.5-flash`, fallback `gemini-1.5-flash`)
 - **Database**: Supabase PostgreSQL
 - **Deploy**: Docker Compose on dedicated Oracle Cloud VM
 - **Test data**: Synthea synthetic patient data (HIPAA-safe)

@@ -111,3 +111,6 @@ healthcare-infra/synthea/*.jar
 
 # Test Data
 test-data/
+
+# Pulumi stack config (contains secrets — managed locally via setup.sh)
+healthcare-infra/pulumi-oracle/Pulumi.dev.yaml

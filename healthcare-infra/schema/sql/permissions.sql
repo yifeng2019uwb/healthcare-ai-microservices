@@ -102,6 +102,7 @@ GRANT SELECT ON conditions  TO ai_role;
 GRANT SELECT ON allergies   TO ai_role;
 GRANT SELECT ON encounters  TO ai_role;
 GRANT SELECT, INSERT        ON ai_analysis_results          TO ai_role;
+GRANT UPDATE (archived)     ON ai_analysis_results          TO ai_role;
 GRANT INSERT                ON audit_logs                   TO ai_role;
 
 DO $$ BEGIN

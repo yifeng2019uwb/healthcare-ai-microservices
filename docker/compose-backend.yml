@@ -1,0 +1,57 @@
+services:
+  provider-service:
+    build:
+      context: ../services/provider-service
+    container_name: healthcare-provider
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: "${SPRING_DATASOURCE_URL}"
+      SPRING_DATASOURCE_USERNAME: "${SPRING_DATASOURCE_USERNAME}"
+      SPRING_DATASOURCE_PASSWORD: "${SPRING_DATASOURCE_PASSWORD}"
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ""
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "2"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      JAVA_TOOL_OPTIONS: "-Xmx200m -Xms64m -XX:MaxMetaspaceSize=96m -XX:+UseSerialGC -XX:TieredStopAtLevel=1"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health"
+      SERVER_TOMCAT_THREADS_MAX: "10"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
+    networks:
+      - healthcare
+
+  ai-service:
+    build:
+      context: ../services/ai-service
+    container_name: healthcare-ai
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: "${SPRING_DATASOURCE_URL}"
+      SPRING_DATASOURCE_USERNAME: "${SPRING_DATASOURCE_USERNAME}"
+      SPRING_DATASOURCE_PASSWORD: "${SPRING_DATASOURCE_PASSWORD}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY}"
+      GEMINI_MODEL: "${GEMINI_MODEL:-gemini-2.5-flash}"
+      GEMINI_FALLBACK_MODEL: "${GEMINI_FALLBACK_MODEL:-gemini-1.5-flash}"
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ""
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "2"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      JAVA_TOOL_OPTIONS: "-Xmx200m -Xms64m -XX:MaxMetaspaceSize=96m -XX:+UseSerialGC -XX:TieredStopAtLevel=1"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health"
+      SERVER_TOMCAT_THREADS_MAX: "10"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8085/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
+    networks:
+      - healthcare
+
+networks:
+  healthcare:
+    driver: bridge
