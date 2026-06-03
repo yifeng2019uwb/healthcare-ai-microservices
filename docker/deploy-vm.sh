@@ -39,6 +39,8 @@ if [[ -z "$VM2_IP" ]]; then
   VM2_IP=$(cd "$PULUMI_DIR" && pulumi stack output instance2PublicIp 2>/dev/null) \
     || fail "Cannot get instance2PublicIp — run 'make oracle-up' first, or set VM2_IP=<ip>"
 fi
+# Private IP for gateway→backend routing — stays on internal VCN network
+VM2_PRIVATE_IP="${VM2_PRIVATE_IP:-$(cd "$PULUMI_DIR" && pulumi stack output instance2PrivateIp 2>/dev/null)}"
 ok "VM1 (gateway + auth):    $VM1_IP"
 ok "VM2 (provider + ai):     $VM2_IP"
 
@@ -87,8 +89,8 @@ ok "VM2 JARs uploaded"
 
 # ── Copy .env ────────────────────────────────────────────────────────────────
 stage "Copying .env"
-# VM1 needs BACKEND_VM_IP so the gateway can route to provider + ai on VM2
-{ cat "$ROOT_DIR/docker/.env"; echo "BACKEND_VM_IP=$VM2_IP"; } \
+# VM1 needs BACKEND_VM_IP so the gateway can route to provider + ai on VM2 via internal VCN
+{ cat "$ROOT_DIR/docker/.env"; echo "BACKEND_VM_IP=$VM2_PRIVATE_IP"; } \
   | ssh $SSH_OPTS $SSH_USER@$VM1_IP "cat > ~/healthcare/docker/.env"
 scp $SSH_OPTS "$ROOT_DIR/docker/.env" $SSH_USER@$VM2_IP:~/healthcare/docker/.env
 ok ".env files written"

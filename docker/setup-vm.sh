@@ -1,14 +1,17 @@
 #!/bin/bash
 # =============================================================================
-# setup-vm.sh — Install Docker on Oracle Cloud VMs after provisioning
+# setup-vm.sh — Install Docker + eBPF EDR agent on Oracle Cloud VMs
 #
 # Run once after make oracle-up:
 #   ./docker/setup-vm.sh
 #
 # Env overrides:
-#   SSH_KEY=~/.ssh/oracle_vm     path to SSH private key
-#   VM1_IP=<ip>                  skip Pulumi lookup
-#   VM2_IP=<ip>                  skip Pulumi lookup
+#   SSH_KEY=~/.ssh/oracle_vm          path to SSH private key
+#   VM1_IP=<ip>                       skip Pulumi lookup
+#   VM2_IP=<ip>                       skip Pulumi lookup
+#   EBPF_SA_KEY_FILE=/tmp/oracle-agent.json   path to GCP SA key for eBPF agent
+#                                     Get via: cd ebpf-edr-demo/infra &&
+#                                       pulumi stack output oracleAgentKey --show-secrets | base64 -d > /tmp/oracle-agent.json
 # =============================================================================
 
 set -e
@@ -18,6 +21,8 @@ ROOT_DIR="$SCRIPT_DIR/.."
 PULUMI_DIR="$ROOT_DIR/healthcare-infra/pulumi-oracle"
 
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/oracle_vm}"
+EBPF_SA_KEY_FILE="${EBPF_SA_KEY_FILE:-}"
+EBPF_RELEASE_URL="https://raw.githubusercontent.com/yifengzh/ebpf-edr-demo/main/ebpf-edr"
 SSH_USER="opc"
 SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=no -o ConnectTimeout=60 -o ServerAliveInterval=10 -o ServerAliveCountMax=6"
 
@@ -31,10 +36,11 @@ ssh_retry() {
   done
 }
 
-RED='\033[0;31m'; GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
+RED='\033[0;31m'; GREEN='\033[0;32m'; BLUE='\033[0;34m'; YELLOW='\033[1;33m'; NC='\033[0m'
 ok()    { echo -e "${GREEN}✓ $1${NC}"; }
 fail()  { echo -e "${RED}✗ $1${NC}"; exit 1; }
 stage() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
+warn()  { echo -e "${YELLOW}▶ $1${NC}"; }
 
 # ── VM IPs ───────────────────────────────────────────────────────────────────
 stage "Resolving VM IPs"
@@ -54,6 +60,7 @@ ok "VM2: $VM2_IP"
 setup_vm() {
   local IP=$1
   local HOSTNAME=$2
+  local ENV_TAG=$3
 
   stage "Setting up $HOSTNAME ($IP)"
 
@@ -97,15 +104,64 @@ setup_vm() {
     echo 'DOCKER_HOST=unix:///run/podman/podman.sock' | sudo tee -a /etc/environment
   "
   ok "Podman socket ready"
+
+  # ── eBPF EDR agent ───────────────────────────────────────────────────────
+  if [[ -n "$EBPF_SA_KEY_FILE" ]]; then
+    [[ -f "$EBPF_SA_KEY_FILE" ]] || fail "EBPF_SA_KEY_FILE not found: $EBPF_SA_KEY_FILE"
+
+    # Copy SA key
+    scp -i "$SSH_KEY" -o StrictHostKeyChecking=no "$EBPF_SA_KEY_FILE" $SSH_USER@$IP:/tmp/ebpf-creds.json
+    ssh_retry $SSH_USER@$IP "
+      sudo mv /tmp/ebpf-creds.json /etc/ebpf-creds.json
+      sudo chown root:root /etc/ebpf-creds.json
+      sudo chmod 600 /etc/ebpf-creds.json
+    "
+
+    # Download binary from GitHub releases
+    ssh_retry $SSH_USER@$IP "
+      sudo curl -fsSL $EBPF_RELEASE_URL -o /usr/local/bin/ebpf-edr
+      sudo chmod +x /usr/local/bin/ebpf-edr
+      sudo restorecon -v /usr/local/bin/ebpf-edr 2>/dev/null || true
+    "
+
+    # Install systemd service
+    ssh_retry $SSH_USER@$IP "
+      sudo tee /etc/systemd/system/ebpf-edr.service > /dev/null << 'EOF'
+[Unit]
+Description=eBPF EDR Agent
+After=podman.socket
+Wants=podman.socket
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/ebpf-edr --runtime=docker
+Restart=on-failure
+RestartSec=5
+Environment=GOOGLE_CLOUD_PROJECT=ebpfagent
+Environment=GOOGLE_APPLICATION_CREDENTIALS=/etc/ebpf-creds.json
+Environment=ENV=$ENV_TAG
+
+[Install]
+WantedBy=multi-user.target
+EOF
+      sudo systemctl daemon-reload
+      sudo systemctl enable ebpf-edr
+      sudo systemctl start ebpf-edr
+    "
+    ok "eBPF EDR agent installed (env=$ENV_TAG)"
+  else
+    warn "EBPF_SA_KEY_FILE not set — skipping eBPF agent install"
+  fi
 }
 
-setup_vm "$VM1_IP" "healthcare-gateway" &
+setup_vm "$VM1_IP" "healthcare-gateway" "oracle-vm1" &
 PID1=$!
-setup_vm "$VM2_IP" "healthcare-backend" &
+setup_vm "$VM2_IP" "healthcare-backend" "oracle-vm2" &
 PID2=$!
 wait $PID1 && wait $PID2
 
 echo ""
 echo -e "${GREEN}=== VM setup complete ===${NC}"
 echo "Next: ./docker/deploy-vm.sh"
+[[ -z "$EBPF_SA_KEY_FILE" ]] && echo "eBPF agent: re-run with EBPF_SA_KEY_FILE=/tmp/oracle-agent.json to install"
 echo ""

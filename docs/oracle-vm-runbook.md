@@ -151,7 +151,7 @@ Destroys all OCI resources. Safe to re-run `make oracle-up` to reprovision from 
 ```bash
 # Gateway + auth logs (VM1)
 ssh -i ~/.ssh/oracle_vm opc@163.192.46.25 \
-  "cd ~/healthcare/docker && sudo docker compose -f compose-gateway.yml logs --tail=50"
+  "cd ~/healthcare/docker && "
 
 # Backend logs (VM2)
 ssh -i ~/.ssh/oracle_vm opc@163.192.30.193 \

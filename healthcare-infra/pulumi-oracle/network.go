@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/pulumi/pulumi-oci/sdk/v2/go/oci/core"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 )
 
 const (
@@ -11,6 +12,13 @@ const (
 )
 
 func deployNetwork(ctx *pulumi.Context, compartmentId string) (*core.Subnet, error) {
+	cfg := config.New(ctx, "")
+	// sshAllowedCidr restricts SSH access. Default 0.0.0.0/0 (open).
+	// Set to your IP: pulumi config set sshAllowedCidr <your-ip>/32
+	sshAllowedCidr := cfg.Get("sshAllowedCidr")
+	if sshAllowedCidr == "" {
+		sshAllowedCidr = "0.0.0.0/0"
+	}
 	vcn, err := core.NewVcn(ctx, "healthcare-vcn", &core.VcnArgs{
 		CompartmentId: pulumi.String(compartmentId),
 		CidrBlock:     pulumi.String(vcnCidr),
@@ -53,10 +61,10 @@ func deployNetwork(ctx *pulumi.Context, compartmentId string) (*core.Subnet, err
 		VcnId:         vcn.ID(),
 		DisplayName:   pulumi.String("healthcare-sl"),
 		IngressSecurityRules: core.SecurityListIngressSecurityRuleArray{
-			// SSH port 22
+			// SSH — restricted to sshAllowedCidr (set via: pulumi config set sshAllowedCidr <ip>/32)
 			&core.SecurityListIngressSecurityRuleArgs{
 				Protocol:   pulumi.String("6"),
-				Source:     pulumi.String("0.0.0.0/0"),
+				Source:     pulumi.String(sshAllowedCidr),
 				SourceType: pulumi.String("CIDR_BLOCK"),
 				TcpOptions: &core.SecurityListIngressSecurityRuleTcpOptionsArgs{
 					Min: pulumi.Int(22),

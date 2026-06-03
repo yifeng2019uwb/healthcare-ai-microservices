@@ -81,14 +81,14 @@ if [[ $# -eq 0 ]]; then
   echo ""
   echo "Tests: seed  auth  register  patient  provider  admin  all"
   echo ""
-  echo "Gateway URL: $GATEWAY_URL"
+  echo "Gateway URL: ${GATEWAY_URL:-"(default from BaseIT.java)"}"
   echo "Override:    GATEWAY_URL=https://... $0 all"
   echo "CSV dir:     CSV_DIR=/path/to/csv $0 admin  (default: integration_tests/test-data/csv)"
   echo ""
   exit 0
 fi
 
-echo "Gateway: $GATEWAY_URL"
+echo "Gateway: ${GATEWAY_URL:-"(default from BaseIT.java)"}"
 
 stage "Compiling integration tests"
 mvn compile -f "$POM" -q

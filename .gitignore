@@ -114,3 +114,6 @@ test-data/
 
 # Pulumi stack config (contains secrets — managed locally via setup.sh)
 healthcare-infra/pulumi-oracle/Pulumi.dev.yaml
+
+# A1 provisioning script — extracts secrets from Pulumi state, keep local only
+healthcare-infra/pulumi-oracle/try-a1.sh

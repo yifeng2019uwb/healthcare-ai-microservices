@@ -3,6 +3,8 @@ services:
     build:
       context: ../services/auth-service
     container_name: healthcare-auth
+    restart: unless-stopped
+    mem_limit: 320m
     ports:
       - "8082:8082"
     environment:
@@ -31,6 +33,8 @@ services:
     build:
       context: ../services/gateway
     container_name: healthcare-gateway
+    restart: unless-stopped
+    mem_limit: 256m
     ports:
       - "8080:8080"
     environment:

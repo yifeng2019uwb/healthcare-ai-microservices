@@ -44,13 +44,37 @@ func main() {
 			return err
 		}
 
-		instance1Ip, instance2Ip, err := deployCompute(ctx, compartmentId, availabilityDomain, imageId, sshPublicKey, vmPassword, subnet)
+		instance1PublicIp, instance2PublicIp, _, instance2PrivateIp, err := deployCompute(ctx, compartmentId, availabilityDomain, imageId, sshPublicKey, vmPassword, subnet)
 		if err != nil {
 			return err
 		}
 
-		ctx.Export("instance1PublicIp", instance1Ip)
-		ctx.Export("instance2PublicIp", instance2Ip)
+		ctx.Export("instance1PublicIp", instance1PublicIp)
+		ctx.Export("instance2PublicIp", instance2PublicIp)
+		ctx.Export("instance2PrivateIp", instance2PrivateIp)
+
+		// A1 instance — gated by: pulumi config set a1Enabled true
+		// Retries via try-a1.sh until Oracle free tier capacity is available
+		if cfg.GetBool("a1Enabled") {
+			a1Images, err := core.GetImages(ctx, &core.GetImagesArgs{
+				CompartmentId:          compartmentId,
+				OperatingSystem:        strPtr("Oracle Linux"),
+				OperatingSystemVersion: strPtr("9"),
+				Shape:                  strPtr("VM.Standard.A1.Flex"),
+				SortBy:                 strPtr("TIMECREATED"),
+				SortOrder:              strPtr("DESC"),
+			}, nil)
+			if err != nil {
+				return err
+			}
+			a1ImageId := a1Images.Images[0].Id
+
+			a1Ip, err := deployA1(ctx, compartmentId, availabilityDomain, a1ImageId, sshPublicKey, vmPassword, subnet)
+			if err != nil {
+				return err
+			}
+			ctx.Export("a1PublicIp", a1Ip)
+		}
 
 		return nil
 	})
