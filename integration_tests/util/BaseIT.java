@@ -16,7 +16,8 @@ public abstract class BaseIT {
         //         "https://gateway-dev-824144893232.us-west1.run.app");
         // GATEWAY_URL=http://163.192.46.25:8080
         // RestAssured.baseURI = System.getProperty("gateway.url", "http://localhost:8080");
-        RestAssured.baseURI = System.getProperty("gateway.url", "http://163.192.46.25:8080");
+        // GCP - GKE 8.229.162.35:8080 
+        RestAssured.baseURI = System.getProperty("gateway.url", "http://8.229.162.35:8080");
     }
 
     /**

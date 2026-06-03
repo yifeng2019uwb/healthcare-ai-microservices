@@ -1,0 +1,300 @@
+# Memory sizing: JVM max = Xmx200m + MaxMetaspaceSize=96m ~= 300m per service.
+# Container limit (512Mi) stays above JVM ceiling to prevent OOMKill.
+# CPU: Spring Boot is bursty at startup; 500m limit covers that without starving neighbours.
+# Liveness delay=60s to allow full Spring context load before health checks begin.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: health-ai
+  labels:
+    app: health-ai
+    component: auth-service
+    environment: gke
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: health-ai
+      component: auth-service
+  template:
+    metadata:
+      labels:
+        app: health-ai
+        component: auth-service
+        environment: gke
+    spec:
+      serviceAccountName: health-ai-sa
+      containers:
+      - name: auth-service
+        image: us-west1-docker.pkg.dev/ebpfagent/health-ai/auth-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8082
+          name: http
+        envFrom:
+        - configMapRef:
+            name: health-ai-config
+        env:
+        - name: SPRING_DATASOURCE_URL
+          valueFrom:
+            secretKeyRef:
+              name: health-ai-secrets
+              key: db-url
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: health-ai-secrets
+              key: db-username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: health-ai-secrets
+              key: db-password
+        - name: JWT_PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: health-ai-secrets
+              key: jwt-private-key
+        - name: JWT_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: health-ai-secrets
+              key: jwt-public-key
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "150m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8082
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8082
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: provider-service
+  namespace: health-ai
+  labels:
+    app: health-ai
+    component: provider-service
+    environment: gke
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: health-ai
+      component: provider-service
+  template:
+    metadata:
+      labels:
+        app: health-ai
+        component: provider-service
+        environment: gke
+    spec:
+      serviceAccountName: health-ai-sa
+      containers:
+      - name: provider-service
+        image: us-west1-docker.pkg.dev/ebpfagent/health-ai/provider-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8083
+          name: http
+        envFrom:
+        - configMapRef:
+            name: health-ai-config
+        env:
+        - name: SPRING_DATASOURCE_URL
+          valueFrom:
+            secretKeyRef:
+              name: health-ai-secrets
+              key: db-url
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: health-ai-secrets
+              key: db-username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: health-ai-secrets
+              key: db-password
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "150m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8083
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8083
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-service
+  namespace: health-ai
+  labels:
+    app: health-ai
+    component: ai-service
+    environment: gke
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: health-ai
+      component: ai-service
+  template:
+    metadata:
+      labels:
+        app: health-ai
+        component: ai-service
+        environment: gke
+    spec:
+      serviceAccountName: health-ai-sa
+      containers:
+      - name: ai-service
+        image: us-west1-docker.pkg.dev/ebpfagent/health-ai/ai-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8085
+          name: http
+        envFrom:
+        - configMapRef:
+            name: health-ai-config
+        env:
+        - name: SPRING_DATASOURCE_URL
+          valueFrom:
+            secretKeyRef:
+              name: health-ai-secrets
+              key: db-url
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: health-ai-secrets
+              key: db-username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: health-ai-secrets
+              key: db-password
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: health-ai-secrets
+              key: gemini-api-key
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "150m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8085
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8085
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: health-ai
+  labels:
+    app: health-ai
+    component: gateway
+    environment: gke
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: health-ai
+      component: gateway
+  template:
+    metadata:
+      labels:
+        app: health-ai
+        component: gateway
+        environment: gke
+    spec:
+      serviceAccountName: health-ai-sa
+      containers:
+      - name: gateway
+        image: us-west1-docker.pkg.dev/ebpfagent/health-ai/gateway:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        envFrom:
+        - configMapRef:
+            name: health-ai-config
+        env:
+        - name: JWT_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: health-ai-secrets
+              key: jwt-public-key
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "150m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3

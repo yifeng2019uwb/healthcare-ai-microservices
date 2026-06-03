@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: health-ai
+  labels:
+    app: health-ai
+    component: auth-service
+spec:
+  type: ClusterIP
+  selector:
+    app: health-ai
+    component: auth-service
+  ports:
+  - name: http
+    port: 8082
+    targetPort: 8082
+    protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: provider-service
+  namespace: health-ai
+  labels:
+    app: health-ai
+    component: provider-service
+spec:
+  type: ClusterIP
+  selector:
+    app: health-ai
+    component: provider-service
+  ports:
+  - name: http
+    port: 8083
+    targetPort: 8083
+    protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-service
+  namespace: health-ai
+  labels:
+    app: health-ai
+    component: ai-service
+spec:
+  type: ClusterIP
+  selector:
+    app: health-ai
+    component: ai-service
+  ports:
+  - name: http
+    port: 8085
+    targetPort: 8085
+    protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: health-ai
+  labels:
+    app: health-ai
+    component: gateway
+spec:
+  type: LoadBalancer
+  selector:
+    app: health-ai
+    component: gateway
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
