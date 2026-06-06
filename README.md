@@ -42,7 +42,7 @@ PostgreSQL (Supabase)
 - **Auth**: RS256 JWT, JWKS endpoint, role-based header injection
 - **AI**: Google Gemini via REST (`gemini-2.5-flash`, fallback `gemini-1.5-flash`)
 - **Database**: Supabase PostgreSQL
-- **Deploy**: Docker Compose on dedicated Oracle Cloud VM
+- **Deploy**: GKE (`health-ai-cluster-us-west1`) via Kubernetes manifests + Pulumi
 - **Test data**: Synthea synthetic patient data (HIPAA-safe)
 
 ## Local Development

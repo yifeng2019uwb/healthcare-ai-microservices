@@ -1,5 +1,8 @@
 # Oracle VM Deploy Plan
 
+> **LEGACY** — Oracle Free Tier account terminated 2026-06-06. All VMs deleted.
+
+
 > **Status**: PHASE 2 COMPLETE — All 4 services deployed and running. Integration tests passing.
 > Pulumi stack: `healthcare-oracle-infra / dev` — applied (6 resources: VCN, IGW, SecurityList, RouteTable, Subnet, 2× Instance)
 > Next: Phase 3 — eBPF EDR on instance-2

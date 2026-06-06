@@ -1,5 +1,9 @@
 # Oracle VM Runbook
 
+> **LEGACY** — Oracle Free Tier account terminated 2026-06-06 (VM loop creation policy violation).
+> All VMs deleted. Kept for reference if Oracle Cloud is used again.
+
+
 Everything is code-managed via Pulumi. No manual OCI Console changes — if a setting is needed,
 add it to the Pulumi code and reprovision.
 

@@ -47,5 +47,15 @@ func setupRegistry(ctx *pulumi.Context, sa *serviceaccount.Account) error {
 		return err
 	}
 
+	// Grant node SA publish access to Pub/Sub — required for eBPF EDR alert router dashboard
+	_, err = projects.NewIAMMember(ctx, "sa-pubsub-publisher", &projects.IAMMemberArgs{
+		Project: pulumi.String(projectID),
+		Role:    pulumi.String("roles/pubsub.publisher"),
+		Member:  pulumi.Sprintf("serviceAccount:%s", sa.Email),
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

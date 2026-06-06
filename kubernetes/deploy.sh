@@ -214,14 +214,23 @@ main() {
             get_credentials
             show_status
             ;;
+        destroy)
+            info "Destroying GKE cluster and all associated resources via Pulumi..."
+            warn "This will delete the cluster, node pool, service account, and Artifact Registry repos."
+            read -rp "Type 'yes' to confirm: " confirm
+            [[ "$confirm" == "yes" ]] || { info "Aborted."; exit 0; }
+            (cd "$PULUMI_DIR" && pulumi destroy)
+            success "Infrastructure destroyed"
+            ;;
         *)
-            echo "Usage: $0 [all|build|infra|app|rls|status]"
-            echo "  all    — build images, apply infra+secrets, deploy services, apply eBPF DaemonSet"
-            echo "  build  — build JARs and push Docker images to Artifact Registry"
-            echo "  infra  — namespace, secret, configmap, enable Supabase RLS"
-            echo "  app    — deployments, services, wait rollout, eBPF DaemonSet"
-            echo "  rls    — enable Row Level Security on Supabase tables (idempotent)"
-            echo "  status — show pods, services, gateway IP"
+            echo "Usage: $0 [all|build|infra|app|rls|status|destroy]"
+            echo "  all     — build images, apply infra+secrets, deploy services, apply eBPF DaemonSet"
+            echo "  build   — build JARs and push Docker images to Artifact Registry"
+            echo "  infra   — namespace, secret, configmap, enable Supabase RLS"
+            echo "  app     — deployments, services, wait rollout, eBPF DaemonSet"
+            echo "  rls     — enable Row Level Security on Supabase tables (idempotent)"
+            echo "  status  — show pods, services, gateway IP"
+            echo "  destroy — tear down GKE cluster and all Pulumi-managed resources"
             exit 1
             ;;
     esac

@@ -1,3 +1,10 @@
+# LEGACY — Oracle/GCP-Terraform infra targets. All broken:
+#   - pulumi-oracle/ moved to legacy/healthcare-infra/pulumi-oracle/
+#   - terraform/ directory was never committed (only terraform.tfstate remains)
+#   - GCP Cloud SQL no longer used (replaced by Supabase)
+# Current infra: kubernetes/pulumi/ (GKE cluster + Artifact Registry)
+# Oracle account terminated 2026-06-06.
+
 TERRAFORM_DIR := terraform
 PULUMI_DIR    := pulumi-oracle
 

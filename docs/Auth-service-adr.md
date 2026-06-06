@@ -1,6 +1,8 @@
 # Auth Service — Architecture Decision Records (ADR)
 
-> Version: 1.3 | Last Updated: 2026-05-23
+> Version: 1.4 | Last Updated: 2026-06-06
+> **Note**: System migrated from Oracle OCI VM to GKE (`health-ai-cluster-us-west1`) after Oracle account termination.
+> Oracle OCI references below reflect decisions made in that context; reasoning still applies to GKE deployment.
 > These ADRs document why each security-critical decision was made,
 > what alternatives were considered, and what trade-offs were accepted.
 >

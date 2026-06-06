@@ -1,3 +1,7 @@
+# LEGACY — Oracle VM2 compose (provider-service + ai-service on VM2, internal only).
+# Oracle account terminated 2026-06-06. Current deploy: kubernetes/deploy.sh (GKE).
+# For local dev use docker/docker-compose.yml instead.
+
 services:
   provider-service:
     build:

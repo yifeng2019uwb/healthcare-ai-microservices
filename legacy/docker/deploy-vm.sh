@@ -1,5 +1,8 @@
 #!/bin/bash
 # =============================================================================
+# LEGACY — Oracle Free Tier account terminated 2026-06-06. All VMs deleted.
+# Kept for reference if Oracle Cloud VMs are used again.
+# =============================================================================
 # deploy-vm.sh — Build locally and deploy to Oracle Cloud VMs
 #
 # Usage:

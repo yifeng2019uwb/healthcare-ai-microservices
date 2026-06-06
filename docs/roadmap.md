@@ -19,8 +19,8 @@
 - [x] Unit tests for all services (patient, provider)
 - [x] Integration tests — auth, patient profile, provider profile, admin import
 - [x] Schema indexes — patient history, audit log, encounter, condition, allergy lookups
-- [x] Deployment — Docker Compose on Oracle OCI VM (E2.1.Micro), Supabase PostgreSQL
-- [x] Infrastructure as Code — `pulumi-oracle/` (VCN, subnet, security list, 2x VMs, Docker install)
+- [x] Deployment — GKE (`health-ai-cluster-us-west1`), Supabase PostgreSQL (previously Oracle OCI VM — account terminated 2026-06-06, see `legacy/`)
+- [x] Infrastructure as Code — `kubernetes/pulumi/` (GKE cluster, Artifact Registry, Workload Identity)
 
 ## Deferred (not removed — may revisit)
 
@@ -69,7 +69,7 @@
 
 **Goal**: Production-grade security posture. Directly relevant to federal security and DevSecOps roles.
 
-- [ ] **eBPF EDR on Oracle VM** — deploy eBPF agent on healthcare VM, verify ai-service only touches expected endpoints
+- [ ] **eBPF EDR on GKE** — file-based rules (V3/V7/V9) not yet passing on health-ai GKE; diagnose opensnoop file sensor
 - [ ] **OWASP ZAP scan** — automated security scan added to GitHub Actions CI/CD pipeline
 - [ ] **STRIDE threat model** — written document covering all services and data flows
 - [ ] **TD-4 fix** — `GET /provider/patients/{id}` should return 404 for both non-existent and inaccessible patients (currently leaks valid IDs via 403 vs 404)

@@ -15,8 +15,8 @@
 | Input data | Conditions + allergies + encounters | Available now, no prerequisites |
 | Output | Summary + risk_flags (each flag must have `reason`) | Auditable, explainable |
 | Gateway | PROVIDER only, `/api/ai/**` | Simplest access model |
-| Deployment | Oracle OCI VM (Docker Compose) | Free tier, different env from GCP for eBPF monitoring |
-| Infrastructure as Code | Pulumi (Go) — `pulumi-oracle/` + `pulumi-supabase/` | All infra tracked in git |
+| Deployment | GKE (`health-ai-cluster-us-west1`) | Previously Oracle OCI VM — account terminated 2026-06-06 |
+| Infrastructure as Code | Pulumi (Go) — `kubernetes/pulumi/` | All infra tracked in git |
 
 ---
 
@@ -30,7 +30,7 @@
 | Output | Summary + risk flags | + Care gaps, medication flags |
 | LLM | Gemini API key | Swap model version without code changes |
 | Access | PROVIDER only | + PATIENT with fhirId ownership check |
-| Deployment | Single Oracle OCI VM, Docker Compose | Multi-VM, container orchestration |
+| Deployment | GKE (health-ai-cluster-us-west1) | Multi-region, auto-scaling |
 
 ---
 
@@ -179,19 +179,15 @@ Key columns: `patient_id`, `summary`, `risk_flags` (JSONB), `trigger_type`,
 All infrastructure tracked in git via Pulumi (Go). No manual console commands.
 
 ```
+kubernetes/pulumi/        ← GKE cluster + Artifact Registry + IAM (current)
 healthcare-infra/
-├── pulumi-oracle/        ← Oracle OCI VM + VCN + networking (exists)
-│   ├── main.go
-│   ├── network.go        ← VCN, subnet, internet gateway, security list
-│   └── compute.go        ← 2x E2.1.Micro, Docker install, cloud-init
-└── pulumi-supabase/      ← to be created
-    └── main.go           ← publication + replication slot (pulumi/postgresql provider)
+└── legacy/pulumi-oracle/ ← LEGACY: Oracle OCI VM (account terminated 2026-06-06)
 ```
 
-**`pulumi-oracle/`** provisions:
-- VCN + public subnet + internet gateway + route table
-- Security list: SSH (22), gateway (8080), internal VCN traffic
-- Instance 1: gateway + auth-service
+**`kubernetes/pulumi/`** provisions:
+- GKE cluster (`health-ai-cluster-us-west1`)
+- Artifact Registry for Docker images
+- Workload Identity for GCP service access
 - Instance 2: provider-service + ai-service + Debezium Server
 - Public IP assigned automatically (`AssignPublicIp: true`)
 - Docker + docker-compose-plugin installed via cloud-init
@@ -282,8 +278,7 @@ tail -n +502 conditions.csv >> conditions_sim.csv
 - [ ] `pulumi-supabase/` — create Go Pulumi stack with `postgresql.Publication` + `postgresql.ReplicationSlot` (needed for Debezium auto-trigger)
 - [ ] `docker/debezium/application.properties` — Debezium Server config file
 - [ ] `docker-compose.yml` — add Redpanda + Debezium Server containers (auto-trigger path)
-- [ ] `pulumi-oracle/compute.go` — remove stale `/data/postgres` setup (using Supabase not local PG)
-- [ ] eBPF baseline — after Oracle VM deployment, verify ai-service only touches expected endpoints
+- [ ] eBPF baseline — verify ai-service only touches expected external endpoints (file sensor V3/V7/V9 still failing on GKE)
 
 ---
 
