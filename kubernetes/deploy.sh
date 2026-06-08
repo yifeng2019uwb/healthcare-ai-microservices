@@ -11,9 +11,7 @@ K8S_DIR="$SCRIPT_DIR"
 PULUMI_DIR="$SCRIPT_DIR/pulumi"
 NAMESPACE="health-ai"
 PROJECT_ID="ebpfagent"
-AR_REGION="us-west1"
-AR_REPO="health-ai"
-IMAGE_PREFIX="${AR_REGION}-docker.pkg.dev/${PROJECT_ID}/${AR_REPO}"
+IMAGE_PREFIX="ghcr.io/yifeng2019uwb"
 SERVICES="auth-service provider-service ai-service gateway"
 ENV_FILE="$REPO_ROOT/docker/.env"
 
@@ -37,9 +35,6 @@ build_images() {
     info "Building JARs (mvn)..."
     (cd "$REPO_ROOT/services" && mvn clean package -DskipTests -q)
     success "JARs built"
-
-    info "Configuring Docker for Artifact Registry..."
-    gcloud auth configure-docker "${AR_REGION}-docker.pkg.dev" --quiet
 
     for svc in $SERVICES; do
         info "Building and pushing $svc (linux/amd64)..."
@@ -139,29 +134,25 @@ show_status() {
 
 # ── eBPF EDR DaemonSet ────────────────────────────────────────────────────────
 EBPF_EDR_DS_URL="https://raw.githubusercontent.com/yifeng2019uwb/ebpf-edr-demo/main/k8s/ebpf-edr-ds.yaml"
-EBPF_EDR_IMAGE="us-west1-docker.pkg.dev/ebpfagent/ebpf-edr/ebpf-edr:latest"
+EBPF_EDR_DS="$EBPF_EDR_DIR/k8s/ebpf-edr-ds.yaml"
 
 _apply_daemonset() {
-    info "Checking eBPF EDR image in Artifact Registry..."
-    if ! gcloud artifacts docker images describe "$EBPF_EDR_IMAGE" >/dev/null 2>&1; then
-        warn "eBPF EDR image not found — skipping DaemonSet"
-        warn "Build and push from ebpf-edr-demo/: make docker-push"
+    if [[ -z "$EBPF_EDR_DIR" ]] || [[ ! -f "$EBPF_EDR_DS" ]]; then
+        warn "eBPF EDR not found at $EBPF_EDR_DS — skipping DaemonSet"
+        return 0
+    fi
+    if grep -q "TO_BE_SET" "$EBPF_EDR_DS"; then
+        warn "eBPF EDR image not configured in ebpf-edr-ds.yaml — skipping DaemonSet"
         return 0
     fi
 
-    info "Downloading eBPF EDR DaemonSet manifest..."
-    local ds_yaml
-    ds_yaml=$(curl -fsSL "$EBPF_EDR_DS_URL" 2>/dev/null) || {
-        warn "Failed to download ebpf-edr-ds.yaml — skipping"
-        return 0
-    }
-
+    info "Applying eBPF EDR DaemonSet from local repo..."
     local region cluster
     region=$(cd "$PULUMI_DIR" && pulumi stack output "clusterRegions" --json 2>/dev/null | jq -r '.[0]')
     cluster=$(cd "$PULUMI_DIR" && pulumi stack output "clusterName-${region}" 2>/dev/null)
 
-    echo "$ds_yaml" | REGION="$region" CLUSTER_NAME="$cluster" GOOGLE_CLOUD_PROJECT="$PROJECT_ID" \
-        envsubst '${REGION} ${CLUSTER_NAME} ${GOOGLE_CLOUD_PROJECT}' | kubectl apply -f -
+    REGION="$region" CLUSTER_NAME="$cluster" GOOGLE_CLOUD_PROJECT="$PROJECT_ID" \
+        envsubst '${REGION} ${CLUSTER_NAME} ${GOOGLE_CLOUD_PROJECT}' < "$EBPF_EDR_DS" | kubectl apply -f -
     kubectl rollout restart daemonset/ebpf-edr -n kube-system
     kubectl rollout status daemonset/ebpf-edr -n kube-system --timeout=120s
     success "eBPF EDR DaemonSet deployed (region=$region)"

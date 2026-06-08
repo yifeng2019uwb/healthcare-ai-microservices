@@ -27,7 +27,7 @@ spec:
       serviceAccountName: health-ai-sa
       containers:
       - name: auth-service
-        image: us-west1-docker.pkg.dev/ebpfagent/health-ai/auth-service:latest
+        image: ghcr.io/yifeng2019uwb/auth-service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8082
@@ -110,7 +110,7 @@ spec:
       serviceAccountName: health-ai-sa
       containers:
       - name: provider-service
-        image: us-west1-docker.pkg.dev/ebpfagent/health-ai/provider-service:latest
+        image: ghcr.io/yifeng2019uwb/provider-service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8083
@@ -183,7 +183,7 @@ spec:
       serviceAccountName: health-ai-sa
       containers:
       - name: ai-service
-        image: us-west1-docker.pkg.dev/ebpfagent/health-ai/ai-service:latest
+        image: ghcr.io/yifeng2019uwb/ai-service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8085
@@ -261,7 +261,7 @@ spec:
       serviceAccountName: health-ai-sa
       containers:
       - name: gateway
-        image: us-west1-docker.pkg.dev/ebpfagent/health-ai/gateway:latest
+        image: ghcr.io/yifeng2019uwb/gateway:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
